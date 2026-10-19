@@ -1,0 +1,77 @@
+# Mondafone Agent Guide
+
+## Project Scope
+
+Mondafone is a minimal Android call anti-spam app written in Kotlin. It is intentionally limited and always have to use Android framework APIs over other Libs:
+
+- `CallScreeningService` for rejecting and filtering incoming calls before they ring.
+- `Telecom` and `TelephonyManager` for call state and telecom integration.
+- `ContactsContract` for allowlist lookups against the user's contacts.
+- Native Android `Activity`, `Canvas`, and `View` for the UI.
+
+The application keeps a minimal, low-footprint UI. Do not add Compose, AndroidX, Material, AppCompat, Room, WorkManager, or coroutine dependencies unless explicitly requested.
+
+## Repository Layout
+
+- `app/src/main/java/dev/polyrics/mondafone/MainActivity.kt`: activity composition, permissions, and feature coordination.
+- `app/src/main/java/dev/polyrics/mondafone/screening/`: `CallScreeningService` implementation and block/allow decision logic.
+- `app/src/main/java/dev/polyrics/mondafone/rules/`: persisted block rules (numbers, prefixes, unknown/private callers).
+- `app/src/main/java/dev/polyrics/mondafone/contacts/`: contacts-based allowlist queries.
+- `app/src/main/java/dev/polyrics/mondafone/log/`: blocked-call history stored through framework APIs.
+- `app/src/main/java/dev/polyrics/mondafone/ui/`: native panels and settings screens.
+- `app/src/main/AndroidManifest.xml`: screening service declaration, permissions, and launcher activity.
+- `app/src/main/res/mipmap-*/`: launcher icon.
+- `app/build.gradle.kts`: Android build configuration and release shrinking.
+- `gradle/libs.versions.toml`: plugin version catalog; keep it dependency-free apart from required build plugins.
+
+## Build And Verify
+
+Use the Gradle wrapper from the project root:
+
+```bash
+./gradlew :app:assembleDebug
+./gradlew :app:assembleRelease
+```
+
+The optimized release APK is generated at:
+
+```text
+app/build/outputs/apk/release/app-release-unsigned.apk
+```
+
+Always run at least `assembleRelease` after code or manifest changes. A physical Android device is required to verify `CallScreeningService` behavior, since the emulator telephony stack does not exercise screening reliably.
+
+## Implementation Rules
+
+- Keep the APK as small as possible.
+- Prefer framework APIs over third-party libraries.
+- Do not add image assets for UI elements; draw simple UI elements with `Canvas`, except if the user explicitly requests it.
+- Do not request `READ_CALL_LOG`, `READ_CONTACTS`, or other sensitive permissions unless the screening design explicitly requires them.
+- Request the `ROLE_CALL_SCREENING` role through `RoleManager`, never by assuming granted access.
+- Store rules and blocked-call history in app-specific storage unless a user-visible export is requested.
+- Never block a call without recording a decision entry the user can review.
+- Keep screening decisions fast and synchronous; do no network or heavy I/O on the screening callback path.
+- Run on minSdk 31; do not add compat shims for older APIs.
+- Use R8 and resource shrinking for release builds.
+
+## Change Checklist
+
+1. Check whether the change adds a dependency or resource that can be avoided with a framework API.
+2. Build both debug and release variants when changing Kotlin, the manifest, or Gradle configuration.
+3. Check the release APK size after dependency or resource changes.
+4. Test screening role grant/revocation, block rule matching, contacts allowlist, and activity destruction on a physical device with real incoming calls.
+
+## Code Rules
+1. KISS for all the code
+2. POO principes to the limit: abstraction, encapsulation, inheritance, and polymorphism.
+3. SOLID for all.
+4. Code Human-Understandable, keep the functions short, prioritizing the little classes and functions for do one thing or groups of related things, good code indentation.
+5. Clean-Code all the time, Variables, functions, and classes should have meaningful names.
+6. Don't put comments to all, and if you do include them, keep them short.
+7. English first, all the code have to be in English
+
+## Workflow
+1. `main` is the main branch, so always fork it when adding new features, fix bux or whatever thing.
+2. Merge directly to `main` is bad, use pull request or suggest to the user do a pull request.
+3. Do commits with less of 200 lines (no strict), and less of 10 files.
+4. SSD for all, and TDD, do the test first and then the code.
