@@ -1,16 +1,31 @@
 package dev.polyrics.mondafone.spam
 
 import android.content.Context
+import android.content.SharedPreferences
 
-class PrefsSpamStore(context: Context) : SpamStore {
+class PrefsSpamStore(private val prefs: SharedPreferences) : SpamStore {
 
-    private val prefs = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+    constructor(context: Context) : this(
+        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE),
+    )
 
     override fun isRegistered(number: String): Boolean = prefs.contains(number)
 
     override fun mark(number: String, isSpam: Boolean) {
         val verdict = if (isSpam) VERDICT_SPAM else VERDICT_NOT_SPAM
         prefs.edit().putString(number, verdict).apply()
+    }
+
+    override fun stats(): SpamStats {
+        val values = prefs.all.values
+        return SpamStats(
+            spam = values.count { it == VERDICT_SPAM },
+            notSpam = values.count { it == VERDICT_NOT_SPAM },
+        )
+    }
+
+    override fun clear() {
+        prefs.edit().clear().apply()
     }
 
     private companion object {
