@@ -51,26 +51,49 @@ class MainActivity : Activity() {
     private fun buildContent(): LinearLayout {
         val density = resources.displayMetrics.density
         val pad = (24 * density).toInt()
+        val gap = (16 * density).toInt()
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
+            gravity = Gravity.CENTER_VERTICAL
             setPadding(pad, pad, pad, pad)
             setBackgroundColor(getColor(R.color.background))
-            statusLabel = TextView(this@MainActivity).apply {
-                textSize = 14f
-                setTextColor(Color.BLACK)
-                typeface = Typeface.MONOSPACE
-            }
-            addView(statusLabel)
-            addView(RetroButton(this@MainActivity, getString(R.string.grant_access), getColor(R.color.primary)) {
-                requestAccess()
-            })
+            addView(textLabel(getString(R.string.app_name), 24f, bold = true))
+            addView(textLabel(getString(R.string.app_subtitle), 14f), marginParams(bottom = gap * 2))
+            statusLabel = textLabel("", 14f, mono = true)
+            addView(statusLabel, marginParams(bottom = gap * 2))
+            addView(
+                RetroButton(this@MainActivity, getString(R.string.grant_access), getColor(R.color.primary)) {
+                    requestAccess()
+                },
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ),
+            )
         }
     }
 
+    private fun textLabel(text: String, sizeSp: Float, bold: Boolean = false, mono: Boolean = false): TextView =
+        TextView(this).apply {
+            this.text = text
+            textSize = sizeSp
+            setTextColor(Color.BLACK)
+            if (mono) typeface = Typeface.MONOSPACE
+            if (bold) setTypeface(typeface, Typeface.BOLD)
+        }
+
+    private fun marginParams(bottom: Int): LinearLayout.LayoutParams =
+        LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+        ).apply { bottomMargin = bottom }
+
     private fun refreshStatus() {
         statusLabel.text = buildReport()
-        if (isReady()) startMonitorService()
+        if (isReady()) {
+            startMonitorService()
+            statusLabel.postDelayed({ statusLabel.text = buildReport() }, REFRESH_DELAY_MS)
+        }
     }
 
     private fun buildReport(): String = buildString {
@@ -104,5 +127,6 @@ class MainActivity : Activity() {
 
     private companion object {
         const val REQUEST_CODE = 1
+        const val REFRESH_DELAY_MS = 500L
     }
 }
