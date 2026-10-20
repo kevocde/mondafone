@@ -7,7 +7,7 @@ class CallEndTrigger(private val onCallEnded: () -> Unit) {
 
     private var wasOffHook = false
 
-    val callback = object : TelephonyCallback(), TelephonyCallback.CallStateListener {
+    val callback: TelephonyCallback = object : TelephonyCallback(), TelephonyCallback.CallStateListener {
         override fun onCallStateChanged(state: Int) {
             when (state) {
                 TelephonyManager.CALL_STATE_OFFHOOK -> wasOffHook = true
