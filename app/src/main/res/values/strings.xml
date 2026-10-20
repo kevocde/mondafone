@@ -1,11 +1,11 @@
 <resources>
     <string name="app_name">Mondafone</string>
-    <string name="spam_question">¿Esta llamada fue spam?</string>
-    <string name="answer_yes">Sí</string>
+    <string name="spam_question">Was this call spam?</string>
+    <string name="answer_yes">Yes</string>
     <string name="answer_no">No</string>
     <string name="monitor_channel_name">Call monitor</string>
     <string name="monitor_notification_text">Watching ended calls</string>
-    <string name="grant_access">Conceder acceso</string>
-    <string name="status_active">[ OK ] Monitor activo</string>
-    <string name="status_inactive">[ .. ] Concede los permisos para activar el monitor</string>
+    <string name="grant_access">Grant access</string>
+    <string name="status_active">[ OK ] Monitor active</string>
+    <string name="status_inactive">[ .. ] Grant the permissions to activate the monitor</string>
 </resources>
