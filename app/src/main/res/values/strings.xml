@@ -3,4 +3,6 @@
     <string name="spam_question">¿Esta llamada fue spam?</string>
     <string name="answer_yes">Sí</string>
     <string name="answer_no">No</string>
+    <string name="monitor_channel_name">Call monitor</string>
+    <string name="monitor_notification_text">Watching ended calls</string>
 </resources>
