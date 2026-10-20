@@ -17,11 +17,11 @@ import dev.polyrics.mondafone.ui.RetroButton
 
 class MainActivity : Activity() {
 
-    private val runtimePermissions = arrayOf(
-        Manifest.permission.READ_CALL_LOG,
-        Manifest.permission.READ_PHONE_STATE,
-        Manifest.permission.READ_CONTACTS,
-        Manifest.permission.POST_NOTIFICATIONS,
+    private val runtimePermissions = linkedMapOf(
+        "Call log" to Manifest.permission.READ_CALL_LOG,
+        "Phone state" to Manifest.permission.READ_PHONE_STATE,
+        "Contacts" to Manifest.permission.READ_CONTACTS,
+        "Notifications" to Manifest.permission.POST_NOTIFICATIONS,
     )
 
     private lateinit var statusLabel: TextView
@@ -54,10 +54,9 @@ class MainActivity : Activity() {
             setPadding(pad, pad, pad, pad)
             setBackgroundColor(getColor(R.color.background))
             statusLabel = TextView(this@MainActivity).apply {
-                textSize = 16f
+                textSize = 14f
                 setTextColor(Color.BLACK)
                 typeface = Typeface.MONOSPACE
-                gravity = Gravity.CENTER
             }
             addView(statusLabel)
             addView(RetroButton(this@MainActivity, getString(R.string.grant_access), getColor(R.color.primary)) {
@@ -67,18 +66,30 @@ class MainActivity : Activity() {
     }
 
     private fun refreshStatus() {
-        val ready = hasRuntimePermissions() && Settings.canDrawOverlays(this)
-        statusLabel.text = getString(if (ready) R.string.status_active else R.string.status_inactive)
-        if (ready) startMonitorService()
+        statusLabel.text = buildReport()
+        if (isReady()) startMonitorService()
     }
 
-    private fun hasRuntimePermissions(): Boolean = runtimePermissions.all {
-        checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED
+    private fun buildReport(): String = buildString {
+        runtimePermissions.forEach { (label, permission) ->
+            appendLine(checkLine(label, isGranted(permission)))
+        }
+        appendLine(checkLine("Overlay window", Settings.canDrawOverlays(this@MainActivity)))
+        append(checkLine("Monitor running", CallMonitorService.isRunning))
     }
+
+    private fun checkLine(label: String, ok: Boolean): String =
+        (if (ok) "[ OK ] " else "[ .. ] ") + label
+
+    private fun isGranted(permission: String): Boolean =
+        checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
+
+    private fun isReady(): Boolean =
+        runtimePermissions.values.all(::isGranted) && Settings.canDrawOverlays(this)
 
     private fun requestAccess() {
-        if (!hasRuntimePermissions()) {
-            requestPermissions(runtimePermissions, REQUEST_CODE)
+        if (!runtimePermissions.values.all(::isGranted)) {
+            requestPermissions(runtimePermissions.values.toTypedArray(), REQUEST_CODE)
         } else if (!Settings.canDrawOverlays(this)) {
             startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
         }
