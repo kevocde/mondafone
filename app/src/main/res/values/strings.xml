@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">Mondafone</string>
+    <string name="app_subtitle">The end of spam calls</string>
+    <string name="spam_question">Was this call spam?</string>
+    <string name="answer_yes">Yes</string>
+    <string name="answer_no">No</string>
+    <string name="monitor_channel_name">Call monitor</string>
+    <string name="monitor_notification_text">Watching ended calls</string>
+    <string name="grant_access">Grant access</string>
+    <string name="debug_title">Debug:</string>
+    <string name="clear_store">Clear</string>
 </resources>
