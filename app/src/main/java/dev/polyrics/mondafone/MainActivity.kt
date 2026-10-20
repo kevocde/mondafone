@@ -14,10 +14,13 @@ import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
 import dev.polyrics.mondafone.monitor.CallMonitorService
+import dev.polyrics.mondafone.spam.PrefsSpamStore
 import dev.polyrics.mondafone.ui.RetroButton
 import dev.polyrics.mondafone.ui.RetroTitle
 
 class MainActivity : Activity() {
+
+    private val store by lazy { PrefsSpamStore(this) }
 
     private val runtimePermissions = buildMap {
         put("Call log", Manifest.permission.READ_CALL_LOG)
@@ -29,6 +32,7 @@ class MainActivity : Activity() {
     }
 
     private lateinit var statusLabel: TextView
+    private lateinit var debugLabel: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,10 +70,16 @@ class MainActivity : Activity() {
                 RetroButton(this@MainActivity, getString(R.string.grant_access), getColor(R.color.primary)) {
                     requestAccess()
                 },
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ),
+                marginParams(bottom = gap * 2),
+            )
+            addView(textLabel(getString(R.string.debug_title), 16f, bold = true), marginParams(bottom = gap / 2))
+            debugLabel = textLabel("", 14f, mono = true)
+            addView(debugLabel, marginParams(bottom = gap))
+            addView(
+                RetroButton(this@MainActivity, getString(R.string.clear_store), getColor(R.color.secondary)) {
+                    clearSpamStore()
+                },
+                marginParams(bottom = 0),
             )
         }
     }
@@ -91,10 +101,25 @@ class MainActivity : Activity() {
 
     private fun refreshStatus() {
         statusLabel.text = buildReport()
+        debugLabel.text = buildDebugReport()
         if (isReady()) {
             startMonitorService()
             statusLabel.postDelayed({ statusLabel.text = buildReport() }, REFRESH_DELAY_MS)
         }
+    }
+
+    private fun buildDebugReport(): String {
+        val stats = store.stats()
+        return buildString {
+            appendLine("* Total marked = ${stats.total}")
+            appendLine("* Spam = ${stats.spam}")
+            append("* Not spam = ${stats.notSpam}")
+        }
+    }
+
+    private fun clearSpamStore() {
+        store.clear()
+        refreshStatus()
     }
 
     private fun buildReport(): String = buildString {
