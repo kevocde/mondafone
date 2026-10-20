@@ -13,14 +13,14 @@ The application keeps a minimal, low-footprint UI. Do not add Compose, AndroidX,
 
 ## Repository Layout
 
-- `app/src/main/java/dev/polyrics/mondafone/MainActivity.kt`: activity composition, permissions, and feature coordination.
-- `app/src/main/java/dev/polyrics/mondafone/screening/`: `CallScreeningService` implementation and block/allow decision logic.
-- `app/src/main/java/dev/polyrics/mondafone/rules/`: persisted block rules (numbers, prefixes, unknown/private callers).
-- `app/src/main/java/dev/polyrics/mondafone/contacts/`: contacts-based allowlist queries.
-- `app/src/main/java/dev/polyrics/mondafone/log/`: blocked-call history stored through framework APIs.
-- `app/src/main/java/dev/polyrics/mondafone/ui/`: native panels and settings screens.
-- `app/src/main/AndroidManifest.xml`: screening service declaration, permissions, and launcher activity.
-- `app/src/main/res/mipmap-*/`: launcher icon.
+- `app/src/main/java/dev/polyrics/mondafone/MainActivity.kt`: permission requests and monitor service startup.
+- `app/src/main/java/dev/polyrics/mondafone/spam/`: verdict store (`SpamStore`/`PrefsSpamStore`) and `SpamReportDecider` rules (incoming, min duration, not contact, not registered).
+- `app/src/main/java/dev/polyrics/mondafone/contacts/`: `ContactsLookup` queries against `ContactsContract`.
+- `app/src/main/java/dev/polyrics/mondafone/monitor/`: `CallMonitorService` foreground daemon, `ContentObserver` on `CallLog`, and `CallLogReader`.
+- `app/src/main/java/dev/polyrics/mondafone/ui/`: `RetroButton`, `SpamReportView` and `SpamReportOverlay` (canvas-drawn retro dialog over `TYPE_APPLICATION_OVERLAY`).
+- `app/src/test/java/`: local unit tests for decision logic (JUnit 4).
+- `app/src/main/AndroidManifest.xml`: permissions, monitor service, and launcher activity.
+- `app/src/main/res/values/colors.xml`: retro pastel palette (see Design).
 - `app/build.gradle.kts`: Android build configuration and release shrinking.
 - `gradle/libs.versions.toml`: plugin version catalog; keep it dependency-free apart from required build plugins.
 
