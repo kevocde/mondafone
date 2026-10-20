@@ -2,6 +2,7 @@ package dev.polyrics.mondafone.ui
 
 import android.content.Context
 import android.graphics.PixelFormat
+import android.view.Gravity
 import android.view.WindowManager
 
 class SpamReportOverlay(context: Context) {
@@ -36,5 +37,5 @@ class SpamReportOverlay(context: Context) {
         WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
         WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
         PixelFormat.TRANSLUCENT,
-    )
+    ).apply { gravity = Gravity.CENTER }
 }
