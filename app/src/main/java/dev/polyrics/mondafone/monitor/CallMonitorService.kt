@@ -11,6 +11,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.provider.CallLog
+import android.telephony.TelephonyManager
 import android.util.Log
 import dev.polyrics.mondafone.R
 import dev.polyrics.mondafone.contacts.PhoneContactsLookup
@@ -33,17 +34,22 @@ class CallMonitorService : Service() {
         override fun onChange(selfChange: Boolean) = scheduleCallCheck("call log changed")
     }
 
+    private val telephonyManager by lazy { getSystemService(TelephonyManager::class.java) }
+    private val callEndTrigger = CallEndTrigger { scheduleCallCheck("call ended") }
+
     override fun onCreate() {
         super.onCreate()
         startForegroundWithNotification()
         lastSeenCallId = reader.latestCall()?.id ?: -1L
         contentResolver.registerContentObserver(CallLog.Calls.CONTENT_URI, true, callLogObserver)
+        telephonyManager.registerTelephonyCallback(mainExecutor, callEndTrigger.callback)
         isRunning = true
         Log.i(TAG, "monitor started, last call id $lastSeenCallId")
     }
 
     override fun onDestroy() {
         contentResolver.unregisterContentObserver(callLogObserver)
+        telephonyManager.unregisterTelephonyCallback(callEndTrigger.callback)
         isRunning = false
         super.onDestroy()
     }

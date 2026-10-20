@@ -19,6 +19,7 @@ class MainActivity : Activity() {
 
     private val runtimePermissions = arrayOf(
         Manifest.permission.READ_CALL_LOG,
+        Manifest.permission.READ_PHONE_STATE,
         Manifest.permission.READ_CONTACTS,
         Manifest.permission.POST_NOTIFICATIONS,
     )
