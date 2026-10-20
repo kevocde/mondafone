@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.Gravity
@@ -17,12 +18,14 @@ import dev.polyrics.mondafone.ui.RetroButton
 
 class MainActivity : Activity() {
 
-    private val runtimePermissions = linkedMapOf(
-        "Call log" to Manifest.permission.READ_CALL_LOG,
-        "Phone state" to Manifest.permission.READ_PHONE_STATE,
-        "Contacts" to Manifest.permission.READ_CONTACTS,
-        "Notifications" to Manifest.permission.POST_NOTIFICATIONS,
-    )
+    private val runtimePermissions = buildMap {
+        put("Call log", Manifest.permission.READ_CALL_LOG)
+        put("Phone state", Manifest.permission.READ_PHONE_STATE)
+        put("Contacts", Manifest.permission.READ_CONTACTS)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            put("Notifications", Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
 
     private lateinit var statusLabel: TextView
 
