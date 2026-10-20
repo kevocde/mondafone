@@ -31,7 +31,7 @@ class RetroButton(
     private var pressed = false
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        val width = (textPaint.measureText(label) + 48 * density).toInt()
+        val width = (textPaint.measureText(label) + 24 * density).toInt()
         val height = (48 * density).toInt()
         setMeasuredDimension(
             resolveSize(width, widthMeasureSpec),
