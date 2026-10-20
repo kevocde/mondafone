@@ -15,6 +15,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import dev.polyrics.mondafone.monitor.CallMonitorService
 import dev.polyrics.mondafone.ui.RetroButton
+import dev.polyrics.mondafone.ui.RetroTitle
 
 class MainActivity : Activity() {
 
@@ -57,8 +58,8 @@ class MainActivity : Activity() {
             gravity = Gravity.CENTER_VERTICAL
             setPadding(pad, pad, pad, pad)
             setBackgroundColor(getColor(R.color.background))
-            addView(textLabel(getString(R.string.app_name), 24f, bold = true))
-            addView(textLabel(getString(R.string.app_subtitle), 14f), marginParams(bottom = gap * 2))
+            addView(RetroTitle(this@MainActivity, getString(R.string.app_name)))
+            addView(textLabel(getString(R.string.app_subtitle), 18f, bold = true), marginParams(bottom = gap * 2))
             statusLabel = textLabel("", 14f, mono = true)
             addView(statusLabel, marginParams(bottom = gap * 2))
             addView(
