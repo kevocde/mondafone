@@ -54,6 +54,8 @@ class CallMonitorService : Service() {
         super.onDestroy()
     }
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun scheduleCallCheck(reason: String) {
