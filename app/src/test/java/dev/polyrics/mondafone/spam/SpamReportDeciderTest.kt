@@ -16,6 +16,8 @@ class SpamReportDeciderTest {
         override fun mark(number: String, isSpam: Boolean) {
             registeredNumbers += number
         }
+        override fun addPending(number: String) {}
+        override fun pendingNumbers(): List<String> = emptyList()
     }
     private val contacts = object : ContactsLookup {
         override fun isContact(number: String) = number in contactNumbers

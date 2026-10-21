@@ -62,6 +62,49 @@ class PrefsSpamStoreTest {
 
         assertFalse(store.isSpam("600111222"))
     }
+
+    @Test
+    fun addPendingStoresNumberAsPending() {
+        store.addPending("600111222")
+
+        assertEquals(listOf("600111222"), store.pendingNumbers())
+    }
+
+    @Test
+    fun pendingNumberIsNotRegistered() {
+        store.addPending("600111222")
+
+        assertFalse(store.isRegistered("600111222"))
+    }
+
+    @Test
+    fun addPendingDoesNotOverwriteExistingVerdict() {
+        store.mark("600111222", isSpam = true)
+
+        store.addPending("600111222")
+
+        assertTrue(store.isSpam("600111222"))
+    }
+
+    @Test
+    fun markRemovesFromPending() {
+        store.addPending("600111222")
+
+        store.mark("600111222", isSpam = true)
+
+        assertEquals(emptyList<String>(), store.pendingNumbers())
+        assertTrue(store.isRegistered("600111222"))
+    }
+
+    @Test
+    fun clearRemovesAllPending() {
+        store.addPending("600111222")
+        store.addPending("600333444")
+
+        store.clear()
+
+        assertEquals(emptyList<String>(), store.pendingNumbers())
+    }
 }
 
 private class FakeSharedPreferences : SharedPreferences {
