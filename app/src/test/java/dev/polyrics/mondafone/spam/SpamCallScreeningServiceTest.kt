@@ -16,7 +16,17 @@ class SpamCallScreeningServiceTest {
         }
     }
 
-    private val screeningService = SpamCallScreeningService(store)
+    private val notifier = object : SpamBlockedNotifier {
+        val blockedNumbers = mutableListOf<String>()
+        override fun notifyBlocked(number: String) {
+            blockedNumbers += number
+        }
+    }
+
+    private val screeningService = SpamCallScreeningService().apply {
+        this.store = this@SpamCallScreeningServiceTest.store
+        this.notifier = this@SpamCallScreeningServiceTest.notifier
+    }
 
     @Test
     fun shouldBlockSpamNumber() {
