@@ -2,24 +2,20 @@
 
 ## Project Scope
 
-Mondafone is a minimal Android call anti-spam app written in Kotlin. It is intentionally limited and always have to use Android framework APIs over other Libs:
+Mondafone is a minimal Android call anti-spam app written in Kotlin. It is intentionally limited and always use Android framework APIs over other Libs:
 
 - `CallScreeningService` for rejecting and filtering incoming calls before they ring.
-- `Telecom` and `TelephonyManager` for call state and telecom integration.
-- `ContactsContract` for allowlist lookups against the user's contacts.
 - Native Android `Activity`, `Canvas`, and `View` for the UI.
 
 The application keeps a minimal, low-footprint UI. Do not add Compose, AndroidX, Material, AppCompat, Room, WorkManager, or coroutine dependencies unless explicitly requested.
 
 ## Repository Layout
 
-- `app/src/main/java/dev/polyrics/mondafone/MainActivity.kt`: permission requests and monitor service startup.
-- `app/src/main/java/dev/polyrics/mondafone/spam/`: verdict store (`SpamStore`/`PrefsSpamStore`) and `SpamReportDecider` rules (incoming, min duration, not contact, not registered).
-- `app/src/main/java/dev/polyrics/mondafone/contacts/`: `ContactsLookup` queries against `ContactsContract`.
-- `app/src/main/java/dev/polyrics/mondafone/monitor/`: `CallMonitorService` foreground daemon, `ContentObserver` on `CallLog`, and `CallLogReader`.
-- `app/src/main/java/dev/polyrics/mondafone/ui/`: `RetroButton`, `SpamReportView` and `SpamReportOverlay` (canvas-drawn retro dialog over `TYPE_APPLICATION_OVERLAY`).
+- `app/src/main/java/dev/polyrics/mondafone/MainActivity.kt`: chained onboarding (ROLE_CALL_SCREENING → POST_NOTIFICATIONS), status display, and in-app pending verdict review.
+- `app/src/main/java/dev/polyrics/mondafone/spam/`: verdict store (`SpamStore`/`PrefsSpamStore`), `SpamCallScreeningService` (on-demand call screening), `SpamReportDecider` rules, `SpamBlockedNotifier` (blocked call notifications), `SpamVerdictPromptNotifier` (interactive verdict prompt notifications), and `SpamVerdictReceiver` (handles verdict button actions).
+- `app/src/main/java/dev/polyrics/mondafone/ui/`: `RetroButton`, `SpamReportView` (canvas-drawn retro dialog for in-app verdict).
 - `app/src/test/java/`: local unit tests for decision logic (JUnit 4).
-- `app/src/main/AndroidManifest.xml`: permissions, monitor service, and launcher activity.
+- `app/src/main/AndroidManifest.xml`: permissions (only POST_NOTIFICATIONS), screening service, verdict receiver, and launcher activity.
 - `app/src/main/res/values/colors.xml`: retro pastel palette (see Design).
 - `app/build.gradle.kts`: Android build configuration and release shrinking.
 - `gradle/libs.versions.toml`: plugin version catalog; keep it dependency-free apart from required build plugins.
@@ -58,7 +54,7 @@ Retro pastel design system for all UI:
 - Keep the APK as small as possible.
 - Prefer framework APIs over third-party libraries.
 - Do not add image assets for UI elements; draw simple UI elements with `Canvas`, except if the user explicitly requests it.
-- Do not request `READ_CALL_LOG`, `READ_CONTACTS`, or other sensitive permissions unless the screening design explicitly requires them.
+- Do not request `READ_CALL_LOG`, `READ_CONTACTS`, `READ_PHONE_STATE`, or other sensitive permissions. Android Telecom natively skips contacts when `ROLE_CALL_SCREENING` is held.
 - Request the `ROLE_CALL_SCREENING` role through `RoleManager`, never by assuming granted access.
 - Store rules and blocked-call history in app-specific storage unless a user-visible export is requested.
 - Never block a call without recording a decision entry the user can review.
@@ -71,7 +67,7 @@ Retro pastel design system for all UI:
 1. Check whether the change adds a dependency or resource that can be avoided with a framework API.
 2. Build both debug and release variants when changing Kotlin, the manifest, or Gradle configuration.
 3. Check the release APK size after dependency or resource changes.
-4. Test screening role grant/revocation, block rule matching, contacts allowlist, and activity destruction on a physical device with real incoming calls.
+4. Test screening role grant/revocation, block rule matching, and in-app pending review on a physical device with real incoming calls.
 
 ## Code Rules
 1. KISS for all the code
