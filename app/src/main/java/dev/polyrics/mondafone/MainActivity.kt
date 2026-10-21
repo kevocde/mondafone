@@ -2,6 +2,7 @@ package dev.polyrics.mondafone
 
 import android.Manifest
 import android.app.Activity
+import android.app.role.RoleManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -51,6 +52,13 @@ class MainActivity : Activity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         refreshStatus()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_ROLE_CODE) {
+            refreshStatus()
+        }
     }
 
     private fun buildContent(): LinearLayout {
@@ -127,6 +135,7 @@ class MainActivity : Activity() {
             appendLine(checkLine(label, isGranted(permission)))
         }
         appendLine(checkLine("Overlay window", Settings.canDrawOverlays(this@MainActivity)))
+        appendLine(checkLine("Call screening role", isCallScreeningRoleHeld()))
         append(checkLine("Monitor running", CallMonitorService.isRunning))
     }
 
@@ -137,13 +146,30 @@ class MainActivity : Activity() {
         checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
 
     private fun isReady(): Boolean =
-        runtimePermissions.values.all(::isGranted) && Settings.canDrawOverlays(this)
+        runtimePermissions.values.all(::isGranted) &&
+            Settings.canDrawOverlays(this) &&
+            isCallScreeningRoleHeld()
 
     private fun requestAccess() {
         if (!runtimePermissions.values.all(::isGranted)) {
             requestPermissions(runtimePermissions.values.toTypedArray(), REQUEST_CODE)
         } else if (!Settings.canDrawOverlays(this)) {
             startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+        } else if (!isCallScreeningRoleHeld()) {
+            requestCallScreeningRole()
+        }
+    }
+
+    private fun isCallScreeningRoleHeld(): Boolean =
+        getSystemService(RoleManager::class.java).isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
+
+    private fun requestCallScreeningRole() {
+        val roleManager = getSystemService(RoleManager::class.java)
+        if (roleManager.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)) {
+            startActivityForResult(
+                roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING),
+                REQUEST_ROLE_CODE,
+            )
         }
     }
 
@@ -153,6 +179,7 @@ class MainActivity : Activity() {
 
     private companion object {
         const val REQUEST_CODE = 1
+        const val REQUEST_ROLE_CODE = 2
         const val REFRESH_DELAY_MS = 500L
     }
 }

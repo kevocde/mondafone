@@ -3,6 +3,7 @@ package dev.polyrics.mondafone.spam
 import android.content.SharedPreferences
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PrefsSpamStoreTest {
@@ -32,6 +33,34 @@ class PrefsSpamStoreTest {
         assertEquals(0, stats.total)
         assertFalse(store.isRegistered("600111222"))
         assertFalse(store.isRegistered("600555666"))
+    }
+
+    @Test
+    fun isSpamReturnsTrueForSpamNumber() {
+        store.mark("600111222", isSpam = true)
+
+        assertTrue(store.isSpam("600111222"))
+    }
+
+    @Test
+    fun isSpamReturnsFalseForNotSpamNumber() {
+        store.mark("600111222", isSpam = false)
+
+        assertFalse(store.isSpam("600111222"))
+    }
+
+    @Test
+    fun isSpamReturnsFalseForUnknownNumber() {
+        assertFalse(store.isSpam("600999888"))
+    }
+
+    @Test
+    fun isSpamReturnsFalseAfterClear() {
+        store.mark("600111222", isSpam = true)
+
+        store.clear()
+
+        assertFalse(store.isSpam("600111222"))
     }
 }
 

@@ -9,4 +9,7 @@
     <string name="grant_access">Grant access</string>
     <string name="debug_title">Debug:</string>
     <string name="clear_store">Clear</string>
+    <string name="spam_blocked_channel_name">Spam blocked</string>
+    <string name="spam_blocked_title">Spam call blocked</string>
+    <string name="spam_blocked_text">Blocked call from %1$s</string>
 </resources>

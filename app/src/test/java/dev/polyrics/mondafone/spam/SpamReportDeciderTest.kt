@@ -12,6 +12,7 @@ class SpamReportDeciderTest {
 
     private val store = object : SpamStore {
         override fun isRegistered(number: String) = number in registeredNumbers
+        override fun isSpam(number: String) = false
         override fun mark(number: String, isSpam: Boolean) {
             registeredNumbers += number
         }

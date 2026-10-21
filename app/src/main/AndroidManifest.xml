@@ -28,6 +28,14 @@
             android:name=".monitor.CallMonitorService"
             android:exported="false"
             android:foregroundServiceType="phoneCall" />
+        <service
+            android:name=".spam.SpamCallScreeningService"
+            android:exported="true"
+            android:permission="android.permission.BIND_SCREENING_SERVICE">
+            <intent-filter>
+                <action android:name="android.telecom.CallScreeningService" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>
