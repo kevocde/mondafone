@@ -27,7 +27,7 @@ class SpamCallScreeningServiceTest {
 
     private val screeningService = SpamCallScreeningService().apply {
         this.store = this@SpamCallScreeningServiceTest.store
-        this.notifier = this@SpamCallScreeningServiceTest.notifier
+        this.blockedNotifier = this@SpamCallScreeningServiceTest.notifier
     }
 
     @Test
