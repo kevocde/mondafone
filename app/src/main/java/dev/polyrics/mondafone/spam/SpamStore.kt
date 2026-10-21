@@ -9,6 +9,7 @@ data class SpamStats(
 
 interface SpamStore {
     fun isRegistered(number: String): Boolean
+    fun isSpam(number: String): Boolean
     fun mark(number: String, isSpam: Boolean)
     fun stats(): SpamStats = SpamStats()
     fun clear() {}

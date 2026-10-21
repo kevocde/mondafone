@@ -11,6 +11,8 @@ class PrefsSpamStore(private val prefs: SharedPreferences) : SpamStore {
 
     override fun isRegistered(number: String): Boolean = prefs.contains(number)
 
+    override fun isSpam(number: String): Boolean = prefs.getString(number, null) == VERDICT_SPAM
+
     override fun mark(number: String, isSpam: Boolean) {
         val verdict = if (isSpam) VERDICT_SPAM else VERDICT_NOT_SPAM
         prefs.edit().putString(number, verdict).apply()
