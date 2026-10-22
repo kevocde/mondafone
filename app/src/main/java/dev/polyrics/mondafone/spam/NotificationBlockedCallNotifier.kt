@@ -15,7 +15,7 @@ class NotificationBlockedCallNotifier(
     override fun notifyBlocked(number: String) {
         ensureChannel()
         val notification = buildNotification(number)
-        notificationManager.notify(NOTIFICATION_ID, notification)
+        notificationManager.notify(notificationId(number), notification)
     }
 
     private fun buildNotification(number: String): Notification {
@@ -42,7 +42,8 @@ class NotificationBlockedCallNotifier(
         return Notification.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_delete)
             .setContentTitle(context.getString(R.string.blocked_call_title))
-            .setContentText(context.getString(R.string.blocked_call_text, number))
+            .setContentText(context.getString(R.string.blocked_call_text))
+            .setSubText(number)
             .setAutoCancel(true)
             .addAction(
                 Notification.Action.Builder(
@@ -73,8 +74,9 @@ class NotificationBlockedCallNotifier(
     private val notificationManager: NotificationManager
         get() = context.getSystemService(NotificationManager::class.java)
 
+    private fun notificationId(number: String): Int = number.hashCode()
+
     private companion object {
         const val CHANNEL_ID = "blocked_call"
-        const val NOTIFICATION_ID = 2
     }
 }

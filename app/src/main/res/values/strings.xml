@@ -8,9 +8,8 @@
     <string name="debug_title">Debug:</string>
     <string name="clear_store">Clear</string>
     <string name="blocked_call_channel_name">Blocked call</string>
-    <string name="blocked_call_title">Call blocked</string>
-    <string name="blocked_call_text">Blocked call from %1$s</string>
-    <string name="blocked_call_question">Was this spam?</string>
+    <string name="blocked_call_title">Call Blocked</string>
+    <string name="blocked_call_text">Keep blocking this call?</string>
     <string name="blocked_call_action_yes">Yes</string>
     <string name="blocked_call_action_no">No</string>
     <string name="spam_prompt_channel_name">Spam verdict prompt</string>
