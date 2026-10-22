@@ -82,7 +82,7 @@ class MainActivity : Activity() {
                 currentTab = index
                 renderList()
             }
-            addView(tabBar, marginParams(bottom = gap))
+            addView(tabBar, marginParams(bottom = 0))
             listContainer = LinearLayout(this@MainActivity).apply {
                 orientation = LinearLayout.VERTICAL
             }

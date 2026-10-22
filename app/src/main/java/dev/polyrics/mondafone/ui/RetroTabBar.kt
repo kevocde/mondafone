@@ -91,13 +91,21 @@ class RetroTabBar(
         }
 
         override fun onDraw(canvas: Canvas) {
-            val fill = if (isTabSelected) activeFill else inactiveFill
-            val shadowPaint = Paint().apply { color = Color.BLACK; style = Paint.Style.FILL }
-            canvas.drawRect(shadow, shadow, width.toFloat(), height.toFloat(), shadowPaint)
-            canvas.drawRect(0f, 0f, width - shadow, height - shadow, fill)
-            canvas.drawRect(0f, 0f, width - shadow, height - shadow, inkPaint)
-            val textY = (height - shadow) / 2f - (textPaint.descent() + textPaint.ascent()) / 2
-            canvas.drawText(label, (width - shadow) / 2f, textY, textPaint)
+            if (isTabSelected) {
+                canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), activeFill)
+                canvas.drawLine(0f, 0f, 0f, height.toFloat(), inkPaint)
+                canvas.drawLine(0f, 0f, width.toFloat(), 0f, inkPaint)
+                canvas.drawLine(width.toFloat(), 0f, width.toFloat(), height.toFloat(), inkPaint)
+                val textY = height / 2f - (textPaint.descent() + textPaint.ascent()) / 2
+                canvas.drawText(label, width / 2f, textY, textPaint)
+            } else {
+                val shadowPaint = Paint().apply { color = Color.BLACK; style = Paint.Style.FILL }
+                canvas.drawRect(shadow, shadow, width.toFloat(), height.toFloat(), shadowPaint)
+                canvas.drawRect(0f, 0f, width - shadow, height - shadow, inactiveFill)
+                canvas.drawRect(0f, 0f, width - shadow, height - shadow, inkPaint)
+                val textY = (height - shadow) / 2f - (textPaint.descent() + textPaint.ascent()) / 2
+                canvas.drawText(label, (width - shadow) / 2f, textY, textPaint)
+            }
         }
 
         override fun performClick(): Boolean {
