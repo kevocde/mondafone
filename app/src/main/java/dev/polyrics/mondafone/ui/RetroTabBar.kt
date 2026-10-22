@@ -78,7 +78,12 @@ class RetroTabBar(
 
         private val activeFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.primary) }
         private val inactiveFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.surface) }
-        private val badgeFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.secondary) }
+        private val badgeFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.coin) }
+        private val badgeInnerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = context.getColor(R.color.coin)
+            style = Paint.Style.STROKE
+            strokeWidth = 1 * density
+        }
         private val inkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
             style = Paint.Style.STROKE
@@ -142,19 +147,18 @@ class RetroTabBar(
         }
 
         private fun drawBadge(canvas: Canvas) {
-            val badgeSize = 16 * density
-            val offset = 6 * density
-            val left = width - badgeSize / 2f - offset
-            val top = -badgeSize / 2f - offset
-            val right = width - offset
-            val bottom = badgeSize / 2f - offset
+            val radius = 10 * density
+            val offset = 2 * density
+            val centerX = width - radius - offset
+            val centerY = -offset + radius
 
-            canvas.drawRect(left, top, right, bottom, badgeFill)
-            canvas.drawRect(left, top, right, bottom, inkPaint)
+            canvas.drawCircle(centerX, centerY, radius, badgeFill)
+            canvas.drawCircle(centerX, centerY, radius, inkPaint)
+            canvas.drawCircle(centerX, centerY, radius * 0.6f, badgeInnerPaint)
 
             val text = if (badgeCount > 99) "99+" else badgeCount.toString()
-            val textY = (top + bottom) / 2f - (badgeTextPaint.descent() + badgeTextPaint.ascent()) / 2
-            canvas.drawText(text, (left + right) / 2f, textY, badgeTextPaint)
+            val textY = centerY - (badgeTextPaint.descent() + badgeTextPaint.ascent()) / 2
+            canvas.drawText(text, centerX, textY, badgeTextPaint)
         }
 
         override fun performClick(): Boolean {
