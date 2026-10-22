@@ -79,11 +79,6 @@ class RetroTabBar(
         private val activeFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.primary) }
         private val inactiveFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.surface) }
         private val badgeFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.coin) }
-        private val badgeInnerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = context.getColor(R.color.coin)
-            style = Paint.Style.STROKE
-            strokeWidth = 1 * density
-        }
         private val inkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
             style = Paint.Style.STROKE
@@ -97,7 +92,7 @@ class RetroTabBar(
         }
         private val badgeTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
-            textSize = 10 * density
+            textSize = 8 * density
             textAlign = Paint.Align.CENTER
             typeface = Typeface.DEFAULT_BOLD
         }
@@ -147,18 +142,42 @@ class RetroTabBar(
         }
 
         private fun drawBadge(canvas: Canvas) {
-            val radius = 10 * density
+            val pixelSize = 2 * density
             val offset = 2 * density
-            val centerX = width - radius - offset
-            val centerY = -offset + radius
+            val baseX = width - 6 * pixelSize - offset
+            val baseY = -offset
 
-            canvas.drawCircle(centerX, centerY, radius, badgeFill)
-            canvas.drawCircle(centerX, centerY, radius, inkPaint)
-            canvas.drawCircle(centerX, centerY, radius * 0.6f, badgeInnerPaint)
+            val coinPattern = arrayOf(
+                intArrayOf(0, 1, 1, 1, 1, 0),
+                intArrayOf(1, 1, 2, 1, 1, 1),
+                intArrayOf(1, 2, 2, 1, 1, 1),
+                intArrayOf(1, 1, 1, 1, 1, 1),
+                intArrayOf(1, 1, 1, 1, 1, 1),
+                intArrayOf(0, 1, 1, 1, 1, 0)
+            )
+
+            val highlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { 
+                color = Color.parseColor("#FFE699")
+            }
+
+            for (row in coinPattern.indices) {
+                for (col in coinPattern[row].indices) {
+                    val value = coinPattern[row][col]
+                    if (value > 0) {
+                        val x = baseX + col * pixelSize
+                        val y = baseY + row * pixelSize
+                        val paint = if (value == 2) highlightPaint else badgeFill
+                        canvas.drawRect(x, y, x + pixelSize, y + pixelSize, paint)
+                    }
+                }
+            }
+
+            canvas.drawRect(baseX, baseY, baseX + 6 * pixelSize, baseY + 6 * pixelSize, inkPaint.apply { style = Paint.Style.STROKE })
 
             val text = if (badgeCount > 99) "99+" else badgeCount.toString()
-            val textY = centerY - (badgeTextPaint.descent() + badgeTextPaint.ascent()) / 2
-            canvas.drawText(text, centerX, textY, badgeTextPaint)
+            val textX = baseX + 3 * pixelSize
+            val textY = baseY + 3 * pixelSize - (badgeTextPaint.descent() + badgeTextPaint.ascent()) / 2
+            canvas.drawText(text, textX, textY, badgeTextPaint)
         }
 
         override fun performClick(): Boolean {
