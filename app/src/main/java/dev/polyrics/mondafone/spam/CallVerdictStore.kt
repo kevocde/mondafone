@@ -8,6 +8,8 @@ interface CallVerdictStore {
     fun addToBlacklist(number: String)
     fun addPending(number: String)
     fun pendingNumbers(): List<String>
+    fun whitelistNumbers(): List<String>
+    fun blacklistNumbers(): List<String>
     fun remove(number: String)
     fun stats(): VerdictStats
     fun clear()

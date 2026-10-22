@@ -26,6 +26,8 @@ class TrustCallScreeningServiceTest {
             if (!isClassified(number)) pendingNumbers += number
         }
         override fun pendingNumbers(): List<String> = pendingNumbers
+        override fun whitelistNumbers(): List<String> = whitelisted.toList()
+        override fun blacklistNumbers(): List<String> = blacklisted.toList()
         override fun remove(number: String) {
             whitelisted -= number
             blacklisted -= number
