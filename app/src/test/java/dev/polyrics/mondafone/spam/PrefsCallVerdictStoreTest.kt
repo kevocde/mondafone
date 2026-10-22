@@ -6,61 +6,94 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class PrefsSpamStoreTest {
+class PrefsCallVerdictStoreTest {
 
-    private val store = PrefsSpamStore(FakeSharedPreferences())
+    private val store = PrefsCallVerdictStore(FakeSharedPreferences())
 
     @Test
-    fun countsTotalSpamAndNotSpam() {
-        store.mark("600111222", isSpam = true)
-        store.mark("600333444", isSpam = true)
-        store.mark("600555666", isSpam = false)
+    fun addToBlacklistMakesNumberBlacklisted() {
+        store.addToBlacklist("600111222")
 
-        val stats = store.stats()
-        assertEquals(3, stats.total)
-        assertEquals(2, stats.spam)
-        assertEquals(1, stats.notSpam)
+        assertTrue(store.isBlacklisted("600111222"))
+        assertFalse(store.isWhitelisted("600111222"))
     }
 
     @Test
-    fun clearsAllRegisteredNumbers() {
-        store.mark("600111222", isSpam = true)
-        store.mark("600555666", isSpam = false)
+    fun addToWhitelistMakesNumberWhitelisted() {
+        store.addToWhitelist("600111222")
+
+        assertTrue(store.isWhitelisted("600111222"))
+        assertFalse(store.isBlacklisted("600111222"))
+    }
+
+    @Test
+    fun whitelistOverwritesBlacklist() {
+        store.addToBlacklist("600111222")
+        store.addToWhitelist("600111222")
+
+        assertTrue(store.isWhitelisted("600111222"))
+        assertFalse(store.isBlacklisted("600111222"))
+    }
+
+    @Test
+    fun blacklistOverwritesWhitelist() {
+        store.addToWhitelist("600111222")
+        store.addToBlacklist("600111222")
+
+        assertTrue(store.isBlacklisted("600111222"))
+        assertFalse(store.isWhitelisted("600111222"))
+    }
+
+    @Test
+    fun unclassifiedNumberIsNeitherWhitelistNorBlacklist() {
+        assertFalse(store.isWhitelisted("600999888"))
+        assertFalse(store.isBlacklisted("600999888"))
+        assertFalse(store.isClassified("600999888"))
+    }
+
+    @Test
+    fun isClassifiedReturnsTrueForWhitelistedNumber() {
+        store.addToWhitelist("600111222")
+        assertTrue(store.isClassified("600111222"))
+    }
+
+    @Test
+    fun isClassifiedReturnsTrueForBlacklistedNumber() {
+        store.addToBlacklist("600111222")
+        assertTrue(store.isClassified("600111222"))
+    }
+
+    @Test
+    fun statsCountsWhitelistAndBlacklist() {
+        store.addToBlacklist("600111222")
+        store.addToBlacklist("600333444")
+        store.addToWhitelist("600555666")
+
+        val stats = store.stats()
+        assertEquals(2, stats.blacklist)
+        assertEquals(1, stats.whitelist)
+    }
+
+    @Test
+    fun clearRemovesAllNumbers() {
+        store.addToBlacklist("600111222")
+        store.addToWhitelist("600555666")
 
         store.clear()
 
-        val stats = store.stats()
-        assertEquals(0, stats.total)
-        assertFalse(store.isRegistered("600111222"))
-        assertFalse(store.isRegistered("600555666"))
+        assertEquals(0, store.stats().blacklist)
+        assertEquals(0, store.stats().whitelist)
+        assertFalse(store.isClassified("600111222"))
+        assertFalse(store.isClassified("600555666"))
     }
 
     @Test
-    fun isSpamReturnsTrueForSpamNumber() {
-        store.mark("600111222", isSpam = true)
+    fun removeDeletesNumber() {
+        store.addToBlacklist("600111222")
 
-        assertTrue(store.isSpam("600111222"))
-    }
+        store.remove("600111222")
 
-    @Test
-    fun isSpamReturnsFalseForNotSpamNumber() {
-        store.mark("600111222", isSpam = false)
-
-        assertFalse(store.isSpam("600111222"))
-    }
-
-    @Test
-    fun isSpamReturnsFalseForUnknownNumber() {
-        assertFalse(store.isSpam("600999888"))
-    }
-
-    @Test
-    fun isSpamReturnsFalseAfterClear() {
-        store.mark("600111222", isSpam = true)
-
-        store.clear()
-
-        assertFalse(store.isSpam("600111222"))
+        assertFalse(store.isClassified("600111222"))
     }
 
     @Test
@@ -71,29 +104,39 @@ class PrefsSpamStoreTest {
     }
 
     @Test
-    fun pendingNumberIsNotRegistered() {
+    fun pendingNumberIsNotClassified() {
         store.addPending("600111222")
 
-        assertFalse(store.isRegistered("600111222"))
+        assertFalse(store.isClassified("600111222"))
     }
 
     @Test
     fun addPendingDoesNotOverwriteExistingVerdict() {
-        store.mark("600111222", isSpam = true)
+        store.addToBlacklist("600111222")
 
         store.addPending("600111222")
 
-        assertTrue(store.isSpam("600111222"))
+        assertTrue(store.isBlacklisted("600111222"))
     }
 
     @Test
-    fun markRemovesFromPending() {
+    fun addToBlacklistRemovesFromPending() {
         store.addPending("600111222")
 
-        store.mark("600111222", isSpam = true)
+        store.addToBlacklist("600111222")
 
         assertEquals(emptyList<String>(), store.pendingNumbers())
-        assertTrue(store.isRegistered("600111222"))
+        assertTrue(store.isClassified("600111222"))
+    }
+
+    @Test
+    fun addToWhitelistRemovesFromPending() {
+        store.addPending("600111222")
+
+        store.addToWhitelist("600111222")
+
+        assertEquals(emptyList<String>(), store.pendingNumbers())
+        assertTrue(store.isClassified("600111222"))
     }
 
     @Test
