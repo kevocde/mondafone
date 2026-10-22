@@ -7,9 +7,11 @@
     <string name="grant_access">Grant access</string>
     <string name="debug_title">Debug:</string>
     <string name="clear_store">Clear</string>
-    <string name="spam_blocked_channel_name">Spam blocked</string>
-    <string name="spam_blocked_title">Spam call blocked</string>
-    <string name="spam_blocked_text">Blocked call from %1$s</string>
+    <string name="blocked_call_channel_name">Blocked call</string>
+    <string name="blocked_call_title">Call Blocked</string>
+    <string name="blocked_call_text">Keep blocking this call?</string>
+    <string name="blocked_call_action_yes">Yes</string>
+    <string name="blocked_call_action_no">No</string>
     <string name="spam_prompt_channel_name">Spam verdict prompt</string>
     <string name="spam_prompt_title">Was this call spam?</string>
     <string name="spam_prompt_text">From %1$s</string>

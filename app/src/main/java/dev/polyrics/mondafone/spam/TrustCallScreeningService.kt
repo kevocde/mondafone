@@ -3,18 +3,18 @@ package dev.polyrics.mondafone.spam
 import android.telecom.Call
 import android.telecom.CallScreeningService
 
-class SpamCallScreeningService : CallScreeningService() {
+class TrustCallScreeningService : CallScreeningService() {
 
-    var store: SpamStore? = null
-    var blockedNotifier: SpamBlockedNotifier? = null
+    var store: CallVerdictStore? = null
+    var blockedNotifier: BlockedCallNotifier? = null
     var promptNotifier: SpamVerdictPromptNotifier? = null
 
-    private val defaultStore: SpamStore by lazy { PrefsSpamStore(this) }
-    private val defaultBlockedNotifier: SpamBlockedNotifier by lazy { NotificationSpamBlockedNotifier(this) }
+    private val defaultStore: CallVerdictStore by lazy { PrefsCallVerdictStore(this) }
+    private val defaultBlockedNotifier: BlockedCallNotifier by lazy { NotificationBlockedCallNotifier(this) }
     private val defaultPromptNotifier: SpamVerdictPromptNotifier by lazy { NotificationSpamVerdictPromptNotifier(this) }
 
-    private fun activeStore(): SpamStore = store ?: defaultStore
-    private fun activeBlockedNotifier(): SpamBlockedNotifier = blockedNotifier ?: defaultBlockedNotifier
+    private fun activeStore(): CallVerdictStore = store ?: defaultStore
+    private fun activeBlockedNotifier(): BlockedCallNotifier = blockedNotifier ?: defaultBlockedNotifier
     private fun activePromptNotifier(): SpamVerdictPromptNotifier = promptNotifier ?: defaultPromptNotifier
 
     override fun onScreenCall(callDetails: Call.Details) {
@@ -27,11 +27,12 @@ class SpamCallScreeningService : CallScreeningService() {
         val currentStore = activeStore()
 
         when {
-            currentStore.isSpam(number) -> {
+            currentStore.isWhitelisted(number) -> respondToCall(callDetails, allowResponse())
+            currentStore.isBlacklisted(number) -> {
                 respondToCall(callDetails, blockResponse())
                 activeBlockedNotifier().notifyBlocked(number)
             }
-            !currentStore.isRegistered(number) -> {
+            !currentStore.isClassified(number) -> {
                 respondToCall(callDetails, allowResponse())
                 currentStore.addPending(number)
                 activePromptNotifier().promptVerdict(number)
@@ -40,7 +41,10 @@ class SpamCallScreeningService : CallScreeningService() {
         }
     }
 
-    fun shouldBlockCall(number: String): Boolean = activeStore().isSpam(number)
+    fun shouldBlockCall(number: String): Boolean {
+        if (activeStore().isWhitelisted(number)) return false
+        return activeStore().isBlacklisted(number)
+    }
 
     private fun blockResponse(): CallResponse = CallResponse.Builder()
         .setDisallowCall(true)

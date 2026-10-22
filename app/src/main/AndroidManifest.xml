@@ -18,7 +18,7 @@
             </intent-filter>
         </activity>
         <service
-            android:name=".spam.SpamCallScreeningService"
+            android:name=".spam.TrustCallScreeningService"
             android:exported="true"
             android:permission="android.permission.BIND_SCREENING_SERVICE">
             <intent-filter>
