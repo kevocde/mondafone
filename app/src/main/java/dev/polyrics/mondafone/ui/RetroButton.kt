@@ -12,18 +12,21 @@ class RetroButton(
     context: Context,
     private val label: String,
     fillColor: Int,
+    private val compact: Boolean = false,
     private val onTap: () -> Unit,
 ) : View(context) {
 
     private val density = resources.displayMetrics.density
     private val border = 2 * density
-    private val shadow = 4 * density
+    private val shadow = if (compact) 3 * density else 4 * density
+    private val textSizeDp = if (compact) 12f else 16f
+    private val heightDp = if (compact) 32f else 48f
 
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = fillColor }
     private val inkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK }
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.BLACK
-        textSize = 16 * density
+        textSize = textSizeDp * density
         textAlign = Paint.Align.CENTER
     }
 
@@ -32,7 +35,7 @@ class RetroButton(
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val width = (textPaint.measureText(label) + 24 * density).toInt()
-        val height = (48 * density).toInt()
+        val height = (heightDp * density).toInt()
         setMeasuredDimension(
             resolveSize(width, widthMeasureSpec),
             resolveSize(height, heightMeasureSpec),

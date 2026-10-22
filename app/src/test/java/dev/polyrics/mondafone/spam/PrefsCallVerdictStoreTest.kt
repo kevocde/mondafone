@@ -148,6 +148,34 @@ class PrefsCallVerdictStoreTest {
 
         assertEquals(emptyList<String>(), store.pendingNumbers())
     }
+
+    @Test
+    fun whitelistNumbersReturnsOnlyWhitelisted() {
+        store.addToWhitelist("600111222")
+        store.addToWhitelist("600333444")
+        store.addToBlacklist("600555666")
+
+        val whitelisted = store.whitelistNumbers()
+
+        assertEquals(2, whitelisted.size)
+        assertTrue(whitelisted.contains("600111222"))
+        assertTrue(whitelisted.contains("600333444"))
+        assertFalse(whitelisted.contains("600555666"))
+    }
+
+    @Test
+    fun blacklistNumbersReturnsOnlyBlacklisted() {
+        store.addToBlacklist("600111222")
+        store.addToBlacklist("600333444")
+        store.addToWhitelist("600555666")
+
+        val blacklisted = store.blacklistNumbers()
+
+        assertEquals(2, blacklisted.size)
+        assertTrue(blacklisted.contains("600111222"))
+        assertTrue(blacklisted.contains("600333444"))
+        assertFalse(blacklisted.contains("600555666"))
+    }
 }
 
 private class FakeSharedPreferences : SharedPreferences {

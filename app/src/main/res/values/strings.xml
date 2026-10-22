@@ -15,4 +15,13 @@
     <string name="spam_prompt_channel_name">Spam verdict prompt</string>
     <string name="spam_prompt_title">Was this call spam?</string>
     <string name="spam_prompt_text">From %1$s</string>
+    <string name="tab_pending">Pending</string>
+    <string name="tab_whitelist">Whitelist</string>
+    <string name="tab_blacklist">Blacklist</string>
+    <string name="action_spam">Spam</string>
+    <string name="action_not_spam">No Spam</string>
+    <string name="action_remove">x</string>
+    <string name="empty_pending">No pending calls verdicts</string>
+    <string name="empty_whitelist">No whitelisted numbers</string>
+    <string name="empty_blacklist">No blacklisted numbers</string>
 </resources>

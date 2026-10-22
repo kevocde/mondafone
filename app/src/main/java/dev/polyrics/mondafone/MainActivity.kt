@@ -11,18 +11,21 @@ import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import dev.polyrics.mondafone.spam.PrefsCallVerdictStore
 import dev.polyrics.mondafone.ui.RetroButton
+import dev.polyrics.mondafone.ui.RetroPanel
+import dev.polyrics.mondafone.ui.RetroTabBar
 import dev.polyrics.mondafone.ui.RetroTitle
-import dev.polyrics.mondafone.ui.SpamReportView
+import dev.polyrics.mondafone.ui.VerdictListItemView
 
 class MainActivity : Activity() {
 
     private val store by lazy { PrefsCallVerdictStore(this) }
-    private lateinit var statusLabel: TextView
-    private lateinit var debugLabel: TextView
-    private lateinit var pendingContainer: LinearLayout
+    private lateinit var listContainer: LinearLayout
+    private lateinit var tabBar: RetroTabBar
+    private var currentTab = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,8 +34,8 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        store.registerOnChangeListener { runOnUiThread { refreshStatus() } }
-        refreshStatus()
+        store.registerOnChangeListener { runOnUiThread { renderList() } }
+        renderList()
     }
 
     override fun onPause() {
@@ -46,7 +49,7 @@ class MainActivity : Activity() {
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        refreshStatus()
+        refreshView()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -54,7 +57,7 @@ class MainActivity : Activity() {
         if (requestCode == REQUEST_ROLE_CODE && isCallScreeningRoleHeld()) {
             requestNotificationPermission()
         } else {
-            refreshStatus()
+            refreshView()
         }
     }
 
@@ -64,31 +67,43 @@ class MainActivity : Activity() {
         val gap = (16 * density).toInt()
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_VERTICAL
             setPadding(pad, pad, pad, pad)
             setBackgroundColor(getColor(R.color.background))
+            clipChildren = false
             addView(RetroTitle(this@MainActivity, getString(R.string.app_name)))
             addView(textLabel(getString(R.string.app_subtitle), 18f, bold = true), marginParams(bottom = gap * 2))
-            statusLabel = textLabel("", 14f, mono = true)
-            addView(statusLabel, marginParams(bottom = gap * 2))
-            addView(
-                RetroButton(this@MainActivity, getString(R.string.grant_access), getColor(R.color.primary)) {
-                    requestAccess()
-                },
-                marginParams(bottom = gap * 2),
-            )
-            pendingContainer = LinearLayout(this@MainActivity).apply {
+            tabBar = RetroTabBar(
+                this@MainActivity,
+                listOf(
+                    getString(R.string.tab_pending),
+                    getString(R.string.tab_whitelist),
+                    getString(R.string.tab_blacklist),
+                ),
+            ) { index ->
+                currentTab = index
+                renderList()
+            }
+            addView(tabBar, marginParams(bottom = 0))
+            listContainer = LinearLayout(this@MainActivity).apply {
                 orientation = LinearLayout.VERTICAL
             }
-            addView(pendingContainer, marginParams(bottom = gap * 2))
-            addView(textLabel(getString(R.string.debug_title), 16f, bold = true), marginParams(bottom = gap / 2))
-            debugLabel = textLabel("", 14f, mono = true)
-            addView(debugLabel, marginParams(bottom = gap))
             addView(
-                RetroButton(this@MainActivity, getString(R.string.clear_store), getColor(R.color.secondary)) {
-                    clearVerdictStore()
+                ScrollView(this@MainActivity).apply {
+                    addView(
+                        RetroPanel(this@MainActivity).apply {
+                            addView(listContainer)
+                        },
+                        LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                        ),
+                    )
                 },
-                marginParams(bottom = 0),
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    0,
+                    1f,
+                ),
             )
         }
     }
@@ -108,52 +123,157 @@ class MainActivity : Activity() {
             LinearLayout.LayoutParams.WRAP_CONTENT,
         ).apply { bottomMargin = bottom }
 
-    private fun refreshStatus() {
-        statusLabel.text = buildReport()
-        debugLabel.text = buildDebugReport()
-        renderPendingVerdict()
+    private fun refreshView() {
+        if (isReady()) {
+            renderList()
+        } else {
+            setContentView(buildOnboardingContent())
+        }
     }
 
-    private fun renderPendingVerdict() {
-        pendingContainer.removeAllViews()
-        val pending = store.pendingNumbers().firstOrNull() ?: return
-        pendingContainer.addView(
-            SpamReportView(this, pending) { isSpam ->
-                if (isSpam) store.addToBlacklist(pending)
-                else store.addToWhitelist(pending)
-                renderPendingVerdict()
+    private fun buildOnboardingContent(): LinearLayout {
+        val density = resources.displayMetrics.density
+        val pad = (24 * density).toInt()
+        val gap = (16 * density).toInt()
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(pad, pad, pad, pad)
+            setBackgroundColor(getColor(R.color.background))
+            addView(RetroTitle(this@MainActivity, getString(R.string.app_name)))
+            addView(textLabel(getString(R.string.app_subtitle), 18f, bold = true), marginParams(bottom = gap * 2))
+            addView(
+                RetroButton(this@MainActivity, getString(R.string.grant_access), getColor(R.color.primary)) {
+                    requestAccess()
+                },
+                marginParams(bottom = 0),
+            )
+        }
+    }
+
+    private fun renderList() {
+        if (!isReady()) {
+            setContentView(buildOnboardingContent())
+            return
+        }
+        tabBar.setCounts(
+            listOf(
+                store.pendingNumbers().size,
+                store.whitelistNumbers().size,
+                store.blacklistNumbers().size,
+            ),
+        )
+        listContainer.removeAllViews()
+        when (currentTab) {
+            0 -> renderPendingItems()
+            1 -> renderWhitelistItems()
+            2 -> renderBlacklistItems()
+        }
+    }
+
+    private fun renderPendingItems() {
+        val numbers = store.pendingNumbers()
+        if (numbers.isEmpty()) {
+            showEmptyMessage(getString(R.string.empty_pending))
+            return
+        }
+        numbers.forEach { number ->
+            listContainer.addView(
+                VerdictListItemView(
+                    this,
+                    number,
+                    listOf(
+                        VerdictListItemView.Action(
+                            getString(R.string.action_spam),
+                            getColor(R.color.secondary),
+                        ) {
+                            store.addToBlacklist(number)
+                        },
+                        VerdictListItemView.Action(
+                            getString(R.string.action_not_spam),
+                            getColor(R.color.primary),
+                        ) {
+                            store.addToWhitelist(number)
+                        },
+                    ),
+                ),
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { bottomMargin = (8 * resources.displayMetrics.density).toInt() },
+            )
+        }
+    }
+
+    private fun renderWhitelistItems() {
+        val numbers = store.whitelistNumbers()
+        if (numbers.isEmpty()) {
+            showEmptyMessage(getString(R.string.empty_whitelist))
+            return
+        }
+        numbers.forEach { number ->
+            listContainer.addView(
+                VerdictListItemView(
+                    this,
+                    number,
+                    listOf(
+                        VerdictListItemView.Action(
+                            getString(R.string.action_remove),
+                            getColor(R.color.secondary),
+                        ) {
+                            store.remove(number)
+                        },
+                    ),
+                ),
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { bottomMargin = (8 * resources.displayMetrics.density).toInt() },
+            )
+        }
+    }
+
+    private fun renderBlacklistItems() {
+        val numbers = store.blacklistNumbers()
+        if (numbers.isEmpty()) {
+            showEmptyMessage(getString(R.string.empty_blacklist))
+            return
+        }
+        numbers.forEach { number ->
+            listContainer.addView(
+                VerdictListItemView(
+                    this,
+                    number,
+                    listOf(
+                        VerdictListItemView.Action(
+                            getString(R.string.action_remove),
+                            getColor(R.color.secondary),
+                        ) {
+                            store.remove(number)
+                        },
+                    ),
+                ),
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { bottomMargin = (8 * resources.displayMetrics.density).toInt() },
+            )
+        }
+    }
+
+    private fun showEmptyMessage(message: String) {
+        val pad = (32 * resources.displayMetrics.density).toInt()
+        listContainer.addView(
+            textLabel(message, 14f, mono = true).apply {
+                setPadding(pad, pad, pad, pad)
+                gravity = android.view.Gravity.CENTER
             },
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ),
         )
     }
-
-    private fun buildDebugReport(): String {
-        val stats = store.stats()
-        val pendingCount = store.pendingNumbers().size
-        return buildString {
-            appendLine("* Pending = $pendingCount")
-            appendLine("* Total marked = ${stats.total}")
-            appendLine("* Whitelist = ${stats.whitelist}")
-            append("* Blacklist = ${stats.blacklist}")
-        }
-    }
-
-    private fun clearVerdictStore() {
-        store.clear()
-        refreshStatus()
-    }
-
-    private fun buildReport(): String = buildString {
-        appendLine(checkLine("Call screening role", isCallScreeningRoleHeld()))
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            append(checkLine("Notifications", isGranted(Manifest.permission.POST_NOTIFICATIONS)))
-        }
-    }
-
-    private fun checkLine(label: String, ok: Boolean): String =
-        (if (ok) "[ OK ] " else "[ .. ] ") + label
-
-    private fun isGranted(permission: String): Boolean =
-        checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
 
     private fun isReady(): Boolean {
         val notificationsGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -164,6 +284,12 @@ class MainActivity : Activity() {
         return isCallScreeningRoleHeld() && notificationsGranted
     }
 
+    private fun isGranted(permission: String): Boolean =
+        checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
+
+    private fun isCallScreeningRoleHeld(): Boolean =
+        getSystemService(RoleManager::class.java).isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
+
     private fun requestAccess() {
         if (!isCallScreeningRoleHeld()) {
             requestCallScreeningRole()
@@ -173,9 +299,6 @@ class MainActivity : Activity() {
             requestNotificationPermission()
         }
     }
-
-    private fun isCallScreeningRoleHeld(): Boolean =
-        getSystemService(RoleManager::class.java).isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
 
     private fun requestCallScreeningRole() {
         val roleManager = getSystemService(RoleManager::class.java)

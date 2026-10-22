@@ -43,6 +43,16 @@ class PrefsCallVerdictStore(private val prefs: SharedPreferences) : CallVerdictS
             .filter { it.value == VERDICT_PENDING }
             .map { it.key }
 
+    override fun whitelistNumbers(): List<String> =
+        prefs.all.entries
+            .filter { it.value == VERDICT_WHITELIST }
+            .map { it.key }
+
+    override fun blacklistNumbers(): List<String> =
+        prefs.all.entries
+            .filter { it.value == VERDICT_BLACKLIST }
+            .map { it.key }
+
     override fun remove(number: String) {
         prefs.edit().remove(number).apply()
     }
