@@ -69,6 +69,7 @@ class MainActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             setPadding(pad, pad, pad, pad)
             setBackgroundColor(getColor(R.color.background))
+            clipChildren = false
             addView(RetroTitle(this@MainActivity, getString(R.string.app_name)))
             addView(textLabel(getString(R.string.app_subtitle), 18f, bold = true), marginParams(bottom = gap * 2))
             tabBar = RetroTabBar(
