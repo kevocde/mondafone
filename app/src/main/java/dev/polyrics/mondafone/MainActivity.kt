@@ -15,6 +15,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import dev.polyrics.mondafone.spam.PrefsCallVerdictStore
 import dev.polyrics.mondafone.ui.RetroButton
+import dev.polyrics.mondafone.ui.RetroPanel
 import dev.polyrics.mondafone.ui.RetroTabBar
 import dev.polyrics.mondafone.ui.RetroTitle
 import dev.polyrics.mondafone.ui.VerdictListItemView
@@ -86,8 +87,16 @@ class MainActivity : Activity() {
                 orientation = LinearLayout.VERTICAL
             }
             addView(
-                ScrollView(this@MainActivity).apply {
-                    addView(listContainer)
+                RetroPanel(this@MainActivity).apply {
+                    addView(
+                        ScrollView(this@MainActivity).apply {
+                            addView(listContainer)
+                        },
+                        android.widget.FrameLayout.LayoutParams(
+                            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                        ),
+                    )
                 },
                 LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,

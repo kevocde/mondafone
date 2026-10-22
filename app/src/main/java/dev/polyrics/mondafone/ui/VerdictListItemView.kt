@@ -8,7 +8,6 @@ import android.graphics.Typeface
 import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
-import dev.polyrics.mondafone.R
 
 class VerdictListItemView(
     context: Context,
@@ -19,6 +18,10 @@ class VerdictListItemView(
     data class Action(val label: String, val color: Int, val onClick: () -> Unit)
 
     private val density = resources.displayMetrics.density
+    private val dividerPaint = Paint().apply {
+        color = Color.BLACK
+        strokeWidth = 2 * density
+    }
 
     init {
         orientation = HORIZONTAL
@@ -27,7 +30,8 @@ class VerdictListItemView(
         isClickable = false
         isFocusable = false
         val pad = (16 * density).toInt()
-        setPadding(pad, pad / 2, pad, pad / 2)
+        val vPad = (12 * density).toInt()
+        setPadding(pad, vPad, pad, vPad)
 
         addView(numberLabel(number), LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
         actions.forEach { action ->
@@ -49,14 +53,8 @@ class VerdictListItemView(
         }
 
     override fun onDraw(canvas: Canvas) {
-        val shadow = 4 * density
-        canvas.drawRect(shadow, shadow, width.toFloat(), height.toFloat(), Paint().apply { color = Color.BLACK })
-        canvas.drawRect(0f, 0f, width - shadow, height - shadow, Paint().apply { color = context.getColor(R.color.surface) })
-        canvas.drawRect(0f, 0f, width - shadow, height - shadow, Paint().apply {
-            color = Color.BLACK
-            style = Paint.Style.STROKE
-            strokeWidth = 2 * density
-        })
+        val y = height - dividerPaint.strokeWidth / 2
+        canvas.drawLine(0f, y, width.toFloat(), y, dividerPaint)
         super.onDraw(canvas)
     }
 }
