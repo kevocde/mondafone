@@ -87,14 +87,14 @@ class MainActivity : Activity() {
                 orientation = LinearLayout.VERTICAL
             }
             addView(
-                RetroPanel(this@MainActivity).apply {
+                ScrollView(this@MainActivity).apply {
                     addView(
-                        ScrollView(this@MainActivity).apply {
+                        RetroPanel(this@MainActivity).apply {
                             addView(listContainer)
                         },
-                        android.widget.FrameLayout.LayoutParams(
-                            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-                            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
                         ),
                     )
                 },
@@ -155,6 +155,13 @@ class MainActivity : Activity() {
             setContentView(buildOnboardingContent())
             return
         }
+        tabBar.setCounts(
+            listOf(
+                store.pendingNumbers().size,
+                store.whitelistNumbers().size,
+                store.blacklistNumbers().size,
+            ),
+        )
         listContainer.removeAllViews()
         when (currentTab) {
             0 -> renderPendingItems()

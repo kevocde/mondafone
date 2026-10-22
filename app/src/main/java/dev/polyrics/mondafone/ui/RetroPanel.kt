@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.Path
 import android.widget.FrameLayout
 import dev.polyrics.mondafone.R
 
@@ -21,26 +20,16 @@ class RetroPanel(
         style = Paint.Style.STROKE
         strokeWidth = borderPx
     }
-    private val borderPath = Path()
 
     init {
         setWillNotDraw(false)
-        val pad = (8 * density).toInt()
-        setPadding(pad, 0, pad, pad)
-    }
-
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        super.onSizeChanged(w, h, oldw, oldh)
-        borderPath.reset()
-        borderPath.moveTo(0f, 0f)
-        borderPath.lineTo(0f, h.toFloat())
-        borderPath.lineTo(w.toFloat(), h.toFloat())
-        borderPath.lineTo(w.toFloat(), 0f)
+        val pad = (12 * density).toInt()
+        setPadding(pad, pad, pad, pad)
     }
 
     override fun onDraw(canvas: Canvas) {
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), surfacePaint)
-        canvas.drawPath(borderPath, borderPaint)
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), borderPaint)
         super.onDraw(canvas)
     }
 }

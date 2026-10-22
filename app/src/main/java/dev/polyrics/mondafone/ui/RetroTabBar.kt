@@ -18,11 +18,13 @@ class RetroTabBar(
 
     private val density = resources.displayMetrics.density
     private var selectedIndex = 0
+    private var counts = List(tabs.size) { 0 }
 
     init {
         orientation = HORIZONTAL
         gravity = Gravity.CENTER
         setWillNotDraw(false)
+        clipChildren = false
     }
 
     fun selectTab(index: Int) {
@@ -32,6 +34,12 @@ class RetroTabBar(
         onTabSelected(index)
     }
 
+    fun setCounts(newCounts: List<Int>) {
+        if (newCounts.size != tabs.size) return
+        counts = newCounts
+        refreshTabViews()
+    }
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         if (childCount == 0) buildTabs()
@@ -39,13 +47,21 @@ class RetroTabBar(
 
     private fun buildTabs() {
         tabs.forEachIndexed { index, label ->
-            addView(TabView(context, label, index == selectedIndex) { selectTab(index) })
+            val tabView = TabView(context, label, index == selectedIndex) { selectTab(index) }
+            val params = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
+            if (index > 0) {
+                params.leftMargin = (4 * density).toInt()
+            }
+            addView(tabView, params)
         }
     }
 
     private fun refreshTabViews() {
         for (i in 0 until childCount) {
-            (getChildAt(i) as? TabView)?.setTabSelected(i == selectedIndex)
+            (getChildAt(i) as? TabView)?.apply {
+                setTabSelected(i == selectedIndex)
+                setBadgeCount(counts.getOrNull(i) ?: 0)
+            }
         }
     }
 
@@ -62,6 +78,7 @@ class RetroTabBar(
 
         private val activeFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.primary) }
         private val inactiveFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.surface) }
+        private val badgeFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.secondary) }
         private val inkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
             style = Paint.Style.STROKE
@@ -73,11 +90,23 @@ class RetroTabBar(
             textAlign = Paint.Align.CENTER
             typeface = Typeface.DEFAULT_BOLD
         }
+        private val badgeTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.BLACK
+            textSize = 10 * density
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.DEFAULT_BOLD
+        }
 
         private var isTabSelected = selected
+        private var badgeCount = 0
 
         fun setTabSelected(value: Boolean) {
             isTabSelected = value
+            invalidate()
+        }
+
+        fun setBadgeCount(count: Int) {
+            badgeCount = count
             invalidate()
         }
 
@@ -106,6 +135,26 @@ class RetroTabBar(
                 val textY = (height - shadow) / 2f - (textPaint.descent() + textPaint.ascent()) / 2
                 canvas.drawText(label, (width - shadow) / 2f, textY, textPaint)
             }
+
+            if (badgeCount > 0) {
+                drawBadge(canvas)
+            }
+        }
+
+        private fun drawBadge(canvas: Canvas) {
+            val badgeSize = 18 * density
+            val offset = 4 * density
+            val left = width - badgeSize - offset
+            val top = -offset
+            val right = width - offset
+            val bottom = badgeSize - offset
+
+            canvas.drawRect(left, top, right, bottom, badgeFill)
+            canvas.drawRect(left, top, right, bottom, inkPaint)
+
+            val text = if (badgeCount > 99) "99+" else badgeCount.toString()
+            val textY = (top + bottom) / 2f - (badgeTextPaint.descent() + badgeTextPaint.ascent()) / 2
+            canvas.drawText(text, (left + right) / 2f, textY, badgeTextPaint)
         }
 
         override fun performClick(): Boolean {
