@@ -5,6 +5,11 @@ import android.content.SharedPreferences
 
 class PrefsCallVerdictStore(private val prefs: SharedPreferences) : CallVerdictStore {
 
+    private var externalListener: (() -> Unit)? = null
+    private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+        externalListener?.invoke()
+    }
+
     constructor(context: Context) : this(
         context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE),
     ) {
@@ -52,6 +57,16 @@ class PrefsCallVerdictStore(private val prefs: SharedPreferences) : CallVerdictS
 
     override fun clear() {
         prefs.edit().clear().apply()
+    }
+
+    override fun registerOnChangeListener(listener: () -> Unit) {
+        externalListener = listener
+        prefs.registerOnSharedPreferenceChangeListener(prefsListener)
+    }
+
+    override fun unregisterOnChangeListener() {
+        externalListener = null
+        prefs.unregisterOnSharedPreferenceChangeListener(prefsListener)
     }
 
     private fun migrateLegacyVerdicts() {

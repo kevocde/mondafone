@@ -36,6 +36,8 @@ class TrustCallScreeningServiceTest {
             blacklisted.clear()
             pendingNumbers.clear()
         }
+        override fun registerOnChangeListener(listener: () -> Unit) {}
+        override fun unregisterOnChangeListener() {}
     }
 
     private val notifier = object : BlockedCallNotifier {

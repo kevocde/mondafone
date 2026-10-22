@@ -31,7 +31,13 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        store.registerOnChangeListener { runOnUiThread { refreshStatus() } }
         refreshStatus()
+    }
+
+    override fun onPause() {
+        store.unregisterOnChangeListener()
+        super.onPause()
     }
 
     override fun onRequestPermissionsResult(

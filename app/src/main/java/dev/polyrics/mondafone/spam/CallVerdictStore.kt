@@ -11,4 +11,6 @@ interface CallVerdictStore {
     fun remove(number: String)
     fun stats(): VerdictStats
     fun clear()
+    fun registerOnChangeListener(listener: () -> Unit)
+    fun unregisterOnChangeListener()
 }
