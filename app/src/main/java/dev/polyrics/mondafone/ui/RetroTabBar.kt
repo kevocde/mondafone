@@ -142,12 +142,12 @@ class RetroTabBar(
         }
 
         private fun drawBadge(canvas: Canvas) {
-            val badgeSize = 18 * density
-            val offset = 4 * density
-            val left = width - badgeSize - offset
-            val top = -offset
+            val badgeSize = 16 * density
+            val offset = 6 * density
+            val left = width - badgeSize / 2f - offset
+            val top = -badgeSize / 2f - offset
             val right = width - offset
-            val bottom = badgeSize - offset
+            val bottom = badgeSize / 2f - offset
 
             canvas.drawRect(left, top, right, bottom, badgeFill)
             canvas.drawRect(left, top, right, bottom, inkPaint)

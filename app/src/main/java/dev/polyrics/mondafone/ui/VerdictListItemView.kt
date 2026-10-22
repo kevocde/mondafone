@@ -20,7 +20,7 @@ class VerdictListItemView(
     private val density = resources.displayMetrics.density
     private val dividerPaint = Paint().apply {
         color = Color.BLACK
-        strokeWidth = 2 * density
+        strokeWidth = density
     }
 
     init {
@@ -30,13 +30,13 @@ class VerdictListItemView(
         isClickable = false
         isFocusable = false
         val pad = (16 * density).toInt()
-        val vPad = (12 * density).toInt()
+        val vPad = (8 * density).toInt()
         setPadding(pad, vPad, pad, vPad)
 
         addView(numberLabel(number), LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
         actions.forEach { action ->
             addView(
-                RetroButton(context, action.label, action.color, action.onClick),
+                RetroButton(context, action.label, action.color, compact = true, onTap = action.onClick),
                 LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
                     leftMargin = (8 * density).toInt()
                 },
