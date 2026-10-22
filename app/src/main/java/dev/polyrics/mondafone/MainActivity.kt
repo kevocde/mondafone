@@ -7,33 +7,22 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
-import dev.polyrics.mondafone.monitor.CallMonitorService
 import dev.polyrics.mondafone.spam.PrefsSpamStore
 import dev.polyrics.mondafone.ui.RetroButton
 import dev.polyrics.mondafone.ui.RetroTitle
+import dev.polyrics.mondafone.ui.SpamReportView
 
 class MainActivity : Activity() {
 
     private val store by lazy { PrefsSpamStore(this) }
-
-    private val runtimePermissions = buildMap {
-        put("Call log", Manifest.permission.READ_CALL_LOG)
-        put("Phone state", Manifest.permission.READ_PHONE_STATE)
-        put("Contacts", Manifest.permission.READ_CONTACTS)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            put("Notifications", Manifest.permission.POST_NOTIFICATIONS)
-        }
-    }
-
     private lateinit var statusLabel: TextView
     private lateinit var debugLabel: TextView
+    private lateinit var pendingContainer: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,7 +45,9 @@ class MainActivity : Activity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_ROLE_CODE) {
+        if (requestCode == REQUEST_ROLE_CODE && isCallScreeningRoleHeld()) {
+            requestNotificationPermission()
+        } else {
             refreshStatus()
         }
     }
@@ -80,6 +71,10 @@ class MainActivity : Activity() {
                 },
                 marginParams(bottom = gap * 2),
             )
+            pendingContainer = LinearLayout(this@MainActivity).apply {
+                orientation = LinearLayout.VERTICAL
+            }
+            addView(pendingContainer, marginParams(bottom = gap * 2))
             addView(textLabel(getString(R.string.debug_title), 16f, bold = true), marginParams(bottom = gap / 2))
             debugLabel = textLabel("", 14f, mono = true)
             addView(debugLabel, marginParams(bottom = gap))
@@ -110,15 +105,25 @@ class MainActivity : Activity() {
     private fun refreshStatus() {
         statusLabel.text = buildReport()
         debugLabel.text = buildDebugReport()
-        if (isReady()) {
-            startMonitorService()
-            statusLabel.postDelayed({ statusLabel.text = buildReport() }, REFRESH_DELAY_MS)
-        }
+        renderPendingVerdict()
+    }
+
+    private fun renderPendingVerdict() {
+        pendingContainer.removeAllViews()
+        val pending = store.pendingNumbers().firstOrNull() ?: return
+        pendingContainer.addView(
+            SpamReportView(this, pending) { isSpam ->
+                store.mark(pending, isSpam)
+                renderPendingVerdict()
+            },
+        )
     }
 
     private fun buildDebugReport(): String {
         val stats = store.stats()
+        val pendingCount = store.pendingNumbers().size
         return buildString {
+            appendLine("* Pending = $pendingCount")
             appendLine("* Total marked = ${stats.total}")
             appendLine("* Spam = ${stats.spam}")
             append("* Not spam = ${stats.notSpam}")
@@ -131,12 +136,10 @@ class MainActivity : Activity() {
     }
 
     private fun buildReport(): String = buildString {
-        runtimePermissions.forEach { (label, permission) ->
-            appendLine(checkLine(label, isGranted(permission)))
-        }
-        appendLine(checkLine("Overlay window", Settings.canDrawOverlays(this@MainActivity)))
         appendLine(checkLine("Call screening role", isCallScreeningRoleHeld()))
-        append(checkLine("Monitor running", CallMonitorService.isRunning))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            append(checkLine("Notifications", isGranted(Manifest.permission.POST_NOTIFICATIONS)))
+        }
     }
 
     private fun checkLine(label: String, ok: Boolean): String =
@@ -145,18 +148,22 @@ class MainActivity : Activity() {
     private fun isGranted(permission: String): Boolean =
         checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
 
-    private fun isReady(): Boolean =
-        runtimePermissions.values.all(::isGranted) &&
-            Settings.canDrawOverlays(this) &&
-            isCallScreeningRoleHeld()
+    private fun isReady(): Boolean {
+        val notificationsGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            isGranted(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            true
+        }
+        return isCallScreeningRoleHeld() && notificationsGranted
+    }
 
     private fun requestAccess() {
-        if (!runtimePermissions.values.all(::isGranted)) {
-            requestPermissions(runtimePermissions.values.toTypedArray(), REQUEST_CODE)
-        } else if (!Settings.canDrawOverlays(this)) {
-            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
-        } else if (!isCallScreeningRoleHeld()) {
+        if (!isCallScreeningRoleHeld()) {
             requestCallScreeningRole()
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            !isGranted(Manifest.permission.POST_NOTIFICATIONS)
+        ) {
+            requestNotificationPermission()
         }
     }
 
@@ -173,13 +180,17 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun startMonitorService() {
-        startForegroundService(Intent(this, CallMonitorService::class.java))
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestPermissions(
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                REQUEST_NOTIFICATIONS_CODE,
+            )
+        }
     }
 
     private companion object {
-        const val REQUEST_CODE = 1
-        const val REQUEST_ROLE_CODE = 2
-        const val REFRESH_DELAY_MS = 500L
+        const val REQUEST_ROLE_CODE = 1
+        const val REQUEST_NOTIFICATIONS_CODE = 2
     }
 }

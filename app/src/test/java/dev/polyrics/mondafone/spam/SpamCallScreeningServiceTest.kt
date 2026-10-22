@@ -14,6 +14,8 @@ class SpamCallScreeningServiceTest {
         override fun mark(number: String, isSpam: Boolean) {
             if (isSpam) spamNumbers += number else spamNumbers -= number
         }
+        override fun addPending(number: String) {}
+        override fun pendingNumbers(): List<String> = emptyList()
     }
 
     private val notifier = object : SpamBlockedNotifier {
@@ -25,7 +27,7 @@ class SpamCallScreeningServiceTest {
 
     private val screeningService = SpamCallScreeningService().apply {
         this.store = this@SpamCallScreeningServiceTest.store
-        this.notifier = this@SpamCallScreeningServiceTest.notifier
+        this.blockedNotifier = this@SpamCallScreeningServiceTest.notifier
     }
 
     @Test

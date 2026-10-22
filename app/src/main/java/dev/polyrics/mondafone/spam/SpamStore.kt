@@ -11,6 +11,8 @@ interface SpamStore {
     fun isRegistered(number: String): Boolean
     fun isSpam(number: String): Boolean
     fun mark(number: String, isSpam: Boolean)
+    fun addPending(number: String)
+    fun pendingNumbers(): List<String>
     fun stats(): SpamStats = SpamStats()
     fun clear() {}
 }
