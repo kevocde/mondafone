@@ -12,14 +12,14 @@ import android.os.Bundle
 import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
-import dev.polyrics.mondafone.spam.PrefsSpamStore
+import dev.polyrics.mondafone.spam.PrefsCallVerdictStore
 import dev.polyrics.mondafone.ui.RetroButton
 import dev.polyrics.mondafone.ui.RetroTitle
 import dev.polyrics.mondafone.ui.SpamReportView
 
 class MainActivity : Activity() {
 
-    private val store by lazy { PrefsSpamStore(this) }
+    private val store by lazy { PrefsCallVerdictStore(this) }
     private lateinit var statusLabel: TextView
     private lateinit var debugLabel: TextView
     private lateinit var pendingContainer: LinearLayout
@@ -80,7 +80,7 @@ class MainActivity : Activity() {
             addView(debugLabel, marginParams(bottom = gap))
             addView(
                 RetroButton(this@MainActivity, getString(R.string.clear_store), getColor(R.color.secondary)) {
-                    clearSpamStore()
+                    clearVerdictStore()
                 },
                 marginParams(bottom = 0),
             )
@@ -113,7 +113,8 @@ class MainActivity : Activity() {
         val pending = store.pendingNumbers().firstOrNull() ?: return
         pendingContainer.addView(
             SpamReportView(this, pending) { isSpam ->
-                store.mark(pending, isSpam)
+                if (isSpam) store.addToBlacklist(pending)
+                else store.addToWhitelist(pending)
                 renderPendingVerdict()
             },
         )
@@ -125,12 +126,12 @@ class MainActivity : Activity() {
         return buildString {
             appendLine("* Pending = $pendingCount")
             appendLine("* Total marked = ${stats.total}")
-            appendLine("* Spam = ${stats.spam}")
-            append("* Not spam = ${stats.notSpam}")
+            appendLine("* Whitelist = ${stats.whitelist}")
+            append("* Blacklist = ${stats.blacklist}")
         }
     }
 
-    private fun clearSpamStore() {
+    private fun clearVerdictStore() {
         store.clear()
         refreshStatus()
     }

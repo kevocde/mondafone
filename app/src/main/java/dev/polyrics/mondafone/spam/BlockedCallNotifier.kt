@@ -1,5 +1,5 @@
 package dev.polyrics.mondafone.spam
 
-interface SpamBlockedNotifier {
+interface BlockedCallNotifier {
     fun notifyBlocked(number: String)
 }

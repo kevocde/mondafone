@@ -9,9 +9,12 @@ class SpamVerdictReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val number = intent.getStringExtra(EXTRA_NUMBER) ?: return
-        val isSpam = intent.action == ACTION_MARK_SPAM
+        val store = PrefsCallVerdictStore(context)
 
-        PrefsSpamStore(context).mark(number, isSpam)
+        when (intent.action) {
+            ACTION_MARK_SPAM -> store.addToBlacklist(number)
+            ACTION_MARK_NOT_SPAM -> store.addToWhitelist(number)
+        }
 
         val notificationManager = context.getSystemService(NotificationManager::class.java)
         notificationManager?.cancel(number.hashCode())
