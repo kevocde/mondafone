@@ -24,6 +24,8 @@ class VerdictListItemView(
         orientation = HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
         setWillNotDraw(false)
+        isClickable = false
+        isFocusable = false
         val pad = (16 * density).toInt()
         setPadding(pad, pad / 2, pad, pad / 2)
 
@@ -55,5 +57,6 @@ class VerdictListItemView(
             style = Paint.Style.STROKE
             strokeWidth = 2 * density
         })
+        super.onDraw(canvas)
     }
 }

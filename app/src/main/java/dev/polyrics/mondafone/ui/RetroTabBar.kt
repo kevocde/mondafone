@@ -92,10 +92,8 @@ class RetroTabBar(
 
         override fun onDraw(canvas: Canvas) {
             val fill = if (isTabSelected) activeFill else inactiveFill
-            canvas.drawRect(
-                shadow, shadow, width.toFloat(), height.toFloat(),
-                inkPaint.apply { style = Paint.Style.FILL; color = Color.BLACK },
-            )
+            val shadowPaint = Paint().apply { color = Color.BLACK; style = Paint.Style.FILL }
+            canvas.drawRect(shadow, shadow, width.toFloat(), height.toFloat(), shadowPaint)
             canvas.drawRect(0f, 0f, width - shadow, height - shadow, fill)
             canvas.drawRect(0f, 0f, width - shadow, height - shadow, inkPaint)
             val textY = (height - shadow) / 2f - (textPaint.descent() + textPaint.ascent()) / 2
