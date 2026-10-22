@@ -69,7 +69,7 @@ class MainActivity : Activity() {
             setPadding(pad, pad, pad, pad)
             setBackgroundColor(getColor(R.color.background))
             addView(RetroTitle(this@MainActivity, getString(R.string.app_name)))
-            addView(textLabel(getString(R.string.app_subtitle), 18f, bold = true), marginParams(bottom = gap))
+            addView(textLabel(getString(R.string.app_subtitle), 18f, bold = true), marginParams(bottom = gap * 2))
             tabBar = RetroTabBar(
                 this@MainActivity,
                 listOf(
@@ -155,7 +155,12 @@ class MainActivity : Activity() {
     }
 
     private fun renderPendingItems() {
-        store.pendingNumbers().forEach { number ->
+        val numbers = store.pendingNumbers()
+        if (numbers.isEmpty()) {
+            showEmptyMessage(getString(R.string.empty_pending))
+            return
+        }
+        numbers.forEach { number ->
             listContainer.addView(
                 VerdictListItemView(
                     this,
@@ -184,7 +189,12 @@ class MainActivity : Activity() {
     }
 
     private fun renderWhitelistItems() {
-        store.whitelistNumbers().forEach { number ->
+        val numbers = store.whitelistNumbers()
+        if (numbers.isEmpty()) {
+            showEmptyMessage(getString(R.string.empty_whitelist))
+            return
+        }
+        numbers.forEach { number ->
             listContainer.addView(
                 VerdictListItemView(
                     this,
@@ -207,7 +217,12 @@ class MainActivity : Activity() {
     }
 
     private fun renderBlacklistItems() {
-        store.blacklistNumbers().forEach { number ->
+        val numbers = store.blacklistNumbers()
+        if (numbers.isEmpty()) {
+            showEmptyMessage(getString(R.string.empty_blacklist))
+            return
+        }
+        numbers.forEach { number ->
             listContainer.addView(
                 VerdictListItemView(
                     this,
@@ -227,6 +242,20 @@ class MainActivity : Activity() {
                 ).apply { bottomMargin = (8 * resources.displayMetrics.density).toInt() },
             )
         }
+    }
+
+    private fun showEmptyMessage(message: String) {
+        val pad = (32 * resources.displayMetrics.density).toInt()
+        listContainer.addView(
+            textLabel(message, 14f, mono = true).apply {
+                setPadding(pad, pad, pad, pad)
+                gravity = android.view.Gravity.CENTER
+            },
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ),
+        )
     }
 
     private fun isReady(): Boolean {
