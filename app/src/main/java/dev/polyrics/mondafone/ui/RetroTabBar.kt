@@ -54,6 +54,7 @@ class RetroTabBar(
             }
             addView(tabView, params)
         }
+        refreshTabViews()
     }
 
     private fun refreshTabViews() {
