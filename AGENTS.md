@@ -14,12 +14,12 @@ The application keeps a minimal, low-footprint UI. Do not add Compose, AndroidX,
 - `app/src/main/java/dev/polyrics/mondafone/MainActivity.kt`: chained onboarding (ROLE_CALL_SCREENING → POST_NOTIFICATIONS → Bluetooth), status display, in-app pending verdict review, and debug box.
 - `app/src/main/java/dev/polyrics/mondafone/spam/`: verdict store (`SpamStore`/`PrefsSpamStore`), `SpamCallScreeningService` (on-demand call screening), `SpamReportDecider` rules, `SpamBlockedNotifier` (blocked call notifications), `SpamVerdictPromptNotifier` (interactive verdict prompt notifications), and `SpamVerdictReceiver` (handles verdict button actions).
 - `app/src/main/java/dev/polyrics/mondafone/identity/`: ECC device identity generated once in Android Keystore (`DeviceIdentity`/`KeystoreDeviceIdentity`) with Base64URL public-key encoding.
-- `app/src/main/java/dev/polyrics/mondafone/network/`: BLE beacon discovery (`BleBeaconService`, periodic advertise+scan in a foreground service) with pure helpers (`BeaconPayloadCodec`, `BeaconCycleCounter`, `BeaconEventLog`).
+- `app/src/main/java/dev/polyrics/mondafone/network/`: BLE beacon discovery (`BleBeaconService`, periodic advertise+scan in a foreground service) with pure helpers (`BeaconPayloadCodec`, `BeaconCycleCounter`, `BeaconEventLog`). The advertised ID is the device public-key fingerprint.
 - `app/src/main/java/dev/polyrics/mondafone/ui/`: `RetroButton`, `RetroDebugBox`, `SpamReportView` (canvas-drawn retro dialog for in-app verdict).
 - `app/src/test/java/`: local unit tests for decision and beacon logic (JUnit 4).
 - `app/src/main/AndroidManifest.xml`: permissions (POST_NOTIFICATIONS, Bluetooth advertise/scan/connect, foreground service), screening service, beacon service, verdict receiver, and launcher activity.
 - `app/src/main/res/values/colors.xml`: retro pastel palette (see Design).
-- `app/build.gradle.kts`: Android build configuration, release shrinking, and beacon BuildConfig fields read from `local.properties` (`mondafone.device.id`, `mondafone.beacon.period.ms`, `mondafone.beacon.window.ms`).
+- `app/build.gradle.kts`: Android build configuration, release shrinking, and beacon BuildConfig fields read from `local.properties` (`mondafone.beacon.period.ms`, `mondafone.beacon.window.ms`).
 - `gradle/libs.versions.toml`: plugin version catalog; keep it dependency-free apart from required build plugins.
 
 ## Build And Verify

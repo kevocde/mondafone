@@ -34,9 +34,12 @@ class BleBeaconService : Service() {
     private var counter = BeaconCycleCounter()
     private var advertiser: BluetoothLeAdvertiser? = null
     private var scanner: BluetoothLeScanner? = null
+    private var activeId = ""
 
     private val eventLog: BeaconEventLog
         get() = (application as MondafoneApp).beaconEventLog
+
+    private val identity by lazy { (application as MondafoneApp).deviceIdentity }
 
     private val cycle = object : Runnable {
         override fun run() {
@@ -55,7 +58,7 @@ class BleBeaconService : Service() {
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             val id = codec.decode(result.scanRecord?.getServiceData(serviceUuid)) ?: return
-            if (id == config.deviceId) return
+            if (id == activeId) return
             counter.record()
             eventLog.log("received id $id")
         }
@@ -94,7 +97,12 @@ class BleBeaconService : Service() {
             eventLog.log("ble permission missing")
             return
         }
-        if (!codec.fits(config.deviceId)) {
+        val deviceId = identity.publicKeyFingerprint()
+        if (deviceId == null) {
+            eventLog.log("identity unavailable")
+            return
+        }
+        if (!codec.fits(deviceId)) {
             eventLog.log("device id too long")
             return
         }
@@ -111,13 +119,14 @@ class BleBeaconService : Service() {
         }
         advertiser = newAdvertiser
         scanner = newScanner
+        activeId = deviceId
         counter = BeaconCycleCounter()
         eventLog.log("Beacon active")
-        startAdvertising(newAdvertiser)
+        startAdvertising(newAdvertiser, deviceId)
         startScanning(newScanner)
     }
 
-    private fun startAdvertising(target: BluetoothLeAdvertiser) {
+    private fun startAdvertising(target: BluetoothLeAdvertiser, deviceId: String) {
         val settings = AdvertiseSettings.Builder()
             .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
             .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
@@ -125,7 +134,7 @@ class BleBeaconService : Service() {
             .build()
         val data = AdvertiseData.Builder()
             .setIncludeDeviceName(false)
-            .addServiceData(serviceUuid, codec.encode(config.deviceId))
+            .addServiceData(serviceUuid, codec.encode(deviceId))
             .build()
         runCatching { target.startAdvertising(settings, data, advertiseCallback) }
             .onFailure { eventLog.log("advertise unavailable") }
