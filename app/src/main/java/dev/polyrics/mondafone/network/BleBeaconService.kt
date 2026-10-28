@@ -1,0 +1,189 @@
+package dev.polyrics.mondafone.network
+
+import android.Manifest
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.Service
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
+import android.bluetooth.le.AdvertiseCallback
+import android.bluetooth.le.AdvertiseData
+import android.bluetooth.le.AdvertiseSettings
+import android.bluetooth.le.BluetoothLeAdvertiser
+import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Handler
+import android.os.IBinder
+import android.os.Looper
+import android.os.ParcelUuid
+import dev.polyrics.mondafone.MondafoneApp
+import dev.polyrics.mondafone.R
+
+class BleBeaconService : Service() {
+
+    private val handler = Handler(Looper.getMainLooper())
+    private val config by lazy { BeaconConfig.fromBuild() }
+    private val codec = BeaconPayloadCodec()
+    private val serviceUuid by lazy { ParcelUuid(BeaconProtocol.SERVICE_UUID) }
+    private var counter = BeaconCycleCounter()
+    private var advertiser: BluetoothLeAdvertiser? = null
+    private var scanner: BluetoothLeScanner? = null
+
+    private val eventLog: BeaconEventLog
+        get() = (application as MondafoneApp).beaconEventLog
+
+    private val cycle = object : Runnable {
+        override fun run() {
+            startCycle()
+            handler.postDelayed({ stopWindow() }, config.windowMs)
+            handler.postDelayed(this, config.periodMs)
+        }
+    }
+
+    private val advertiseCallback = object : AdvertiseCallback() {
+        override fun onStartFailure(errorCode: Int) {
+            eventLog.log("advertise failed: $errorCode")
+        }
+    }
+
+    private val scanCallback = object : ScanCallback() {
+        override fun onScanResult(callbackType: Int, result: ScanResult) {
+            val id = codec.decode(result.scanRecord?.getServiceData(serviceUuid)) ?: return
+            if (id == config.deviceId) return
+            counter.record()
+            eventLog.log("received id $id")
+        }
+
+        override fun onScanFailed(errorCode: Int) {
+            eventLog.log("scan failed: $errorCode")
+        }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        if (!hasBluetoothPermissions()) {
+            stopSelf()
+            return
+        }
+        startForeground(FOREGROUND_ID, buildNotification())
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (!hasBluetoothPermissions()) return START_NOT_STICKY
+        handler.removeCallbacks(cycle)
+        handler.post(cycle)
+        return START_STICKY
+    }
+
+    override fun onDestroy() {
+        handler.removeCallbacksAndMessages(null)
+        stopWindow()
+        super.onDestroy()
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    private fun startCycle() {
+        if (!hasBluetoothPermissions()) {
+            eventLog.log("ble permission missing")
+            return
+        }
+        if (!codec.fits(config.deviceId)) {
+            eventLog.log("device id too long")
+            return
+        }
+        val adapter = bluetoothAdapter()
+        if (adapter == null || !adapter.isEnabled) {
+            eventLog.log("bluetooth unavailable")
+            return
+        }
+        val newAdvertiser = adapter.bluetoothLeAdvertiser
+        val newScanner = adapter.bluetoothLeScanner
+        if (newAdvertiser == null || newScanner == null) {
+            eventLog.log("ble unavailable")
+            return
+        }
+        advertiser = newAdvertiser
+        scanner = newScanner
+        counter = BeaconCycleCounter()
+        eventLog.log("Beacon active")
+        startAdvertising(newAdvertiser)
+        startScanning(newScanner)
+    }
+
+    private fun startAdvertising(target: BluetoothLeAdvertiser) {
+        val settings = AdvertiseSettings.Builder()
+            .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
+            .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
+            .setConnectable(false)
+            .build()
+        val data = AdvertiseData.Builder()
+            .setIncludeDeviceName(false)
+            .addServiceData(serviceUuid, codec.encode(config.deviceId))
+            .build()
+        runCatching { target.startAdvertising(settings, data, advertiseCallback) }
+            .onFailure { eventLog.log("advertise unavailable") }
+    }
+
+    private fun startScanning(target: BluetoothLeScanner) {
+        val settings = ScanSettings.Builder()
+            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            .build()
+        runCatching { target.startScan(emptyList<ScanFilter>(), settings, scanCallback) }
+            .onFailure { eventLog.log("scan unavailable") }
+    }
+
+    private fun stopWindow() {
+        val activeAdvertiser = advertiser
+        val activeScanner = scanner
+        if (activeAdvertiser == null && activeScanner == null) return
+        activeAdvertiser?.let { runCatching { it.stopAdvertising(advertiseCallback) } }
+        activeScanner?.let { runCatching { it.stopScan(scanCallback) } }
+        advertiser = null
+        scanner = null
+        eventLog.log("count: ${counter.count()}")
+    }
+
+    private fun hasBluetoothPermissions(): Boolean =
+        BLUETOOTH_PERMISSIONS.all {
+            checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED
+        }
+
+    private fun bluetoothAdapter(): BluetoothAdapter? =
+        getSystemService(BluetoothManager::class.java).adapter
+
+    private fun buildNotification(): Notification {
+        ensureChannel()
+        return Notification.Builder(this, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.stat_notify_sync)
+            .setContentTitle(getString(R.string.beacon_channel_name))
+            .setContentText(getString(R.string.beacon_notification_text))
+            .setOngoing(true)
+            .build()
+    }
+
+    private fun ensureChannel() {
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            getString(R.string.beacon_channel_name),
+            NotificationManager.IMPORTANCE_LOW,
+        )
+        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+    }
+
+    private companion object {
+        const val CHANNEL_ID = "beacon"
+        const val FOREGROUND_ID = 1
+        val BLUETOOTH_PERMISSIONS = listOf(
+            Manifest.permission.BLUETOOTH_ADVERTISE,
+            Manifest.permission.BLUETOOTH_SCAN,
+            Manifest.permission.BLUETOOTH_CONNECT,
+        )
+    }
+}
