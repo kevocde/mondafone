@@ -35,6 +35,7 @@ class BleBeaconService : Service() {
     private var advertiser: BluetoothLeAdvertiser? = null
     private var scanner: BluetoothLeScanner? = null
     private var activeId = ""
+    private var started = false
 
     private val eventLog: BeaconEventLog
         get() = (application as MondafoneApp).beaconEventLog
@@ -70,21 +71,20 @@ class BleBeaconService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        if (!hasBluetoothPermissions()) {
-            stopSelf()
-            return
-        }
         startForeground(FOREGROUND_ID, buildNotification())
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (!hasBluetoothPermissions()) return START_NOT_STICKY
-        handler.removeCallbacks(cycle)
-        handler.post(cycle)
+        if (!started) {
+            started = true
+            handler.post(cycle)
+        }
         return START_STICKY
     }
 
     override fun onDestroy() {
+        started = false
         handler.removeCallbacksAndMessages(null)
         stopWindow()
         super.onDestroy()

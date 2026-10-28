@@ -40,6 +40,7 @@ class MainActivity : Activity() {
         super.onResume()
         store.registerOnChangeListener { runOnUiThread { renderList() } }
         beaconLog.setListener { events -> runOnUiThread { renderDebug(events) } }
+        if (isBluetoothGranted()) (application as MondafoneApp).startBeaconService()
         renderList()
     }
 

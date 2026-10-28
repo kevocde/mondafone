@@ -16,7 +16,6 @@ class MondafoneApp : Application() {
     override fun onCreate() {
         super.onCreate()
         runCatching { deviceIdentity.ensureCreated() }
-        startBeaconService()
     }
 
     fun startBeaconService() {
