@@ -1,6 +1,17 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
 }
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
+val beaconDeviceId = localProperties.getProperty("mondafone.device.id", "dev-device")
+val beaconPeriodMs = localProperties.getProperty("mondafone.beacon.period.ms", "300000")
+val beaconWindowMs = localProperties.getProperty("mondafone.beacon.window.ms", "10000")
 
 android {
     namespace = "dev.polyrics.mondafone"
@@ -14,6 +25,14 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
+
+        buildConfigField("String", "BEACON_DEVICE_ID", "\"$beaconDeviceId\"")
+        buildConfigField("long", "BEACON_PERIOD_MS", "${beaconPeriodMs}L")
+        buildConfigField("long", "BEACON_WINDOW_MS", "${beaconWindowMs}L")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
