@@ -13,8 +13,10 @@ import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import dev.polyrics.mondafone.identity.KeystoreDeviceIdentity
 import dev.polyrics.mondafone.spam.PrefsCallVerdictStore
 import dev.polyrics.mondafone.ui.RetroButton
+import dev.polyrics.mondafone.ui.RetroDebugBox
 import dev.polyrics.mondafone.ui.RetroPanel
 import dev.polyrics.mondafone.ui.RetroTabBar
 import dev.polyrics.mondafone.ui.RetroTitle
@@ -23,6 +25,7 @@ import dev.polyrics.mondafone.ui.VerdictListItemView
 class MainActivity : Activity() {
 
     private val store by lazy { PrefsCallVerdictStore(this) }
+    private val identity by lazy { KeystoreDeviceIdentity() }
     private lateinit var listContainer: LinearLayout
     private lateinit var tabBar: RetroTabBar
     private var currentTab = 0
@@ -104,6 +107,22 @@ class MainActivity : Activity() {
                     0,
                     1f,
                 ),
+            )
+            addView(
+                RetroDebugBox(this@MainActivity).apply {
+                    setLines(
+                        listOf(
+                            getString(
+                                R.string.debug_pub_key,
+                                identity.publicKeyBase64() ?: "-",
+                            ),
+                        ),
+                    )
+                },
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { topMargin = gap },
             )
         }
     }
