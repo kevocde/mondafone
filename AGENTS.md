@@ -19,7 +19,7 @@ The application keeps a minimal, low-footprint UI. Do not add Compose, AndroidX,
 - `app/src/test/java/`: local unit tests for decision and beacon logic (JUnit 4).
 - `app/src/main/AndroidManifest.xml`: permissions (POST_NOTIFICATIONS, Bluetooth advertise/scan/connect, foreground service), screening service, beacon service, verdict receiver, and launcher activity.
 - `app/src/main/res/values/colors.xml`: retro pastel palette (see Design).
-- `app/build.gradle.kts`: Android build configuration, release shrinking, and beacon BuildConfig fields read from `local.properties` (`mondafone.beacon.period.ms`, `mondafone.beacon.window.ms`).
+- `app/build.gradle.kts`: Android build configuration, release shrinking, and beacon BuildConfig fields read from `local.properties` (`mondafone.beacon.cron`, `mondafone.beacon.window.ms`).
 - `gradle/libs.versions.toml`: plugin version catalog; keep it dependency-free apart from required build plugins.
 
 ## Build And Verify

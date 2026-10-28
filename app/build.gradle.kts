@@ -9,7 +9,7 @@ val localProperties = Properties().apply {
     if (file.exists()) file.inputStream().use { load(it) }
 }
 
-val beaconPeriodMs = localProperties.getProperty("mondafone.beacon.period.ms", "300000")
+val beaconCron = localProperties.getProperty("mondafone.beacon.cron", "*/5 * * * *")
 val beaconWindowMs = localProperties.getProperty("mondafone.beacon.window.ms", "10000")
 
 android {
@@ -25,7 +25,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        buildConfigField("long", "BEACON_PERIOD_MS", "${beaconPeriodMs}L")
+        buildConfigField("String", "BEACON_CRON", "\"$beaconCron\"")
         buildConfigField("long", "BEACON_WINDOW_MS", "${beaconWindowMs}L")
     }
 

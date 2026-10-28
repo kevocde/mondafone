@@ -3,12 +3,12 @@ package dev.polyrics.mondafone.network
 import dev.polyrics.mondafone.BuildConfig
 
 data class BeaconConfig(
-    val periodMs: Long,
+    val cronExpression: String,
     val windowMs: Long,
 ) {
     companion object {
         fun fromBuild(): BeaconConfig = BeaconConfig(
-            periodMs = BuildConfig.BEACON_PERIOD_MS,
+            cronExpression = BuildConfig.BEACON_CRON,
             windowMs = BuildConfig.BEACON_WINDOW_MS,
         )
     }

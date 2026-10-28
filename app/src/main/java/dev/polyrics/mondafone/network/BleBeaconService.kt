@@ -24,11 +24,14 @@ import android.os.Looper
 import android.os.ParcelUuid
 import dev.polyrics.mondafone.MondafoneApp
 import dev.polyrics.mondafone.R
+import java.time.Duration
+import java.time.LocalDateTime
 
 class BleBeaconService : Service() {
 
     private val handler = Handler(Looper.getMainLooper())
     private val config by lazy { BeaconConfig.fromBuild() }
+    private val schedule by lazy { CronExpression.parse(config.cronExpression) }
     private val codec = BeaconPayloadCodec()
     private val serviceUuid by lazy { ParcelUuid(BeaconProtocol.SERVICE_UUID) }
     private var counter = BeaconCycleCounter()
@@ -46,7 +49,7 @@ class BleBeaconService : Service() {
         override fun run() {
             startCycle()
             handler.postDelayed({ stopWindow() }, config.windowMs)
-            handler.postDelayed(this, config.periodMs)
+            scheduleNext()
         }
     }
 
@@ -78,7 +81,7 @@ class BleBeaconService : Service() {
         if (!hasBluetoothPermissions()) return START_NOT_STICKY
         if (!started) {
             started = true
-            handler.post(cycle)
+            scheduleNext()
         }
         return START_STICKY
     }
@@ -146,6 +149,22 @@ class BleBeaconService : Service() {
             .build()
         runCatching { target.startScan(emptyList<ScanFilter>(), settings, scanCallback) }
             .onFailure { eventLog.log("scan unavailable") }
+    }
+
+    private fun scheduleNext() {
+        val cron = schedule
+        if (cron == null) {
+            eventLog.log("invalid schedule")
+            return
+        }
+        val now = LocalDateTime.now()
+        val next = cron.nextAfter(now)
+        if (next == null) {
+            eventLog.log("no next schedule")
+            return
+        }
+        val delay = Duration.between(now, next).toMillis().coerceAtLeast(0)
+        handler.postDelayed(cycle, delay)
     }
 
     private fun stopWindow() {
