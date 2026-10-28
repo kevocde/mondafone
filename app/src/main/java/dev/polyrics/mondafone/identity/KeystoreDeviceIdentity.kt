@@ -8,6 +8,7 @@ import java.security.spec.ECGenParameterSpec
 
 class KeystoreDeviceIdentity(
     private val encoder: Base64UrlEncoder = Base64UrlEncoder(),
+    private val fingerprint: PublicKeyFingerprint = PublicKeyFingerprint(),
 ) : DeviceIdentity {
 
     override fun ensureCreated() {
@@ -15,10 +16,12 @@ class KeystoreDeviceIdentity(
         generateKeyPair()
     }
 
-    override fun publicKeyBase64(): String? {
-        val certificate = keyStore().getCertificate(KEY_ALIAS) ?: return null
-        return encoder.encode(certificate.publicKey.encoded)
-    }
+    override fun publicKeyBase64(): String? = publicKeyEncoded()?.let(encoder::encode)
+
+    override fun publicKeyFingerprint(): String? = publicKeyEncoded()?.let(fingerprint::of)
+
+    private fun publicKeyEncoded(): ByteArray? =
+        keyStore().getCertificate(KEY_ALIAS)?.publicKey?.encoded
 
     private fun generateKeyPair() {
         val spec = KeyGenParameterSpec.Builder(
