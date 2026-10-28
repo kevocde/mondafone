@@ -301,8 +301,8 @@ class MainActivity : Activity() {
     }
 
     private fun renderDebug(events: List<String>) {
-        val publicKey = getString(R.string.debug_pub_key, identity.publicKeyBase64() ?: "-")
-        debugBox?.setLines(listOf(publicKey) + events)
+        val deviceId = getString(R.string.debug_device_id, identity.publicKeyFingerprint() ?: "-")
+        debugBox?.setLines(listOf(deviceId) + events)
     }
 
     private fun isReady(): Boolean =

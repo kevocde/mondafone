@@ -6,7 +6,7 @@
     <string name="answer_no">No</string>
     <string name="grant_access">Grant access</string>
     <string name="debug_title">Debug:</string>
-    <string name="debug_pub_key">Key generated pub key: %1$s</string>
+    <string name="debug_device_id">Device ID: %1$s</string>
     <string name="beacon_channel_name">Device beacon</string>
     <string name="beacon_notification_text">Discovering nearby devices</string>
     <string name="clear_store">Clear</string>
