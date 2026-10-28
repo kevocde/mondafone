@@ -2,18 +2,11 @@ package dev.polyrics.mondafone.network
 
 class BeaconCycleCounter {
 
-    private var received = 0
+    private val ids = mutableSetOf<String>()
 
     @Synchronized
-    fun record() {
-        received++
-    }
+    fun record(id: String): Boolean = ids.add(id)
 
     @Synchronized
-    fun reset() {
-        received = 0
-    }
-
-    @Synchronized
-    fun count(): Int = received
+    fun count(): Int = ids.size
 }

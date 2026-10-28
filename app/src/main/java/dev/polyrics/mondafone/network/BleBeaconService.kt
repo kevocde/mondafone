@@ -63,8 +63,7 @@ class BleBeaconService : Service() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             val id = codec.decode(result.scanRecord?.getServiceData(serviceUuid)) ?: return
             if (id == activeId) return
-            counter.record()
-            eventLog.log("received id $id")
+            if (counter.record(id)) eventLog.log("received id $id")
         }
 
         override fun onScanFailed(errorCode: Int) {
