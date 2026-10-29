@@ -11,13 +11,13 @@ The application keeps a minimal, low-footprint UI. Do not add Compose, AndroidX,
 
 ## Repository Layout
 
-- `app/src/main/java/dev/polyrics/mondafone/MainActivity.kt`: chained onboarding (ROLE_CALL_SCREENING → POST_NOTIFICATIONS → Bluetooth), status display, in-app pending verdict review, and debug box.
+- `app/src/main/java/dev/polyrics/mondafone/MainActivity.kt`: chained onboarding (ROLE_CALL_SCREENING → POST_NOTIFICATIONS → Bluetooth → exact alarm access), status display, in-app pending verdict review, and debug box.
 - `app/src/main/java/dev/polyrics/mondafone/spam/`: verdict store (`CallVerdictStore`/`SqliteCallVerdictStore` on native SQLite via `VerdictDbHelper`, with `PrefsVerdictImporter` for the one-time legacy prefs import), `TrustCallScreeningService` (on-demand call screening), `SpamReportDecider` rules, `SpamBlockedNotifier` (blocked call notifications), `SpamVerdictPromptNotifier` (interactive verdict prompt notifications), and `SpamVerdictReceiver` (handles verdict button actions).
 - `app/src/main/java/dev/polyrics/mondafone/identity/`: ECC device identity generated once in Android Keystore (`DeviceIdentity`/`KeystoreDeviceIdentity`) with Base64URL public-key encoding.
-- `app/src/main/java/dev/polyrics/mondafone/network/`: BLE beacon discovery (`BleBeaconService`, periodic advertise+scan in a foreground service) with pure helpers (`BeaconPayloadCodec`, `BeaconCycleCounter`, `BeaconEventLog`, `RotatingBeaconId`, `BeaconScanFilter`). The advertised ID is a time-rotating identifier; the device fingerprint is never emitted in clear.
+- `app/src/main/java/dev/polyrics/mondafone/network/`: BLE beacon discovery driven by `AlarmManager` (`BeaconAlarmScheduler`), where `BleBeaconService` is an ephemeral foreground service that only runs during each beacon window and stops itself afterwards, with pure helpers (`BeaconPayloadCodec`, `BeaconCycleCounter`, `BeaconEventLog`, `RotatingBeaconId`, `BeaconScanFilter`). `BootReceiver` and `ExactAlarmStateReceiver` re-arm the alarm chain. The advertised ID is a time-rotating identifier; the device fingerprint is never emitted in clear.
 - `app/src/main/java/dev/polyrics/mondafone/ui/`: `RetroButton`, `RetroDebugBox`, `SpamReportView` (canvas-drawn retro dialog for in-app verdict).
 - `app/src/test/java/`: local unit tests for decision, verdict-store (SQLite via Robolectric), and beacon logic (JUnit 4).
-- `app/src/main/AndroidManifest.xml`: permissions (POST_NOTIFICATIONS, Bluetooth advertise/scan/connect, foreground service), screening service, beacon service, verdict receiver, and launcher activity.
+- `app/src/main/AndroidManifest.xml`: permissions (POST_NOTIFICATIONS, SCHEDULE_EXACT_ALARM, RECEIVE_BOOT_COMPLETED, Bluetooth advertise/scan/connect, foreground service), screening service, beacon service, verdict/boot/exact-alarm receivers, and launcher activity.
 - `app/src/main/res/values/colors.xml`: retro pastel palette (see Design).
 - `app/build.gradle.kts`: Android build configuration, release shrinking, and beacon BuildConfig fields read from `local.properties` (`mondafone.beacon.cron`, `mondafone.beacon.window.ms`, `mondafone.beacon.app.secret`). The app secret is generated randomly and persisted to `local.properties` on first build when absent.
 - `gradle/libs.versions.toml`: plugin version catalog; keep it dependency-free apart from required build plugins and the test-only Robolectric exception below.
@@ -61,6 +61,7 @@ Retro pastel design system for all UI:
 - Bluetooth advertise/scan/connect permissions are allowed only for the beacon feature; keep `BLUETOOTH_SCAN` flagged as `neverForLocation` so location is never requested.
 - Never advertise the device public-key fingerprint in clear. The beacon payload is the rotating ID `Base64URL(HMAC-SHA256(appSecret, fingerprint || epochHour)[:7])`, derived by `RotatingBeaconId`, so nothing persistent leaves the radio and distinct devices still produce distinct IDs. Trust resolution uses `candidates`/`matches` with a ±1 hour clock tolerance.
 - Filter scans with hardware `ScanFilter`s on the fixed service data UUID (`BeaconScanFilter`), never with an empty filter list.
+- Schedule beacon windows with `BeaconAlarmScheduler` (`setExactAndAllowWhileIdle`, falling back to `setAndAllowWhileIdle` without exact-alarm access). Never keep a 24/7 foreground service or a `Handler`-based cron: Doze freezes handler message loops. The PendingIntent targets the service directly.
 - Request the `ROLE_CALL_SCREENING` role through `RoleManager`, never by assuming granted access.
 - Store rules and blocked-call history in app-specific storage unless a user-visible export is requested.
 - Never block a call without recording a decision entry the user can review.
@@ -75,7 +76,7 @@ Retro pastel design system for all UI:
 2. Build both debug and release variants when changing Kotlin, the manifest, or Gradle configuration.
 3. Check the release APK size after dependency or resource changes.
 4. Test screening role grant/revocation, block rule matching, and in-app pending review on a physical device with real incoming calls.
-5. Test the BLE beacon on physical devices (ideally two) and confirm the `Beacon active`, `received id ...`, and `count: ...` lines in the debug box.
+5. Test the BLE beacon on physical devices (ideally two) and confirm the `Beacon active`, `received id ...`, and `count: ...` lines in the debug box. Also verify a window still fires while the device is idle (`adb shell dumpsys deviceidle force-idle`) and after a reboot.
 
 ## Code Rules
 1. KISS for all the code
