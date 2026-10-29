@@ -7,6 +7,10 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.view.Gravity
 import android.view.View
+import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction
+import android.view.accessibility.AccessibilityNodeInfo.CollectionInfo
+import android.view.accessibility.AccessibilityNodeInfo.CollectionItemInfo
 import android.widget.LinearLayout
 import dev.polyrics.mondafone.R
 
@@ -25,6 +29,19 @@ class RetroTabBar(
         gravity = Gravity.CENTER
         setWillNotDraw(false)
         clipChildren = false
+        importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
+        accessibilityDelegate = object : AccessibilityDelegate() {
+            override fun onInitializeAccessibilityNodeInfo(host: View, info: AccessibilityNodeInfo) {
+                super.onInitializeAccessibilityNodeInfo(host, info)
+                info.collectionInfo = CollectionInfo(
+                    1,
+                    tabs.size,
+                    false,
+                    CollectionInfo.SELECTION_MODE_SINGLE,
+                )
+            }
+        }
+        buildTabs()
     }
 
     fun selectTab(index: Int) {
@@ -47,7 +64,7 @@ class RetroTabBar(
 
     private fun buildTabs() {
         tabs.forEachIndexed { index, label ->
-            val tabView = TabView(context, label, index == selectedIndex) { selectTab(index) }
+            val tabView = TabView(context, index, label, index == selectedIndex) { selectTab(index) }
             val params = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
             if (index > 0) {
                 params.leftMargin = (4 * density).toInt()
@@ -68,6 +85,7 @@ class RetroTabBar(
 
     private class TabView(
         context: Context,
+        private val index: Int,
         private val label: String,
         selected: Boolean,
         private val onTap: () -> Unit,
@@ -101,14 +119,51 @@ class RetroTabBar(
         private var isTabSelected = selected
         private var badgeCount = 0
 
+        init {
+            isClickable = true
+            isFocusable = true
+            importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
+            isSelected = selected
+            updateAccessibilityDescription()
+            accessibilityDelegate = object : AccessibilityDelegate() {
+                override fun onInitializeAccessibilityNodeInfo(
+                    host: View,
+                    info: AccessibilityNodeInfo,
+                ) {
+                    super.onInitializeAccessibilityNodeInfo(host, info)
+                    info.isSelected = isTabSelected
+                    info.collectionItemInfo = CollectionItemInfo(
+                        0,
+                        1,
+                        index,
+                        1,
+                        false,
+                        isTabSelected,
+                    )
+                    if (!isTabSelected && host.isEnabled) {
+                        info.addAction(AccessibilityAction.ACTION_CLICK)
+                    }
+                }
+            }
+        }
+
         fun setTabSelected(value: Boolean) {
             isTabSelected = value
+            isSelected = value
             invalidate()
         }
 
         fun setBadgeCount(count: Int) {
             badgeCount = count
+            updateAccessibilityDescription()
             invalidate()
+        }
+
+        private fun formatBadgeCount(): String =
+            if (badgeCount > 99) "99+" else badgeCount.toString()
+
+        private fun updateAccessibilityDescription() {
+            contentDescription = if (badgeCount > 0) "$label (${formatBadgeCount()})" else label
         }
 
         override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -175,15 +230,16 @@ class RetroTabBar(
 
             canvas.drawRect(baseX, baseY, baseX + 6 * pixelSize, baseY + 6 * pixelSize, inkPaint.apply { style = Paint.Style.STROKE })
 
-            val text = if (badgeCount > 99) "99+" else badgeCount.toString()
+            val text = formatBadgeCount()
             val textX = baseX + 3 * pixelSize
             val textY = baseY + 3 * pixelSize - (badgeTextPaint.descent() + badgeTextPaint.ascent()) / 2
             canvas.drawText(text, textX, textY, badgeTextPaint)
         }
 
         override fun performClick(): Boolean {
+            super.performClick()
             onTap()
-            return super.performClick()
+            return true
         }
 
         override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
