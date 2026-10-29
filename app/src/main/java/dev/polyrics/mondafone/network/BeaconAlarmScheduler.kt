@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import dev.polyrics.mondafone.MainActivity
 import java.time.LocalDateTime
 import java.time.ZoneId
 
@@ -23,7 +24,7 @@ class BeaconAlarmScheduler(
         val triggerAt = next.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         val operation = pendingIntent(triggerAt)
         if (alarmManager.canScheduleExactAlarms()) {
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, operation)
+            alarmManager.setAlarmClock(AlarmManager.AlarmClockInfo(triggerAt, showIntent()), operation)
         } else {
             alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, operation)
         }
@@ -32,6 +33,13 @@ class BeaconAlarmScheduler(
     fun cancel() {
         alarmManager.cancel(pendingIntent(System.currentTimeMillis()))
     }
+
+    private fun showIntent(): PendingIntent = PendingIntent.getActivity(
+        context,
+        SHOW_REQUEST_CODE,
+        Intent(context, MainActivity::class.java),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
 
     private fun pendingIntent(expectedAt: Long): PendingIntent = PendingIntent.getForegroundService(
         context,
@@ -44,5 +52,6 @@ class BeaconAlarmScheduler(
     companion object {
         const val EXTRA_EXPECTED_AT = "extra_expected_at"
         private const val REQUEST_CODE = 0
+        private const val SHOW_REQUEST_CODE = 1
     }
 }
