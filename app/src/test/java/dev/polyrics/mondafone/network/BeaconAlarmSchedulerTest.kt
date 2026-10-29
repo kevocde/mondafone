@@ -74,6 +74,21 @@ class BeaconAlarmSchedulerTest {
         assertTrue(shadowOf(operation!!).isForegroundService)
     }
 
+    @Suppress("DEPRECATION")
+    @Test
+    fun alarmCarriesExpectedTriggerTime() {
+        val scheduler = BeaconAlarmScheduler(context, cron, alarmManager)
+        val expected = triggerAt(2026, 10, 29, 14, 5)
+
+        scheduler.scheduleNext(LocalDateTime.of(2026, 10, 29, 14, 3, 20))
+
+        val operation = shadowOf(alarmManager).scheduledAlarms.single().operation
+        assertEquals(
+            expected,
+            shadowOf(operation!!).savedIntent.getLongExtra(BeaconAlarmScheduler.EXTRA_EXPECTED_AT, 0L),
+        )
+    }
+
     private fun triggerAt(year: Int, month: Int, day: Int, hour: Int, minute: Int): Long =
         LocalDateTime.of(year, month, day, hour, minute)
             .atZone(ZoneId.systemDefault())
