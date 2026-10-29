@@ -6,12 +6,14 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowAlarmManager
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [31], application = Application::class)
@@ -21,16 +23,22 @@ class BeaconAlarmSchedulerTest {
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
     private val cron = CronExpression.parse("*/5 * * * *")
 
+    @Before
+    fun allowExactAlarms() {
+        ShadowAlarmManager.setCanScheduleExactAlarms(true)
+    }
+
     @Test
-    fun schedulesNextCronTickAsWakeupAlarm() {
+    fun schedulesNextCronTickAsAlarmClock() {
         val scheduler = BeaconAlarmScheduler(context, cron, alarmManager)
+        val expected = triggerAt(2026, 10, 29, 14, 5)
 
         scheduler.scheduleNext(LocalDateTime.of(2026, 10, 29, 14, 3, 20))
 
         val scheduled = shadowOf(alarmManager).scheduledAlarms.single()
         assertEquals(AlarmManager.RTC_WAKEUP, scheduled.getType())
-        assertEquals(triggerAt(2026, 10, 29, 14, 5), scheduled.getTriggerAtMs())
-        assertTrue(scheduled.isAllowWhileIdle())
+        assertEquals(expected, scheduled.getTriggerAtMs())
+        assertEquals(expected, scheduled.getAlarmClockInfo()?.getTriggerTime())
     }
 
     @Test
