@@ -39,7 +39,7 @@ class MainActivity : Activity() {
         super.onResume()
         store.registerOnChangeListener { runOnUiThread { renderList() } }
         beaconLog.setListener { events -> runOnUiThread { renderDebug(events) } }
-        if (isBluetoothGranted()) (application as MondafoneApp).startBeaconService()
+        if (isBluetoothGranted()) (application as MondafoneApp).scheduleBeacon()
         renderList()
     }
 
@@ -59,7 +59,7 @@ class MainActivity : Activity() {
             REQUEST_NOTIFICATIONS_CODE ->
                 if (isNotificationGranted()) requestBluetoothPermissions() else refreshView()
             REQUEST_BLUETOOTH_CODE -> {
-                if (isBluetoothGranted()) (application as MondafoneApp).startBeaconService()
+                if (isBluetoothGranted()) (application as MondafoneApp).scheduleBeacon()
                 refreshView()
             }
             else -> refreshView()

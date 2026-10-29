@@ -23,14 +23,13 @@ import android.os.Looper
 import android.os.ParcelUuid
 import dev.polyrics.mondafone.MondafoneApp
 import dev.polyrics.mondafone.R
-import java.time.Duration
-import java.time.LocalDateTime
 
 class BleBeaconService : Service() {
 
     private val handler = Handler(Looper.getMainLooper())
     private val config by lazy { BeaconConfig.fromBuild() }
     private val schedule by lazy { CronExpression.parse(config.cronExpression) }
+    private val scheduler by lazy { BeaconAlarmScheduler(this, schedule) }
     private val rotator by lazy { RotatingBeaconId(config.appSecret) }
     private val codec = BeaconPayloadCodec()
     private val serviceUuid by lazy { ParcelUuid(BeaconProtocol.SERVICE_UUID) }
@@ -38,20 +37,11 @@ class BleBeaconService : Service() {
     private var advertiser: BluetoothLeAdvertiser? = null
     private var scanner: BluetoothLeScanner? = null
     private var activeId = ""
-    private var started = false
 
     private val eventLog: BeaconEventLog
         get() = (application as MondafoneApp).beaconEventLog
 
     private val identity by lazy { (application as MondafoneApp).deviceIdentity }
-
-    private val cycle = object : Runnable {
-        override fun run() {
-            startCycle()
-            handler.postDelayed({ stopWindow() }, config.windowMs)
-            scheduleNext()
-        }
-    }
 
     private val advertiseCallback = object : AdvertiseCallback() {
         override fun onStartFailure(errorCode: Int) {
@@ -78,15 +68,14 @@ class BleBeaconService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (!hasBluetoothPermissions()) return START_NOT_STICKY
-        if (!started) {
-            started = true
-            scheduleNext()
-        }
-        return START_STICKY
+        if (schedule == null) eventLog.log("invalid schedule")
+        scheduler.scheduleNext()
+        startCycle()
+        handler.postDelayed({ finishWindow() }, config.windowMs)
+        return START_NOT_STICKY
     }
 
     override fun onDestroy() {
-        started = false
         handler.removeCallbacksAndMessages(null)
         stopWindow()
         super.onDestroy()
@@ -151,20 +140,9 @@ class BleBeaconService : Service() {
             .onFailure { eventLog.log("scan unavailable") }
     }
 
-    private fun scheduleNext() {
-        val cron = schedule
-        if (cron == null) {
-            eventLog.log("invalid schedule")
-            return
-        }
-        val now = LocalDateTime.now()
-        val next = cron.nextAfter(now)
-        if (next == null) {
-            eventLog.log("no next schedule")
-            return
-        }
-        val delay = Duration.between(now, next).toMillis().coerceAtLeast(0)
-        handler.postDelayed(cycle, delay)
+    private fun finishWindow() {
+        stopWindow()
+        stopSelf()
     }
 
     private fun stopWindow() {
@@ -197,16 +175,19 @@ class BleBeaconService : Service() {
     }
 
     private fun ensureChannel() {
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.deleteNotificationChannel(LEGACY_CHANNEL_ID)
         val channel = NotificationChannel(
             CHANNEL_ID,
             getString(R.string.beacon_channel_name),
-            NotificationManager.IMPORTANCE_LOW,
+            NotificationManager.IMPORTANCE_MIN,
         )
-        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        notificationManager.createNotificationChannel(channel)
     }
 
     private companion object {
-        const val CHANNEL_ID = "beacon"
+        const val CHANNEL_ID = "beacon_windows"
+        const val LEGACY_CHANNEL_ID = "beacon"
         const val FOREGROUND_ID = 1
         val BLUETOOTH_PERMISSIONS = listOf(
             Manifest.permission.BLUETOOTH_ADVERTISE,

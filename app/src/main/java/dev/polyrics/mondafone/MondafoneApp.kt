@@ -1,11 +1,10 @@
 package dev.polyrics.mondafone
 
 import android.app.Application
-import android.content.Intent
 import dev.polyrics.mondafone.identity.DeviceIdentity
 import dev.polyrics.mondafone.identity.KeystoreDeviceIdentity
+import dev.polyrics.mondafone.network.BeaconAlarmScheduler
 import dev.polyrics.mondafone.network.BeaconEventLog
-import dev.polyrics.mondafone.network.BleBeaconService
 import dev.polyrics.mondafone.network.InMemoryBeaconEventLog
 import dev.polyrics.mondafone.spam.CallVerdictStore
 import dev.polyrics.mondafone.spam.PrefsVerdictImporter
@@ -26,7 +25,7 @@ class MondafoneApp : Application() {
         runCatching { deviceIdentity.ensureCreated() }
     }
 
-    fun startBeaconService() {
-        runCatching { startForegroundService(Intent(this, BleBeaconService::class.java)) }
+    fun scheduleBeacon() {
+        runCatching { BeaconAlarmScheduler(this).scheduleNext() }
     }
 }
