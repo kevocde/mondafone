@@ -32,6 +32,7 @@ class BleBeaconService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private val config by lazy { BeaconConfig.fromBuild() }
     private val schedule by lazy { CronExpression.parse(config.cronExpression) }
+    private val rotator by lazy { RotatingBeaconId(config.appSecret) }
     private val codec = BeaconPayloadCodec()
     private val serviceUuid by lazy { ParcelUuid(BeaconProtocol.SERVICE_UUID) }
     private var counter = BeaconCycleCounter()
@@ -99,12 +100,13 @@ class BleBeaconService : Service() {
             eventLog.log("ble permission missing")
             return
         }
-        val deviceId = identity.publicKeyFingerprint()
-        if (deviceId == null) {
+        val fingerprint = identity.publicKeyFingerprint()
+        if (fingerprint == null) {
             eventLog.log("identity unavailable")
             return
         }
-        if (!codec.fits(deviceId)) {
+        val beaconId = rotator.current(fingerprint)
+        if (!codec.fits(beaconId)) {
             eventLog.log("device id too long")
             return
         }
@@ -121,14 +123,14 @@ class BleBeaconService : Service() {
         }
         advertiser = newAdvertiser
         scanner = newScanner
-        activeId = deviceId
+        activeId = beaconId
         counter = BeaconCycleCounter()
         eventLog.log("Beacon active")
-        startAdvertising(newAdvertiser, deviceId)
+        startAdvertising(newAdvertiser, beaconId)
         startScanning(newScanner)
     }
 
-    private fun startAdvertising(target: BluetoothLeAdvertiser, deviceId: String) {
+    private fun startAdvertising(target: BluetoothLeAdvertiser, beaconId: String) {
         val settings = AdvertiseSettings.Builder()
             .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
             .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
@@ -136,7 +138,7 @@ class BleBeaconService : Service() {
             .build()
         val data = AdvertiseData.Builder()
             .setIncludeDeviceName(false)
-            .addServiceData(serviceUuid, codec.encode(deviceId))
+            .addServiceData(serviceUuid, codec.encode(beaconId))
             .build()
         runCatching { target.startAdvertising(settings, data, advertiseCallback) }
             .onFailure { eventLog.log("advertise unavailable") }
