@@ -6,7 +6,6 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
-import dev.polyrics.mondafone.MondafoneApp
 
 class SpamVerdictService : Service() {
 
@@ -27,7 +26,7 @@ class SpamVerdictService : Service() {
         val verdictAction = SpamVerdictAction.fromIntentAction(intent.action) ?: return
         val notificationId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, notificationIdFor(number))
 
-        val store = (applicationContext as MondafoneApp).verdictStore
+        val store = spamDependencies().verdictStore
         verdictAction.applyTo(store, number)
         getSystemService(NotificationManager::class.java)?.cancel(notificationId)
     }
