@@ -10,6 +10,7 @@ class SqliteCallVerdictStore(private val helper: SQLiteOpenHelper) : CallVerdict
 
     constructor(context: Context) : this(VerdictDbHelper(context))
 
+    @Volatile
     private var listener: (() -> Unit)? = null
 
     override fun isWhitelisted(number: String): Boolean =

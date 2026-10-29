@@ -3,9 +3,7 @@ package dev.polyrics.mondafone.spam
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import dev.polyrics.mondafone.R
 
 class NotificationBlockedCallNotifier(
@@ -14,29 +12,23 @@ class NotificationBlockedCallNotifier(
 
     override fun notifyBlocked(number: String) {
         ensureChannel()
-        val notification = buildNotification(number)
-        notificationManager.notify(notificationId(number), notification)
+        val id = notificationId(number)
+        notificationManager.notify(id, buildNotification(number, id))
     }
 
-    private fun buildNotification(number: String): Notification {
-        val blacklistIntent = PendingIntent.getBroadcast(
+    private fun buildNotification(number: String, notificationId: Int): Notification {
+        val blacklistIntent = SpamVerdictService.createPendingIntent(
             context,
-            number.hashCode(),
-            Intent(context, SpamVerdictReceiver::class.java).apply {
-                action = SpamVerdictReceiver.ACTION_MARK_SPAM
-                putExtra(SpamVerdictReceiver.EXTRA_NUMBER, number)
-            },
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            number,
+            SpamVerdictAction.MARK_SPAM,
+            notificationId,
         )
 
-        val whitelistIntent = PendingIntent.getBroadcast(
+        val whitelistIntent = SpamVerdictService.createPendingIntent(
             context,
-            number.hashCode() + 1,
-            Intent(context, SpamVerdictReceiver::class.java).apply {
-                action = SpamVerdictReceiver.ACTION_MARK_NOT_SPAM
-                putExtra(SpamVerdictReceiver.EXTRA_NUMBER, number)
-            },
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            number,
+            SpamVerdictAction.MARK_NOT_SPAM,
+            notificationId,
         )
 
         return Notification.Builder(context, CHANNEL_ID)
@@ -74,7 +66,7 @@ class NotificationBlockedCallNotifier(
     private val notificationManager: NotificationManager
         get() = context.getSystemService(NotificationManager::class.java)
 
-    private fun notificationId(number: String): Int = number.hashCode()
+    private fun notificationId(number: String): Int = SpamVerdictService.notificationIdFor(number)
 
     private companion object {
         const val CHANNEL_ID = "blocked_call"

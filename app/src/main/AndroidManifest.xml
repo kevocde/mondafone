@@ -41,8 +41,8 @@
                 <action android:name="android.telecom.CallScreeningService" />
             </intent-filter>
         </service>
-        <receiver
-            android:name=".spam.SpamVerdictReceiver"
+        <service
+            android:name=".spam.SpamVerdictService"
             android:exported="false" />
         <receiver
             android:name=".network.ExactAlarmStateReceiver"

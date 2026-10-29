@@ -41,7 +41,7 @@ class SpamVerdictServiceTest {
         assertNotNull(notification)
 
         val spamPendingIntent = shadowOf(notification.actions[0].actionIntent)
-        assertTrue(spamPendingIntent.isServiceIntent)
+        assertTrue(spamPendingIntent.isService)
 
         val service = Robolectric.buildService(SpamVerdictService::class.java).create().get()
         val result = service.onStartCommand(spamPendingIntent.savedIntent, 0, 7)
@@ -63,7 +63,7 @@ class SpamVerdictServiceTest {
         assertNotNull(notification)
 
         val whitelistPendingIntent = shadowOf(notification.actions[1].actionIntent)
-        assertTrue(whitelistPendingIntent.isServiceIntent)
+        assertTrue(whitelistPendingIntent.isService)
 
         val service = Robolectric.buildService(SpamVerdictService::class.java).create().get()
         service.onStartCommand(whitelistPendingIntent.savedIntent, 0, 11)
