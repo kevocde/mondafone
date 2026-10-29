@@ -15,6 +15,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import dev.polyrics.mondafone.spam.PrefsCallVerdictStore
 import dev.polyrics.mondafone.ui.RetroButton
+import dev.polyrics.mondafone.ui.RetroDebugBox
 import dev.polyrics.mondafone.ui.RetroPanel
 import dev.polyrics.mondafone.ui.RetroTabBar
 import dev.polyrics.mondafone.ui.RetroTitle
@@ -23,8 +24,11 @@ import dev.polyrics.mondafone.ui.VerdictListItemView
 class MainActivity : Activity() {
 
     private val store by lazy { PrefsCallVerdictStore(this) }
+    private val identity by lazy { (application as MondafoneApp).deviceIdentity }
+    private val beaconLog by lazy { (application as MondafoneApp).beaconEventLog }
     private lateinit var listContainer: LinearLayout
     private lateinit var tabBar: RetroTabBar
+    private var debugBox: RetroDebugBox? = null
     private var currentTab = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,11 +39,14 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         store.registerOnChangeListener { runOnUiThread { renderList() } }
+        beaconLog.setListener { events -> runOnUiThread { renderDebug(events) } }
+        if (isBluetoothGranted()) (application as MondafoneApp).startBeaconService()
         renderList()
     }
 
     override fun onPause() {
         store.unregisterOnChangeListener()
+        beaconLog.setListener(null)
         super.onPause()
     }
 
@@ -49,13 +56,21 @@ class MainActivity : Activity() {
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        refreshView()
+        when (requestCode) {
+            REQUEST_NOTIFICATIONS_CODE ->
+                if (isNotificationGranted()) requestBluetoothPermissions() else refreshView()
+            REQUEST_BLUETOOTH_CODE -> {
+                if (isBluetoothGranted()) (application as MondafoneApp).startBeaconService()
+                refreshView()
+            }
+            else -> refreshView()
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_ROLE_CODE && isCallScreeningRoleHeld()) {
-            requestNotificationPermission()
+            requestAccess()
         } else {
             refreshView()
         }
@@ -105,6 +120,15 @@ class MainActivity : Activity() {
                     1f,
                 ),
             )
+            debugBox = RetroDebugBox(this@MainActivity)
+            addView(
+                debugBox,
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { topMargin = gap },
+            )
+            renderDebug(beaconLog.lines())
         }
     }
 
@@ -132,6 +156,7 @@ class MainActivity : Activity() {
     }
 
     private fun buildOnboardingContent(): LinearLayout {
+        debugBox = null
         val density = resources.displayMetrics.density
         val pad = (24 * density).toInt()
         val gap = (16 * density).toInt()
@@ -275,14 +300,20 @@ class MainActivity : Activity() {
         )
     }
 
-    private fun isReady(): Boolean {
-        val notificationsGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            isGranted(Manifest.permission.POST_NOTIFICATIONS)
-        } else {
-            true
-        }
-        return isCallScreeningRoleHeld() && notificationsGranted
+    private fun renderDebug(events: List<String>) {
+        val deviceId = getString(R.string.debug_device_id, identity.publicKeyFingerprint() ?: "-")
+        debugBox?.setLines(listOf(deviceId) + events)
     }
+
+    private fun isReady(): Boolean =
+        isCallScreeningRoleHeld() && isNotificationGranted()
+
+    private fun isNotificationGranted(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            isGranted(Manifest.permission.POST_NOTIFICATIONS)
+
+    private fun isBluetoothGranted(): Boolean =
+        BLUETOOTH_PERMISSIONS.all { isGranted(it) }
 
     private fun isGranted(permission: String): Boolean =
         checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
@@ -291,12 +322,10 @@ class MainActivity : Activity() {
         getSystemService(RoleManager::class.java).isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
 
     private fun requestAccess() {
-        if (!isCallScreeningRoleHeld()) {
-            requestCallScreeningRole()
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            !isGranted(Manifest.permission.POST_NOTIFICATIONS)
-        ) {
-            requestNotificationPermission()
+        when {
+            !isCallScreeningRoleHeld() -> requestCallScreeningRole()
+            !isNotificationGranted() -> requestNotificationPermission()
+            !isBluetoothGranted() -> requestBluetoothPermissions()
         }
     }
 
@@ -319,8 +348,18 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun requestBluetoothPermissions() {
+        requestPermissions(BLUETOOTH_PERMISSIONS.toTypedArray(), REQUEST_BLUETOOTH_CODE)
+    }
+
     private companion object {
         const val REQUEST_ROLE_CODE = 1
         const val REQUEST_NOTIFICATIONS_CODE = 2
+        const val REQUEST_BLUETOOTH_CODE = 3
+        val BLUETOOTH_PERMISSIONS = listOf(
+            Manifest.permission.BLUETOOTH_ADVERTISE,
+            Manifest.permission.BLUETOOTH_SCAN,
+            Manifest.permission.BLUETOOTH_CONNECT,
+        )
     }
 }
