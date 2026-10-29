@@ -2,6 +2,7 @@ package dev.polyrics.mondafone.spam
 
 import android.telecom.Call
 import android.telecom.CallScreeningService
+import dev.polyrics.mondafone.MondafoneApp
 
 class TrustCallScreeningService : CallScreeningService() {
 
@@ -9,7 +10,7 @@ class TrustCallScreeningService : CallScreeningService() {
     var blockedNotifier: BlockedCallNotifier? = null
     var promptNotifier: SpamVerdictPromptNotifier? = null
 
-    private val defaultStore: CallVerdictStore by lazy { PrefsCallVerdictStore(this) }
+    private val defaultStore: CallVerdictStore by lazy { (application as MondafoneApp).verdictStore }
     private val defaultBlockedNotifier: BlockedCallNotifier by lazy { NotificationBlockedCallNotifier(this) }
     private val defaultPromptNotifier: SpamVerdictPromptNotifier by lazy { NotificationSpamVerdictPromptNotifier(this) }
 

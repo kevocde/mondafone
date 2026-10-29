@@ -13,7 +13,6 @@ import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
-import dev.polyrics.mondafone.spam.PrefsCallVerdictStore
 import dev.polyrics.mondafone.ui.RetroButton
 import dev.polyrics.mondafone.ui.RetroDebugBox
 import dev.polyrics.mondafone.ui.RetroPanel
@@ -23,7 +22,7 @@ import dev.polyrics.mondafone.ui.VerdictListItemView
 
 class MainActivity : Activity() {
 
-    private val store by lazy { PrefsCallVerdictStore(this) }
+    private val store by lazy { (application as MondafoneApp).verdictStore }
     private val identity by lazy { (application as MondafoneApp).deviceIdentity }
     private val beaconLog by lazy { (application as MondafoneApp).beaconEventLog }
     private lateinit var listContainer: LinearLayout
