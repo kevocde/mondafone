@@ -20,13 +20,14 @@ The application keeps a minimal, low-footprint UI. Do not add Compose, AndroidX,
 - `app/src/main/AndroidManifest.xml`: permissions (POST_NOTIFICATIONS, Bluetooth advertise/scan/connect, foreground service), screening service, beacon service, verdict receiver, and launcher activity.
 - `app/src/main/res/values/colors.xml`: retro pastel palette (see Design).
 - `app/build.gradle.kts`: Android build configuration, release shrinking, and beacon BuildConfig fields read from `local.properties` (`mondafone.beacon.cron`, `mondafone.beacon.window.ms`).
-- `gradle/libs.versions.toml`: plugin version catalog; keep it dependency-free apart from required build plugins.
+- `gradle/libs.versions.toml`: plugin version catalog; keep it dependency-free apart from required build plugins and the test-only Robolectric exception below.
 
 ## Build And Verify
 
 Use the Gradle wrapper from the project root:
 
 ```bash
+./gradlew :app:testDebugUnitTest
 ./gradlew :app:assembleDebug
 ./gradlew :app:assembleRelease
 ```
@@ -64,6 +65,7 @@ Retro pastel design system for all UI:
 - Keep screening decisions fast and synchronous; do no network or heavy I/O on the screening callback path.
 - Run on minSdk 31; do not add compat shims for older APIs.
 - Use R8 and resource shrinking for release builds.
+- Robolectric is the single test-only dependency exception (`testImplementation`), used to test `android.database.sqlite` on the JVM. It must never be declared as `implementation`/`api` and never ships in the APK; if a change cannot be covered on the JVM, verify it on a physical device instead.
 
 ## Change Checklist
 
