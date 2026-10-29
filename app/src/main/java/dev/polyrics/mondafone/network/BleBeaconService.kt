@@ -69,6 +69,7 @@ class BleBeaconService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (!hasBluetoothPermissions()) return START_NOT_STICKY
         if (schedule == null) eventLog.log("invalid schedule")
+        logLateness(intent)
         scheduler.scheduleNext()
         startCycle()
         handler.postDelayed({ finishWindow() }, config.windowMs)
@@ -140,6 +141,13 @@ class BleBeaconService : Service() {
             .onFailure { eventLog.log("scan unavailable") }
     }
 
+    private fun logLateness(intent: Intent?) {
+        val expectedAt = intent?.getLongExtra(BeaconAlarmScheduler.EXTRA_EXPECTED_AT, 0L) ?: 0L
+        if (expectedAt <= 0L) return
+        val lateMillis = System.currentTimeMillis() - expectedAt
+        if (lateMillis > LATE_THRESHOLD_MS) eventLog.log("window late ${lateMillis / 1000}s")
+    }
+
     private fun finishWindow() {
         stopWindow()
         stopSelf()
@@ -189,6 +197,7 @@ class BleBeaconService : Service() {
         const val CHANNEL_ID = "beacon_windows"
         const val LEGACY_CHANNEL_ID = "beacon"
         const val FOREGROUND_ID = 1
+        const val LATE_THRESHOLD_MS = 5_000L
         val BLUETOOTH_PERMISSIONS = listOf(
             Manifest.permission.BLUETOOTH_ADVERTISE,
             Manifest.permission.BLUETOOTH_SCAN,

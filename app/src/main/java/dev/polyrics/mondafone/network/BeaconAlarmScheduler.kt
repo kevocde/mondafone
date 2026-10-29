@@ -21,7 +21,7 @@ class BeaconAlarmScheduler(
     fun scheduleNext(now: LocalDateTime = LocalDateTime.now()) {
         val next = schedule?.nextAfter(now) ?: return
         val triggerAt = next.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        val operation = pendingIntent()
+        val operation = pendingIntent(triggerAt)
         if (alarmManager.canScheduleExactAlarms()) {
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, operation)
         } else {
@@ -30,17 +30,19 @@ class BeaconAlarmScheduler(
     }
 
     fun cancel() {
-        alarmManager.cancel(pendingIntent())
+        alarmManager.cancel(pendingIntent(System.currentTimeMillis()))
     }
 
-    private fun pendingIntent(): PendingIntent = PendingIntent.getForegroundService(
+    private fun pendingIntent(expectedAt: Long): PendingIntent = PendingIntent.getForegroundService(
         context,
         REQUEST_CODE,
-        Intent(context, BleBeaconService::class.java),
+        Intent(context, BleBeaconService::class.java)
+            .putExtra(EXTRA_EXPECTED_AT, expectedAt),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
 
-    private companion object {
-        const val REQUEST_CODE = 0
+    companion object {
+        const val EXTRA_EXPECTED_AT = "extra_expected_at"
+        private const val REQUEST_CODE = 0
     }
 }
