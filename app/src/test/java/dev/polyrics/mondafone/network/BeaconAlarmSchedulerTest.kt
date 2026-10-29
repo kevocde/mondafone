@@ -28,8 +28,9 @@ class BeaconAlarmSchedulerTest {
         scheduler.scheduleNext(LocalDateTime.of(2026, 10, 29, 14, 3, 20))
 
         val scheduled = shadowOf(alarmManager).scheduledAlarms.single()
-        assertEquals(AlarmManager.RTC_WAKEUP, scheduled.type)
-        assertEquals(triggerAt(2026, 10, 29, 14, 5), scheduled.triggerAtTime)
+        assertEquals(AlarmManager.RTC_WAKEUP, scheduled.getType())
+        assertEquals(triggerAt(2026, 10, 29, 14, 5), scheduled.getTriggerAtMs())
+        assertTrue(scheduled.isAllowWhileIdle())
     }
 
     @Test
@@ -40,7 +41,7 @@ class BeaconAlarmSchedulerTest {
         scheduler.scheduleNext(LocalDateTime.of(2026, 10, 29, 14, 6))
 
         val scheduled = shadowOf(alarmManager).scheduledAlarms.last()
-        assertEquals(triggerAt(2026, 10, 29, 14, 10), scheduled.triggerAtTime)
+        assertEquals(triggerAt(2026, 10, 29, 14, 10), scheduled.getTriggerAtMs())
     }
 
     @Test
@@ -62,6 +63,7 @@ class BeaconAlarmSchedulerTest {
         assertTrue(shadowOf(alarmManager).scheduledAlarms.isEmpty())
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun alarmTargetsBeaconService() {
         val scheduler = BeaconAlarmScheduler(context, cron, alarmManager)
