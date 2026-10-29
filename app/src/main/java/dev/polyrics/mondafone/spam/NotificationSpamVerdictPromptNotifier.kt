@@ -15,11 +15,11 @@ class NotificationSpamVerdictPromptNotifier(
 
     override fun promptVerdict(number: String) {
         ensureChannel()
-        val notification = buildNotification(number)
-        notificationManager.notify(number.hashCode(), notification)
+        val notificationId = SpamVerdictService.notificationIdFor(number)
+        notificationManager.notify(notificationId, buildNotification(number, notificationId))
     }
 
-    private fun buildNotification(number: String): Notification {
+    private fun buildNotification(number: String, notificationId: Int): Notification {
         val contentIntent = PendingIntent.getActivity(
             context,
             0,
@@ -27,24 +27,18 @@ class NotificationSpamVerdictPromptNotifier(
             PendingIntent.FLAG_IMMUTABLE,
         )
 
-        val spamIntent = PendingIntent.getBroadcast(
+        val spamIntent = SpamVerdictService.createPendingIntent(
             context,
-            number.hashCode(),
-            Intent(context, SpamVerdictReceiver::class.java).apply {
-                action = SpamVerdictReceiver.ACTION_MARK_SPAM
-                putExtra(SpamVerdictReceiver.EXTRA_NUMBER, number)
-            },
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            number,
+            SpamVerdictAction.MARK_SPAM,
+            notificationId,
         )
 
-        val notSpamIntent = PendingIntent.getBroadcast(
+        val notSpamIntent = SpamVerdictService.createPendingIntent(
             context,
-            number.hashCode() + 1,
-            Intent(context, SpamVerdictReceiver::class.java).apply {
-                action = SpamVerdictReceiver.ACTION_MARK_NOT_SPAM
-                putExtra(SpamVerdictReceiver.EXTRA_NUMBER, number)
-            },
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            number,
+            SpamVerdictAction.MARK_NOT_SPAM,
+            notificationId,
         )
 
         return Notification.Builder(context, CHANNEL_ID)

@@ -1,0 +1,57 @@
+package dev.polyrics.mondafone.network
+
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import dev.polyrics.mondafone.MainActivity
+import java.time.LocalDateTime
+import java.time.ZoneId
+
+class BeaconAlarmScheduler(
+    private val context: Context,
+    private val schedule: CronExpression?,
+    private val alarmManager: AlarmManager = context.getSystemService(AlarmManager::class.java),
+) {
+
+    constructor(context: Context) : this(
+        context,
+        CronExpression.parse(BeaconConfig.fromBuild().cronExpression),
+    )
+
+    fun scheduleNext(now: LocalDateTime = LocalDateTime.now()) {
+        val next = schedule?.nextAfter(now) ?: return
+        val triggerAt = next.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val operation = pendingIntent(triggerAt)
+        if (alarmManager.canScheduleExactAlarms()) {
+            alarmManager.setAlarmClock(AlarmManager.AlarmClockInfo(triggerAt, showIntent()), operation)
+        } else {
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, operation)
+        }
+    }
+
+    fun cancel() {
+        alarmManager.cancel(pendingIntent(System.currentTimeMillis()))
+    }
+
+    private fun showIntent(): PendingIntent = PendingIntent.getActivity(
+        context,
+        SHOW_REQUEST_CODE,
+        Intent(context, MainActivity::class.java),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+
+    private fun pendingIntent(expectedAt: Long): PendingIntent = PendingIntent.getForegroundService(
+        context,
+        REQUEST_CODE,
+        Intent(context, BleBeaconService::class.java)
+            .putExtra(EXTRA_EXPECTED_AT, expectedAt),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+
+    companion object {
+        const val EXTRA_EXPECTED_AT = "extra_expected_at"
+        private const val REQUEST_CODE = 0
+        private const val SHOW_REQUEST_CODE = 1
+    }
+}

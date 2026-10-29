@@ -13,7 +13,6 @@ import android.bluetooth.le.AdvertiseSettings
 import android.bluetooth.le.BluetoothLeAdvertiser
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Intent
@@ -24,34 +23,25 @@ import android.os.Looper
 import android.os.ParcelUuid
 import dev.polyrics.mondafone.MondafoneApp
 import dev.polyrics.mondafone.R
-import java.time.Duration
-import java.time.LocalDateTime
 
 class BleBeaconService : Service() {
 
     private val handler = Handler(Looper.getMainLooper())
     private val config by lazy { BeaconConfig.fromBuild() }
     private val schedule by lazy { CronExpression.parse(config.cronExpression) }
+    private val scheduler by lazy { BeaconAlarmScheduler(this, schedule) }
+    private val rotator by lazy { RotatingBeaconId(config.appSecret) }
     private val codec = BeaconPayloadCodec()
     private val serviceUuid by lazy { ParcelUuid(BeaconProtocol.SERVICE_UUID) }
     private var counter = BeaconCycleCounter()
     private var advertiser: BluetoothLeAdvertiser? = null
     private var scanner: BluetoothLeScanner? = null
     private var activeId = ""
-    private var started = false
 
     private val eventLog: BeaconEventLog
         get() = (application as MondafoneApp).beaconEventLog
 
     private val identity by lazy { (application as MondafoneApp).deviceIdentity }
-
-    private val cycle = object : Runnable {
-        override fun run() {
-            startCycle()
-            handler.postDelayed({ stopWindow() }, config.windowMs)
-            scheduleNext()
-        }
-    }
 
     private val advertiseCallback = object : AdvertiseCallback() {
         override fun onStartFailure(errorCode: Int) {
@@ -78,15 +68,15 @@ class BleBeaconService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (!hasBluetoothPermissions()) return START_NOT_STICKY
-        if (!started) {
-            started = true
-            scheduleNext()
-        }
-        return START_STICKY
+        if (schedule == null) eventLog.log("invalid schedule")
+        logLateness(intent)
+        scheduler.scheduleNext()
+        startCycle()
+        handler.postDelayed({ finishWindow() }, config.windowMs)
+        return START_NOT_STICKY
     }
 
     override fun onDestroy() {
-        started = false
         handler.removeCallbacksAndMessages(null)
         stopWindow()
         super.onDestroy()
@@ -99,12 +89,13 @@ class BleBeaconService : Service() {
             eventLog.log("ble permission missing")
             return
         }
-        val deviceId = identity.publicKeyFingerprint()
-        if (deviceId == null) {
+        val fingerprint = identity.publicKeyFingerprint()
+        if (fingerprint == null) {
             eventLog.log("identity unavailable")
             return
         }
-        if (!codec.fits(deviceId)) {
+        val beaconId = rotator.current(fingerprint)
+        if (!codec.fits(beaconId)) {
             eventLog.log("device id too long")
             return
         }
@@ -121,14 +112,14 @@ class BleBeaconService : Service() {
         }
         advertiser = newAdvertiser
         scanner = newScanner
-        activeId = deviceId
+        activeId = beaconId
         counter = BeaconCycleCounter()
         eventLog.log("Beacon active")
-        startAdvertising(newAdvertiser, deviceId)
+        startAdvertising(newAdvertiser, beaconId)
         startScanning(newScanner)
     }
 
-    private fun startAdvertising(target: BluetoothLeAdvertiser, deviceId: String) {
+    private fun startAdvertising(target: BluetoothLeAdvertiser, beaconId: String) {
         val settings = AdvertiseSettings.Builder()
             .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
             .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
@@ -136,7 +127,7 @@ class BleBeaconService : Service() {
             .build()
         val data = AdvertiseData.Builder()
             .setIncludeDeviceName(false)
-            .addServiceData(serviceUuid, codec.encode(deviceId))
+            .addServiceData(serviceUuid, codec.encode(beaconId))
             .build()
         runCatching { target.startAdvertising(settings, data, advertiseCallback) }
             .onFailure { eventLog.log("advertise unavailable") }
@@ -146,24 +137,20 @@ class BleBeaconService : Service() {
         val settings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
             .build()
-        runCatching { target.startScan(emptyList<ScanFilter>(), settings, scanCallback) }
+        runCatching { target.startScan(BeaconScanFilter.filters(), settings, scanCallback) }
             .onFailure { eventLog.log("scan unavailable") }
     }
 
-    private fun scheduleNext() {
-        val cron = schedule
-        if (cron == null) {
-            eventLog.log("invalid schedule")
-            return
-        }
-        val now = LocalDateTime.now()
-        val next = cron.nextAfter(now)
-        if (next == null) {
-            eventLog.log("no next schedule")
-            return
-        }
-        val delay = Duration.between(now, next).toMillis().coerceAtLeast(0)
-        handler.postDelayed(cycle, delay)
+    private fun logLateness(intent: Intent?) {
+        val expectedAt = intent?.getLongExtra(BeaconAlarmScheduler.EXTRA_EXPECTED_AT, 0L) ?: 0L
+        if (expectedAt <= 0L) return
+        val lateMillis = System.currentTimeMillis() - expectedAt
+        if (lateMillis > LATE_THRESHOLD_MS) eventLog.log("window late ${lateMillis / 1000}s")
+    }
+
+    private fun finishWindow() {
+        stopWindow()
+        stopSelf()
     }
 
     private fun stopWindow() {
@@ -196,17 +183,21 @@ class BleBeaconService : Service() {
     }
 
     private fun ensureChannel() {
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.deleteNotificationChannel(LEGACY_CHANNEL_ID)
         val channel = NotificationChannel(
             CHANNEL_ID,
             getString(R.string.beacon_channel_name),
-            NotificationManager.IMPORTANCE_LOW,
+            NotificationManager.IMPORTANCE_MIN,
         )
-        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        notificationManager.createNotificationChannel(channel)
     }
 
     private companion object {
-        const val CHANNEL_ID = "beacon"
+        const val CHANNEL_ID = "beacon_windows"
+        const val LEGACY_CHANNEL_ID = "beacon"
         const val FOREGROUND_ID = 1
+        const val LATE_THRESHOLD_MS = 5_000L
         val BLUETOOTH_PERMISSIONS = listOf(
             Manifest.permission.BLUETOOTH_ADVERTISE,
             Manifest.permission.BLUETOOTH_SCAN,

@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
     <uses-permission
         android:name="android.permission.BLUETOOTH_SCAN"
@@ -37,9 +41,23 @@
                 <action android:name="android.telecom.CallScreeningService" />
             </intent-filter>
         </service>
-        <receiver
-            android:name=".spam.SpamVerdictReceiver"
+        <service
+            android:name=".spam.SpamVerdictService"
             android:exported="false" />
+        <receiver
+            android:name=".network.ExactAlarmStateReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name=".network.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
         <service
             android:name=".network.BleBeaconService"
             android:exported="false"

@@ -6,11 +6,27 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.view.View
+import android.view.accessibility.AccessibilityNodeInfo
+import android.widget.TextView
 
 class RetroTitle(
     context: Context,
     private val text: String,
 ) : View(context) {
+
+    init {
+        importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
+        isAccessibilityHeading = true
+        contentDescription = text
+        accessibilityDelegate = object : AccessibilityDelegate() {
+            override fun onInitializeAccessibilityNodeInfo(host: View, info: AccessibilityNodeInfo) {
+                super.onInitializeAccessibilityNodeInfo(host, info)
+                info.className = TextView::class.java.name
+                info.isHeading = true
+                info.text = text
+            }
+        }
+    }
 
     private val density = resources.displayMetrics.density
     private val strokeWidthPx = 4 * density

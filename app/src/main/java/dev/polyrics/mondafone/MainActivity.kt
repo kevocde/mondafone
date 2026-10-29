@@ -2,18 +2,21 @@ package dev.polyrics.mondafone
 
 import android.Manifest
 import android.app.Activity
+import android.app.AlarmManager
 import android.app.role.RoleManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
 import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
-import dev.polyrics.mondafone.spam.PrefsCallVerdictStore
 import dev.polyrics.mondafone.ui.RetroButton
 import dev.polyrics.mondafone.ui.RetroDebugBox
 import dev.polyrics.mondafone.ui.RetroPanel
@@ -23,13 +26,14 @@ import dev.polyrics.mondafone.ui.VerdictListItemView
 
 class MainActivity : Activity() {
 
-    private val store by lazy { PrefsCallVerdictStore(this) }
+    private val store by lazy { (application as MondafoneApp).verdictStore }
     private val identity by lazy { (application as MondafoneApp).deviceIdentity }
     private val beaconLog by lazy { (application as MondafoneApp).beaconEventLog }
     private lateinit var listContainer: LinearLayout
     private lateinit var tabBar: RetroTabBar
     private var debugBox: RetroDebugBox? = null
     private var currentTab = 0
+    private var batteryExemptionPrompted = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,7 +44,8 @@ class MainActivity : Activity() {
         super.onResume()
         store.registerOnChangeListener { runOnUiThread { renderList() } }
         beaconLog.setListener { events -> runOnUiThread { renderDebug(events) } }
-        if (isBluetoothGranted()) (application as MondafoneApp).startBeaconService()
+        if (isBluetoothGranted()) (application as MondafoneApp).scheduleBeacon()
+        promptBatteryExemptionIfNeeded()
         renderList()
     }
 
@@ -60,7 +65,7 @@ class MainActivity : Activity() {
             REQUEST_NOTIFICATIONS_CODE ->
                 if (isNotificationGranted()) requestBluetoothPermissions() else refreshView()
             REQUEST_BLUETOOTH_CODE -> {
-                if (isBluetoothGranted()) (application as MondafoneApp).startBeaconService()
+                if (isBluetoothGranted()) (application as MondafoneApp).scheduleBeacon()
                 refreshView()
             }
             else -> refreshView()
@@ -302,7 +307,14 @@ class MainActivity : Activity() {
 
     private fun renderDebug(events: List<String>) {
         val deviceId = getString(R.string.debug_device_id, identity.publicKeyFingerprint() ?: "-")
-        debugBox?.setLines(listOf(deviceId) + events)
+        val power = getString(
+            if (isIgnoringBatteryOptimizations()) {
+                R.string.debug_power_unrestricted
+            } else {
+                R.string.debug_power_restricted
+            },
+        )
+        debugBox?.setLines(listOf(deviceId, power) + events)
     }
 
     private fun isReady(): Boolean =
@@ -326,6 +338,8 @@ class MainActivity : Activity() {
             !isCallScreeningRoleHeld() -> requestCallScreeningRole()
             !isNotificationGranted() -> requestNotificationPermission()
             !isBluetoothGranted() -> requestBluetoothPermissions()
+            !canScheduleExactAlarms() -> requestExactAlarmAccess()
+            !isIgnoringBatteryOptimizations() -> requestBatteryExemption()
         }
     }
 
@@ -351,6 +365,33 @@ class MainActivity : Activity() {
     private fun requestBluetoothPermissions() {
         requestPermissions(BLUETOOTH_PERMISSIONS.toTypedArray(), REQUEST_BLUETOOTH_CODE)
     }
+
+    private fun canScheduleExactAlarms(): Boolean =
+        getSystemService(AlarmManager::class.java).canScheduleExactAlarms()
+
+    private fun requestExactAlarmAccess() {
+        startActivity(
+            Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:$packageName")),
+        )
+    }
+
+    private fun promptBatteryExemptionIfNeeded() {
+        if (!isReady() || batteryExemptionPrompted || isIgnoringBatteryOptimizations()) return
+        batteryExemptionPrompted = true
+        requestBatteryExemption()
+    }
+
+    private fun requestBatteryExemption() {
+        startActivity(
+            Intent(
+                Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                Uri.parse("package:$packageName"),
+            ),
+        )
+    }
+
+    private fun isIgnoringBatteryOptimizations(): Boolean =
+        getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)
 
     private companion object {
         const val REQUEST_ROLE_CODE = 1

@@ -7,6 +7,9 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.view.MotionEvent
 import android.view.View
+import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction
+import android.widget.Button
 
 class RetroButton(
     context: Context,
@@ -32,6 +35,29 @@ class RetroButton(
 
     private val body = RectF()
     private var pressed = false
+
+    init {
+        isClickable = true
+        isFocusable = true
+        importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
+        contentDescription = label
+        accessibilityDelegate = object : AccessibilityDelegate() {
+            override fun onInitializeAccessibilityNodeInfo(host: View, info: AccessibilityNodeInfo) {
+                super.onInitializeAccessibilityNodeInfo(host, info)
+                info.className = Button::class.java.name
+                info.text = label
+                if (host.isEnabled) {
+                    info.addAction(AccessibilityAction.ACTION_CLICK)
+                }
+            }
+        }
+    }
+
+    override fun performClick(): Boolean {
+        super.performClick()
+        onTap()
+        return true
+    }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val width = (textPaint.measureText(label) + 24 * density).toInt()
@@ -61,7 +87,7 @@ class RetroButton(
             MotionEvent.ACTION_DOWN -> setPressedState(true)
             MotionEvent.ACTION_UP -> {
                 setPressedState(false)
-                if (body.contains(event.x, event.y)) onTap()
+                if (body.contains(event.x, event.y)) performClick()
             }
             MotionEvent.ACTION_CANCEL -> setPressedState(false)
         }
