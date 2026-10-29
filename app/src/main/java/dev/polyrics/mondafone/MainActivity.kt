@@ -2,13 +2,16 @@ package dev.polyrics.mondafone
 
 import android.Manifest
 import android.app.Activity
+import android.app.AlarmManager
 import android.app.role.RoleManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -325,6 +328,7 @@ class MainActivity : Activity() {
             !isCallScreeningRoleHeld() -> requestCallScreeningRole()
             !isNotificationGranted() -> requestNotificationPermission()
             !isBluetoothGranted() -> requestBluetoothPermissions()
+            !canScheduleExactAlarms() -> requestExactAlarmAccess()
         }
     }
 
@@ -349,6 +353,15 @@ class MainActivity : Activity() {
 
     private fun requestBluetoothPermissions() {
         requestPermissions(BLUETOOTH_PERMISSIONS.toTypedArray(), REQUEST_BLUETOOTH_CODE)
+    }
+
+    private fun canScheduleExactAlarms(): Boolean =
+        getSystemService(AlarmManager::class.java).canScheduleExactAlarms()
+
+    private fun requestExactAlarmAccess() {
+        startActivity(
+            Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:$packageName")),
+        )
     }
 
     private companion object {
