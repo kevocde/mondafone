@@ -13,7 +13,6 @@ import android.bluetooth.le.AdvertiseSettings
 import android.bluetooth.le.BluetoothLeAdvertiser
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Intent
@@ -148,7 +147,7 @@ class BleBeaconService : Service() {
         val settings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
             .build()
-        runCatching { target.startScan(emptyList<ScanFilter>(), settings, scanCallback) }
+        runCatching { target.startScan(BeaconScanFilter.filters(), settings, scanCallback) }
             .onFailure { eventLog.log("scan unavailable") }
     }
 
