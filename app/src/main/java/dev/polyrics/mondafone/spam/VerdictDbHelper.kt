@@ -12,9 +12,10 @@ class VerdictDbHelper(context: Context) : SQLiteOpenHelper(
 ) {
 
     override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL(VerdictContract.CREATE_VERDICTS_TABLE)
+        VerdictContract.CREATE_ALL_TABLES.forEach(db::execSQL)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        if (oldVersion < 2) VerdictContract.CREATE_TABLES_ADDED_IN_VERSION_TWO.forEach(db::execSQL)
     }
 }

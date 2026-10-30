@@ -7,8 +7,12 @@ class TrustCallScreeningService : CallScreeningService() {
 
     private val dependencies: SpamDependencies by lazy { spamDependencies() }
     private val store: CallVerdictStore get() = dependencies.verdictStore
+    private val reportStore: SpamReportStore get() = dependencies.spamReportStore
+    private val normalizer: PhoneNumberNormalizer get() = dependencies.phoneNumberNormalizer
     private val blockedNotifier: BlockedCallNotifier get() = dependencies.blockedCallNotifier
     private val promptNotifier: SpamVerdictPromptNotifier get() = dependencies.verdictPromptNotifier
+
+    internal var globalSpamProbability: GlobalSpamProbability = GlobalSpamProbability()
 
     override fun onScreenCall(callDetails: Call.Details) {
         if (callDetails.callDirection != Call.Details.DIRECTION_INCOMING) {
@@ -24,25 +28,37 @@ class TrustCallScreeningService : CallScreeningService() {
         number: String,
         responder: (CallResponse) -> Unit,
     ) {
-        when {
-            store.isWhitelisted(number) -> responder(allowResponse())
-            store.isBlacklisted(number) -> {
-                responder(blockResponse())
-                blockedNotifier.notifyBlocked(number)
-            }
-            !store.isClassified(number) -> {
-                responder(allowResponse())
-                store.addPending(number)
-                promptNotifier.promptVerdict(number)
-            }
-            else -> responder(allowResponse())
+        val canonicalNumber = canonicalOf(number)
+        if (store.isWhitelisted(canonicalNumber)) {
+            responder(allowResponse())
+            return
         }
+        if (isBlockedNumber(canonicalNumber)) {
+            responder(blockResponse())
+            blockedNotifier.notifyBlocked(number)
+            return
+        }
+        if (!store.isClassified(canonicalNumber)) {
+            responder(allowResponse())
+            store.addPending(canonicalNumber)
+            promptNotifier.promptVerdict(number)
+            return
+        }
+        responder(allowResponse())
     }
 
     fun shouldBlockCall(number: String): Boolean {
-        if (store.isWhitelisted(number)) return false
-        return store.isBlacklisted(number)
+        val canonicalNumber = canonicalOf(number)
+        if (store.isWhitelisted(canonicalNumber)) return false
+        return isBlockedNumber(canonicalNumber)
     }
+
+    private fun isBlockedNumber(canonicalNumber: String): Boolean =
+        reportStore.isReportedByMe(canonicalNumber) ||
+            globalSpamProbability.isSpamByChance(reportStore.foreignReportCount(canonicalNumber))
+
+    private fun canonicalOf(number: String): String =
+        normalizer.normalize(number) ?: number
 
     private fun blockResponse(): CallResponse = CallResponse.Builder()
         .setDisallowCall(true)
