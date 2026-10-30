@@ -17,80 +17,108 @@ import org.robolectric.annotation.Config
 @Config(sdk = [31], application = Application::class)
 class PrefsVerdictImporterTest {
 
+    private val app: Application = RuntimeEnvironment.getApplication()
     private val prefs = FakeSharedPreferences()
+    private val identity = TestIdentity()
     private lateinit var store: CallVerdictStore
+    private lateinit var reports: SpamReportStore
 
     @Before
     fun setUp() {
-        store = SqliteCallVerdictStore(RuntimeEnvironment.getApplication())
+        store = SqliteCallVerdictStore(app)
+        reports = SqliteSpamReportStore(
+            app,
+            identity,
+            SpamReportHasher(SECRET),
+            DeviceReportSigner(identity),
+        )
     }
 
     @After
     fun tearDown() {
-        RuntimeEnvironment.getApplication().deleteDatabase(VerdictContract.DATABASE_NAME)
+        app.deleteDatabase(VerdictContract.DATABASE_NAME)
     }
 
     @Test
-    fun importsWhitelistBlacklistAndPending() {
-        prefs.put("600111222", "whitelist")
-        prefs.put("600333444", "blacklist")
-        prefs.put("600555666", "pending")
+    fun importsWhitelistReportAndPendingAsCanonicalNumbers() {
+        prefs.put(NATIONAL_WHITELIST, VerdictContract.VERDICT_WHITELIST)
+        prefs.put(NATIONAL_SPAM, VerdictContract.VERDICT_BLACKLIST)
+        prefs.put(NATIONAL_PENDING, VerdictContract.VERDICT_PENDING)
 
         importer().runOnce()
 
-        assertTrue(store.isWhitelisted("600111222"))
-        assertTrue(store.isBlacklisted("600333444"))
-        assertEquals(listOf("600555666"), store.pendingNumbers())
+        assertTrue(store.isWhitelisted(CANONICAL_WHITELIST))
+        assertTrue(reports.isReportedByMe(CANONICAL_SPAM))
+        assertEquals(listOf(NATIONAL_SPAM), reports.ownReports().map { it.displayNumber })
+        assertEquals(listOf(CANONICAL_PENDING), store.pendingNumbers())
     }
 
     @Test
-    fun mapsLegacySpamToBlacklist() {
-        prefs.put("600111222", "spam")
+    fun mapsLegacySpamToOwnReport() {
+        prefs.put(NATIONAL_SPAM, LEGACY_SPAM)
 
         importer().runOnce()
 
-        assertTrue(store.isBlacklisted("600111222"))
+        assertTrue(reports.isReportedByMe(CANONICAL_SPAM))
     }
 
     @Test
-    fun mapsLegacyNotSpamToWhitelist() {
-        prefs.put("600111222", "not_spam")
+    fun mapsLegacyNotSpamToCanonicalWhitelist() {
+        prefs.put(NATIONAL_WHITELIST, LEGACY_NOT_SPAM)
 
         importer().runOnce()
 
-        assertTrue(store.isWhitelisted("600111222"))
+        assertTrue(store.isWhitelisted(CANONICAL_WHITELIST))
     }
 
     @Test
     fun ignoresUnknownValues() {
-        prefs.put("600111222", "unexpected")
+        prefs.put(NATIONAL_WHITELIST, "unexpected")
 
         importer().runOnce()
 
-        assertFalse(store.isClassified("600111222"))
+        assertFalse(store.isClassified(CANONICAL_WHITELIST))
         assertEquals(emptyList<String>(), store.pendingNumbers())
+        assertTrue(reports.ownReports().isEmpty())
     }
 
     @Test
     fun clearsPreferencesAfterImport() {
-        prefs.put("600111222", "blacklist")
+        prefs.put(NATIONAL_SPAM, VerdictContract.VERDICT_BLACKLIST)
 
         importer().runOnce()
 
-        assertNull(prefs.getString("600111222", null))
+        assertNull(prefs.getString(NATIONAL_SPAM, null))
     }
 
     @Test
     fun runsOnlyOnce() {
-        prefs.put("600111222", "blacklist")
+        prefs.put(NATIONAL_SPAM, VerdictContract.VERDICT_BLACKLIST)
         importer().runOnce()
 
-        prefs.put("600333444", "blacklist")
+        prefs.put(NATIONAL_PENDING, VerdictContract.VERDICT_BLACKLIST)
         importer().runOnce()
 
-        assertTrue(store.isBlacklisted("600111222"))
-        assertFalse(store.isBlacklisted("600333444"))
+        assertTrue(reports.isReportedByMe(CANONICAL_SPAM))
+        assertFalse(reports.isReportedByMe(CANONICAL_PENDING))
     }
 
-    private fun importer(): PrefsVerdictImporter = PrefsVerdictImporter(prefs, store)
+    private fun importer(): PrefsVerdictImporter {
+        val normalizer = PhoneNumberNormalizer(object : RegionProvider {
+            override fun regionIso(): String = "ES"
+        })
+        return PrefsVerdictImporter(prefs, store, reports, normalizer)
+    }
+
+    private companion object {
+        const val SECRET = "test-secret"
+        const val LEGACY_SPAM = "spam"
+        const val LEGACY_NOT_SPAM = "not_spam"
+        const val NATIONAL_WHITELIST = "600111222"
+        const val NATIONAL_SPAM = "600333444"
+        const val NATIONAL_PENDING = "600555666"
+        const val CANONICAL_WHITELIST = "0034600111222"
+        const val CANONICAL_SPAM = "0034600333444"
+        const val CANONICAL_PENDING = "0034600555666"
+    }
 }

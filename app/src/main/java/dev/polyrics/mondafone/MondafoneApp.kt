@@ -32,7 +32,7 @@ open class MondafoneApp : Application(), SpamDependencies {
     val deviceIdentity: DeviceIdentity = KeystoreDeviceIdentity()
     override val verdictStore: CallVerdictStore by lazy {
         SqliteCallVerdictStore(this).also { store ->
-            PrefsVerdictImporter(this, store).runOnce()
+            PrefsVerdictImporter(this, store, spamReportStore, phoneNumberNormalizer).runOnce()
             CanonicalVerdictMigrator(
                 this,
                 store,

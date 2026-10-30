@@ -142,24 +142,20 @@ class TrustCallScreeningServiceTest {
 
         override val verdictStore: CallVerdictStore = object : CallVerdictStore {
             override fun isWhitelisted(number: String) = number in whitelisted
-            override fun isBlacklisted(number: String) = false
             override fun isClassified(number: String) = number in whitelisted
             override fun addToWhitelist(number: String) {
                 whitelisted += number
                 pendingNumbers -= number
             }
-            override fun addToBlacklist(number: String) = Unit
             override fun addPending(number: String) {
                 if (!isClassified(number)) pendingNumbers += number
             }
             override fun pendingNumbers(): List<String> = pendingNumbers
             override fun whitelistNumbers(): List<String> = whitelisted.toList()
-            override fun blacklistNumbers(): List<String> = emptyList()
             override fun remove(number: String) {
                 whitelisted -= number
                 pendingNumbers -= number
             }
-            override fun stats(): VerdictStats = VerdictStats(whitelisted.size, 0)
             override fun clear() {
                 whitelisted.clear()
                 pendingNumbers.clear()

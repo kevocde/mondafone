@@ -16,17 +16,11 @@ class SqliteCallVerdictStore(private val helper: SQLiteOpenHelper) : CallVerdict
     override fun isWhitelisted(number: String): Boolean =
         verdictOf(number) == VerdictContract.VERDICT_WHITELIST
 
-    override fun isBlacklisted(number: String): Boolean =
-        verdictOf(number) == VerdictContract.VERDICT_BLACKLIST
-
     override fun isClassified(number: String): Boolean =
-        verdictOf(number) in CLASSIFIED_VERDICTS
+        verdictOf(number) == VerdictContract.VERDICT_WHITELIST
 
     override fun addToWhitelist(number: String) =
         writeVerdict(number, VerdictContract.VERDICT_WHITELIST)
-
-    override fun addToBlacklist(number: String) =
-        writeVerdict(number, VerdictContract.VERDICT_BLACKLIST)
 
     override fun addPending(number: String) {
         if (isClassified(number)) return
@@ -39,9 +33,6 @@ class SqliteCallVerdictStore(private val helper: SQLiteOpenHelper) : CallVerdict
     override fun whitelistNumbers(): List<String> =
         numbersWith(VerdictContract.VERDICT_WHITELIST)
 
-    override fun blacklistNumbers(): List<String> =
-        numbersWith(VerdictContract.VERDICT_BLACKLIST)
-
     override fun remove(number: String) {
         database().delete(
             VerdictContract.TABLE_VERDICTS,
@@ -50,11 +41,6 @@ class SqliteCallVerdictStore(private val helper: SQLiteOpenHelper) : CallVerdict
         )
         notifyChanged()
     }
-
-    override fun stats(): VerdictStats = VerdictStats(
-        whitelist = count(VerdictContract.VERDICT_WHITELIST),
-        blacklist = count(VerdictContract.VERDICT_BLACKLIST),
-    )
 
     override fun clear() {
         database().delete(VerdictContract.TABLE_VERDICTS, null, null)
@@ -75,11 +61,6 @@ class SqliteCallVerdictStore(private val helper: SQLiteOpenHelper) : CallVerdict
 
     private fun numbersWith(verdict: String): List<String> =
         queryColumn(VerdictContract.COLUMN_NUMBER, "${VerdictContract.COLUMN_VERDICT} = ?", verdict)
-
-    private fun count(verdict: String): Int =
-        database()
-            .rawQuery("SELECT COUNT(*) FROM ${VerdictContract.TABLE_VERDICTS} WHERE ${VerdictContract.COLUMN_VERDICT} = ?", arrayOf(verdict))
-            .use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
 
     private fun queryColumn(column: String, selection: String, argument: String): List<String> =
         database()
@@ -118,12 +99,5 @@ class SqliteCallVerdictStore(private val helper: SQLiteOpenHelper) : CallVerdict
         val values = mutableListOf<String>()
         while (moveToNext()) values.add(getString(0))
         return values
-    }
-
-    private companion object {
-        val CLASSIFIED_VERDICTS = setOf(
-            VerdictContract.VERDICT_WHITELIST,
-            VerdictContract.VERDICT_BLACKLIST,
-        )
     }
 }
