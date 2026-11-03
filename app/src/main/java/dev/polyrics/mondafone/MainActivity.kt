@@ -17,6 +17,7 @@ import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import dev.polyrics.mondafone.spam.PhoneNumberDisplay
 import dev.polyrics.mondafone.ui.RetroButton
 import dev.polyrics.mondafone.ui.RetroDebugBox
 import dev.polyrics.mondafone.ui.RetroPanel
@@ -27,6 +28,7 @@ import dev.polyrics.mondafone.ui.VerdictListItemView
 class MainActivity : Activity() {
 
     private val store by lazy { (application as MondafoneApp).verdictStore }
+    private val reports by lazy { (application as MondafoneApp).spamReportStore }
     private val identity by lazy { (application as MondafoneApp).deviceIdentity }
     private val beaconLog by lazy { (application as MondafoneApp).beaconEventLog }
     private lateinit var listContainer: LinearLayout
@@ -43,6 +45,7 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         store.registerOnChangeListener { runOnUiThread { renderList() } }
+        reports.registerOnChangeListener { runOnUiThread { renderList() } }
         beaconLog.setListener { events -> runOnUiThread { renderDebug(events) } }
         if (isBluetoothGranted()) (application as MondafoneApp).scheduleBeacon()
         promptBatteryExemptionIfNeeded()
@@ -51,6 +54,7 @@ class MainActivity : Activity() {
 
     override fun onPause() {
         store.unregisterOnChangeListener()
+        reports.unregisterOnChangeListener()
         beaconLog.setListener(null)
         super.onPause()
     }
@@ -190,7 +194,7 @@ class MainActivity : Activity() {
             listOf(
                 store.pendingNumbers().size,
                 store.whitelistNumbers().size,
-                store.blacklistNumbers().size,
+                reports.ownReports().size,
             ),
         )
         listContainer.removeAllViews()
@@ -208,16 +212,18 @@ class MainActivity : Activity() {
             return
         }
         numbers.forEach { number ->
+            val display = PhoneNumberDisplay.format(number)
             listContainer.addView(
                 VerdictListItemView(
                     this,
-                    number,
+                    display,
                     listOf(
                         VerdictListItemView.Action(
                             getString(R.string.action_spam),
                             getColor(R.color.secondary),
                         ) {
-                            store.addToBlacklist(number)
+                            reports.reportOwn(number, display)
+                            store.remove(number)
                         },
                         VerdictListItemView.Action(
                             getString(R.string.action_not_spam),
@@ -245,7 +251,7 @@ class MainActivity : Activity() {
             listContainer.addView(
                 VerdictListItemView(
                     this,
-                    number,
+                    PhoneNumberDisplay.format(number),
                     listOf(
                         VerdictListItemView.Action(
                             getString(R.string.action_remove),
@@ -264,22 +270,22 @@ class MainActivity : Activity() {
     }
 
     private fun renderBlacklistItems() {
-        val numbers = store.blacklistNumbers()
-        if (numbers.isEmpty()) {
+        val ownReports = reports.ownReports()
+        if (ownReports.isEmpty()) {
             showEmptyMessage(getString(R.string.empty_blacklist))
             return
         }
-        numbers.forEach { number ->
+        ownReports.forEach { report ->
             listContainer.addView(
                 VerdictListItemView(
                     this,
-                    number,
+                    report.displayNumber,
                     listOf(
                         VerdictListItemView.Action(
                             getString(R.string.action_remove),
                             getColor(R.color.secondary),
                         ) {
-                            store.remove(number)
+                            reports.removeOwnReport(report.phoneHash)
                         },
                     ),
                 ),

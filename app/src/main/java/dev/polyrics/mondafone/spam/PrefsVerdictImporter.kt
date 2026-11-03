@@ -6,11 +6,20 @@ import android.content.SharedPreferences
 class PrefsVerdictImporter(
     private val prefs: SharedPreferences,
     private val store: CallVerdictStore,
+    private val reportStore: SpamReportStore,
+    private val normalizer: PhoneNumberNormalizer,
 ) {
 
-    constructor(context: Context, store: CallVerdictStore) : this(
+    constructor(
+        context: Context,
+        store: CallVerdictStore,
+        reportStore: SpamReportStore,
+        normalizer: PhoneNumberNormalizer,
+    ) : this(
         context.getSharedPreferences(LEGACY_FILE_NAME, Context.MODE_PRIVATE),
         store,
+        reportStore,
+        normalizer,
     )
 
     fun runOnce() {
@@ -21,11 +30,14 @@ class PrefsVerdictImporter(
 
     private fun importVerdict(number: String, value: Any?) {
         when (value) {
-            VerdictContract.VERDICT_WHITELIST, LEGACY_NOT_SPAM -> store.addToWhitelist(number)
-            VerdictContract.VERDICT_BLACKLIST, LEGACY_SPAM -> store.addToBlacklist(number)
-            VerdictContract.VERDICT_PENDING -> store.addPending(number)
+            VerdictContract.VERDICT_WHITELIST, LEGACY_NOT_SPAM -> store.addToWhitelist(canonicalOf(number))
+            VerdictContract.VERDICT_BLACKLIST, LEGACY_SPAM -> reportStore.reportOwn(canonicalOf(number), number)
+            VerdictContract.VERDICT_PENDING -> store.addPending(canonicalOf(number))
         }
     }
+
+    private fun canonicalOf(number: String): String =
+        normalizer.normalize(number) ?: number
 
     companion object {
         const val LEGACY_FILE_NAME = "spam_store"

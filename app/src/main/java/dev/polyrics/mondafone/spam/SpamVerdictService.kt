@@ -26,8 +26,8 @@ class SpamVerdictService : Service() {
         val verdictAction = SpamVerdictAction.fromIntentAction(intent.action) ?: return
         val notificationId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, notificationIdFor(number))
 
-        val store = spamDependencies().verdictStore
-        verdictAction.applyTo(store, number)
+        val dependencies = spamDependencies()
+        verdictAction.applyTo(dependencies, number)
         getSystemService(NotificationManager::class.java)?.cancel(notificationId)
     }
 
