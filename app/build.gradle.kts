@@ -17,6 +17,7 @@ val beaconAppSecret = localProperties.getProperty("mondafone.beacon.app.secret")
         localPropertiesFile.appendText("\nmondafone.beacon.app.secret=$generated\n")
     }
 val reportMaxAgeDays = localProperties.getProperty("mondafone.report.max.age.days", "20")
+val syncIdleTimeoutMs = localProperties.getProperty("mondafone.sync.idle.timeout.ms", "2000")
 
 android {
     namespace = "dev.polyrics.mondafone"
@@ -35,6 +36,7 @@ android {
         buildConfigField("long", "BEACON_WINDOW_MS", "${beaconWindowMs}L")
         buildConfigField("String", "BEACON_APP_SECRET", "\"$beaconAppSecret\"")
         buildConfigField("long", "REPORT_MAX_AGE_DAYS", "${reportMaxAgeDays}L")
+        buildConfigField("long", "SYNC_IDLE_TIMEOUT_MS", "${syncIdleTimeoutMs}L")
     }
 
     buildFeatures {
