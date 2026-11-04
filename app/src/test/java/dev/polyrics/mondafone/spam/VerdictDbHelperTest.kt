@@ -46,6 +46,45 @@ class VerdictDbHelperTest {
         assertEquals(1, db.rowCount(VerdictContract.TABLE_VERDICTS))
     }
 
+    @Test
+    fun backfillsPeerVectorWhenUpgradingFromVersionTwo() {
+        createVersionTwoDatabase()
+
+        val db = VerdictDbHelper(app).writableDatabase
+
+        assertEquals(5L, db.maxSeqNumOf("pubkey-a"))
+        assertEquals(2L, db.maxSeqNumOf("pubkey-b"))
+    }
+
+    private fun createVersionTwoDatabase() {
+        val path = app.getDatabasePath(VerdictContract.DATABASE_NAME)
+        path.parentFile?.mkdirs()
+        SQLiteDatabase.openOrCreateDatabase(path, null).use { db ->
+            VerdictContract.CREATE_ALL_TABLES.forEach(db::execSQL)
+            db.insertReport("hash-a", "pubkey-a", 5L)
+            db.insertReport("hash-b", "pubkey-a", 2L)
+            db.insertReport("hash-c", "pubkey-b", 2L)
+            db.version = 2
+        }
+    }
+
+    private fun SQLiteDatabase.insertReport(phoneHash: String, createdBy: String, seqNum: Long) {
+        execSQL(
+            "INSERT INTO ${VerdictContract.TABLE_SPAM_REPORTS} VALUES (?, ?, ?, 0, 'signature')",
+            arrayOf(phoneHash, createdBy, seqNum),
+        )
+    }
+
+    private fun SQLiteDatabase.maxSeqNumOf(idPubkey: String): Long =
+        rawQuery(
+            "SELECT ${VerdictContract.COLUMN_MAX_SEQ_NUM} " +
+                "FROM ${VerdictContract.TABLE_PEERS_STATUS} WHERE ${VerdictContract.COLUMN_ID_PUBKEY} = ?",
+            arrayOf(idPubkey),
+        ).use { cursor ->
+            cursor.moveToFirst()
+            cursor.getLong(0)
+        }
+
     private fun createVersionOneDatabase() {
         val path = app.getDatabasePath(VerdictContract.DATABASE_NAME)
         path.parentFile?.mkdirs()

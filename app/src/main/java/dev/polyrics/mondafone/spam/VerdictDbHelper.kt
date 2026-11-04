@@ -17,5 +17,6 @@ class VerdictDbHelper(context: Context) : SQLiteOpenHelper(
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         if (oldVersion < 2) VerdictContract.CREATE_TABLES_ADDED_IN_VERSION_TWO.forEach(db::execSQL)
+        if (oldVersion < 3) db.execSQL(VerdictContract.BACKFILL_PEERS_STATUS)
     }
 }

@@ -2,7 +2,7 @@ package dev.polyrics.mondafone.spam
 
 object VerdictContract {
     const val DATABASE_NAME = "spam_verdicts.db"
-    const val DATABASE_VERSION = 2
+    const val DATABASE_VERSION = 3
 
     const val TABLE_VERDICTS = "verdicts"
     const val COLUMN_NUMBER = "number"
@@ -73,4 +73,10 @@ object VerdictContract {
         CREATE_PEERS_STATUS_TABLE,
         CREATE_LOCAL_SYNC_STATE_TABLE,
     )
+
+    const val BACKFILL_PEERS_STATUS =
+        "INSERT INTO $TABLE_PEERS_STATUS " +
+            "($COLUMN_ID_PUBKEY, $COLUMN_MAX_SEQ_NUM, $COLUMN_LAST_SYNC_AT) " +
+            "SELECT $COLUMN_CREATED_BY, MAX($COLUMN_SEQ_NUM), MAX($COLUMN_CREATED_AT) " +
+            "FROM $TABLE_SPAM_REPORTS GROUP BY $COLUMN_CREATED_BY"
 }
