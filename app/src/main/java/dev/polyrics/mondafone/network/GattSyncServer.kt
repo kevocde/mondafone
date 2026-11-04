@@ -19,7 +19,8 @@ class GattSyncServer(
     private val context: Context,
     private val inventoryProvider: () -> List<SequenceInventoryEntry>,
     private val eventLog: BeaconEventLog,
-    private val codec: SequenceInventoryCodec = SequenceInventoryCodec(),
+    private val inventoryCodec: SequenceInventoryCodec = SequenceInventoryCodec(),
+    private val requestCodec: ReportRequestCodec = ReportRequestCodec(),
 ) {
 
     private var server: BluetoothGattServer? = null
@@ -102,7 +103,7 @@ class GattSyncServer(
                 return
             }
             val entries = inventoryProvider()
-            val payload = codec.encode(entries)
+            val payload = inventoryCodec.encode(entries)
             val chunk = payload.copyOfRange(offset.coerceAtMost(payload.size), payload.size)
             respond(device, requestId, offset, chunk)
             eventLog.log("state read: ${entries.size} entries")
@@ -118,7 +119,7 @@ class GattSyncServer(
             value: ByteArray,
         ) {
             if (responseNeeded) respond(device, requestId, offset, null)
-            eventLog.log("data write: ${value.size} bytes")
+            if (characteristic.uuid == GattSyncProtocol.DATA_UUID) logRequests(value)
         }
 
         override fun onDescriptorWriteRequest(
@@ -142,7 +143,7 @@ class GattSyncServer(
     private fun notifyState(device: BluetoothDevice) {
         val characteristic = stateCharacteristic ?: return
         val current = server ?: return
-        val payload = codec.encode(inventoryProvider())
+        val payload = inventoryCodec.encode(inventoryProvider())
         val sent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             current.notifyCharacteristicChanged(device, characteristic, false, payload) ==
                 BluetoothStatusCodes.SUCCESS
@@ -151,6 +152,17 @@ class GattSyncServer(
             current.notifyCharacteristicChanged(device, characteristic, false)
         }
         eventLog.log(if (sent) "state notified" else "state notify failed")
+    }
+
+    private fun logRequests(value: ByteArray) {
+        val requests = requestCodec.decode(value)
+        if (requests == null) {
+            eventLog.log("data write: ${value.size} bytes")
+            return
+        }
+        requests.forEach { request ->
+            eventLog.log("REQ: ${request.createdBy.take(LOG_KEY_CHARS)} [${request.fromSeq}..${request.toSeq}]")
+        }
     }
 
     private fun respond(device: BluetoothDevice, requestId: Int, offset: Int, value: ByteArray?) {
@@ -162,5 +174,6 @@ class GattSyncServer(
 
     private companion object {
         const val NOTIFY_FLAG = 0x01
+        const val LOG_KEY_CHARS = 8
     }
 }
