@@ -159,10 +159,10 @@ class BleBeaconService : Service() {
             eventLog = eventLog,
             localInventoryProvider = { spamReportStore.sequenceInventory() },
             ownPubkeyProvider = { identity.publicKeyBase64() },
-            reportValidator = reportValidator,
-            reportPersister = spamReportStore::acceptRemoteReport,
-            peerMaxSeqProvider = { pubkey -> peerStatusStore.find(pubkey)?.maxSeqNum ?: 0L },
+            reportsProvider = spamReportStore::reportsByReporter,
             reportCountProvider = spamReportStore::reportCount,
+            ingester = reportIngester(),
+            idleTimeoutMs = BuildConfig.SYNC_IDLE_TIMEOUT_MS,
         )
         gattClients.add(client)
         client.connect()

@@ -39,4 +39,12 @@ class ReportIngester(
         val droppedText = if (dropped > 0) ", dropped $dropped" else ""
         return "sync: got $accepted$droppedText, total $total"
     }
+
+    @Synchronized
+    fun consumeSummaryLine(total: Int): String? {
+        val line = summaryLine(total)
+        accepted = 0
+        dropped = 0
+        return line
+    }
 }
