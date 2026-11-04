@@ -6,6 +6,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.AdvertiseCallback
 import android.bluetooth.le.AdvertiseData
@@ -23,6 +24,7 @@ import android.os.Looper
 import android.os.ParcelUuid
 import dev.polyrics.mondafone.MondafoneApp
 import dev.polyrics.mondafone.R
+import dev.polyrics.mondafone.spam.SpamDependencies
 
 class BleBeaconService : Service() {
 
@@ -37,11 +39,17 @@ class BleBeaconService : Service() {
     private var advertiser: BluetoothLeAdvertiser? = null
     private var scanner: BluetoothLeScanner? = null
     private var activeId = ""
+    private val roleResolver = PeerRoleResolver()
+    private val connectingAddresses = mutableSetOf<String>()
+    private val gattClients = mutableListOf<GattSyncClient>()
+    private var gattServer: GattSyncServer? = null
 
     private val eventLog: BeaconEventLog
         get() = (application as MondafoneApp).beaconEventLog
 
     private val identity by lazy { (application as MondafoneApp).deviceIdentity }
+
+    private val spamReportStore by lazy { (application as SpamDependencies).spamReportStore }
 
     private val advertiseCallback = object : AdvertiseCallback() {
         override fun onStartFailure(errorCode: Int) {
@@ -53,7 +61,10 @@ class BleBeaconService : Service() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             val id = codec.decode(result.scanRecord?.getServiceData(serviceUuid)) ?: return
             if (id == activeId) return
-            if (counter.record(id)) eventLog.log("received id $id")
+            if (counter.record(id)) {
+                eventLog.log("received id $id")
+                resolvePeer(id, result.device)
+            }
         }
 
         override fun onScanFailed(errorCode: Int) {
@@ -115,15 +126,41 @@ class BleBeaconService : Service() {
         activeId = beaconId
         counter = BeaconCycleCounter()
         eventLog.log("Beacon active")
+        openGattServer()
         startAdvertising(newAdvertiser, beaconId)
         startScanning(newScanner)
+    }
+
+    private fun resolvePeer(peerId: String, device: BluetoothDevice) {
+        when (roleResolver.roleFor(activeId, peerId)) {
+            PeerRole.CENTRAL -> connectCentral(peerId, device)
+            PeerRole.PERIPHERAL -> eventLog.log("peer $peerId -> peripheral")
+            null -> Unit
+        }
+    }
+
+    private fun connectCentral(peerId: String, device: BluetoothDevice) {
+        if (!connectingAddresses.add(device.address)) return
+        eventLog.log("peer $peerId -> central")
+        val client = GattSyncClient(this, device, eventLog)
+        gattClients.add(client)
+        client.connect()
+    }
+
+    private fun openGattServer() {
+        val server = GattSyncServer(this, { spamReportStore.sequenceInventory() }, eventLog)
+        if (!server.open(bluetoothManager())) {
+            eventLog.log("gatt server unavailable")
+            return
+        }
+        gattServer = server
     }
 
     private fun startAdvertising(target: BluetoothLeAdvertiser, beaconId: String) {
         val settings = AdvertiseSettings.Builder()
             .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
             .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
-            .setConnectable(false)
+            .setConnectable(true)
             .build()
         val data = AdvertiseData.Builder()
             .setIncludeDeviceName(false)
@@ -156,12 +193,24 @@ class BleBeaconService : Service() {
     private fun stopWindow() {
         val activeAdvertiser = advertiser
         val activeScanner = scanner
-        if (activeAdvertiser == null && activeScanner == null) return
+        if (activeAdvertiser == null && activeScanner == null) {
+            closeGatt()
+            return
+        }
         activeAdvertiser?.let { runCatching { it.stopAdvertising(advertiseCallback) } }
         activeScanner?.let { runCatching { it.stopScan(scanCallback) } }
         advertiser = null
         scanner = null
+        closeGatt()
         eventLog.log("count: ${counter.count()}")
+    }
+
+    private fun closeGatt() {
+        gattClients.forEach { it.close() }
+        gattClients.clear()
+        connectingAddresses.clear()
+        gattServer?.close()
+        gattServer = null
     }
 
     private fun hasBluetoothPermissions(): Boolean =
@@ -169,8 +218,10 @@ class BleBeaconService : Service() {
             checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED
         }
 
-    private fun bluetoothAdapter(): BluetoothAdapter? =
-        getSystemService(BluetoothManager::class.java).adapter
+    private fun bluetoothManager(): BluetoothManager =
+        getSystemService(BluetoothManager::class.java)
+
+    private fun bluetoothAdapter(): BluetoothAdapter? = bluetoothManager().adapter
 
     private fun buildNotification(): Notification {
         ensureChannel()
