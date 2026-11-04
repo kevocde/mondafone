@@ -68,10 +68,7 @@ class SqliteSpamReportStore(
             SQLiteDatabase.CONFLICT_IGNORE,
         )
         val accepted = inserted != INSERT_FAILED
-        if (accepted) {
-            peerStatusStore.recordReport(report.createdBy, report.seqNum, clock())
-            notifyChanged()
-        }
+        if (accepted) notifyChanged()
         return accepted
     }
 

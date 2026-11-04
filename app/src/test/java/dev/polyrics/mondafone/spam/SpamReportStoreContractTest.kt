@@ -164,24 +164,12 @@ abstract class SpamReportStoreContractTest {
     }
 
     @Test
-    fun sequenceInventoryIncludesRemoteReporters() {
+    fun sequenceInventoryIgnoresRemoteReports() {
         val remote = TestIdentity()
         store.reportOwn(CANONICAL_A, DISPLAY_A)
         store.acceptRemoteReport(remote.signedReport(hashOf(CANONICAL_B), 7L, NOW))
 
-        assertEquals(
-            mapOf(identity.publicKeyBase64() to 1L, remote.publicKeyBase64() to 7L),
-            inventoryByReporter(),
-        )
-    }
-
-    @Test
-    fun sequenceInventoryKeepsHighestSequencePerReporter() {
-        val remote = TestIdentity()
-        store.acceptRemoteReport(remote.signedReport(hashOf(CANONICAL_A), 2L, NOW))
-        store.acceptRemoteReport(remote.signedReport(hashOf(CANONICAL_B), 5L, NOW))
-
-        assertEquals(mapOf(remote.publicKeyBase64() to 5L), inventoryByReporter())
+        assertEquals(mapOf(identity.publicKeyBase64() to 1L), inventoryByReporter())
     }
 
     @Test
