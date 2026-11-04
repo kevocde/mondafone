@@ -34,6 +34,9 @@ class GattSyncServer(
     private var dataCharacteristic: BluetoothGattCharacteristic? = null
     private val mtuByDevice = mutableMapOf<String, Int>()
     private val ingesters = mutableMapOf<String, ReportIngester>()
+    private val phases = mutableMapOf<String, Phase>()
+    private val pendingRequests = mutableMapOf<String, MutableList<ReportRequest>>()
+    private val pendingOffers = mutableMapOf<String, MutableList<SequenceInventoryEntry>>()
     private val pendingFrames = mutableMapOf<String, ArrayDeque<OutgoingFrame>>()
     private val notifyInFlight = mutableSetOf<String>()
 
@@ -59,6 +62,9 @@ class GattSyncServer(
         dataCharacteristic = null
         mtuByDevice.clear()
         ingesters.clear()
+        phases.clear()
+        pendingRequests.clear()
+        pendingOffers.clear()
         pendingFrames.clear()
         notifyInFlight.clear()
     }
@@ -101,6 +107,7 @@ class GattSyncServer(
                 BluetoothProfile.STATE_CONNECTED -> {
                     eventLog.log("connected ${device.address}")
                     ingesters[device.address] = ingesterFactory()
+                    phases[device.address] = Phase.AWAIT_PULL_REQUESTS
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> onDeviceDisconnected(device)
             }
@@ -162,12 +169,39 @@ class GattSyncServer(
 
     private fun handlePipeFrame(device: BluetoothDevice, message: DataPipeMessage?) {
         when (message) {
-            is DataPipeMessage.Requests -> serveRequests(device, message.requests)
-            is DataPipeMessage.OfferState -> replyWithRequests(device, message.entries)
+            is DataPipeMessage.Requests -> requestsFor(device).addAll(message.requests)
+            is DataPipeMessage.OfferState -> offersFor(device).addAll(message.entries)
             is DataPipeMessage.Reports -> ingesterFor(device).ingest(message.reports)
-            DataPipeMessage.End, null -> Unit
+            DataPipeMessage.End -> advancePhase(device)
+            null -> Unit
         }
     }
+
+    private fun advancePhase(device: BluetoothDevice) {
+        val address = device.address
+        when (phases[address] ?: Phase.AWAIT_PULL_REQUESTS) {
+            Phase.AWAIT_PULL_REQUESTS -> {
+                serveRequests(device, pendingRequests.remove(address).orEmpty())
+                phases[address] = Phase.AWAIT_OFFER
+            }
+            Phase.AWAIT_OFFER -> {
+                replyWithRequests(device, pendingOffers.remove(address).orEmpty())
+                phases[address] = Phase.AWAIT_PUSH_REPORTS
+            }
+            Phase.AWAIT_PUSH_REPORTS -> acknowledge(device)
+        }
+    }
+
+    private fun acknowledge(device: BluetoothDevice) {
+        val data = dataCharacteristic ?: return
+        enqueue(device, data, pipeCodec.encode(DataPipeMessage.End, maxPayloadFor(device)))
+    }
+
+    private fun requestsFor(device: BluetoothDevice): MutableList<ReportRequest> =
+        pendingRequests.getOrPut(device.address) { mutableListOf() }
+
+    private fun offersFor(device: BluetoothDevice): MutableList<SequenceInventoryEntry> =
+        pendingOffers.getOrPut(device.address) { mutableListOf() }
 
     private fun serveRequests(device: BluetoothDevice, requests: List<ReportRequest>) {
         val reports = requests.flatMap { request ->
@@ -221,7 +255,10 @@ class GattSyncServer(
         mtuByDevice.remove(address)
         pendingFrames.remove(address)
         notifyInFlight.remove(address)
-        ingesters.remove(address)?.summaryLine(reportCountProvider())?.let(eventLog::log)
+        phases.remove(address)
+        pendingRequests.remove(address)
+        pendingOffers.remove(address)
+        ingesters.remove(address)?.consumeSummaryLine(reportCountProvider())?.let(eventLog::log)
     }
 
     private fun maxPayloadFor(device: BluetoothDevice): Int =
@@ -252,6 +289,12 @@ class GattSyncServer(
 
     private fun isNotificationEnabled(value: ByteArray): Boolean =
         value.isNotEmpty() && (value[0].toInt() and NOTIFY_FLAG) != 0
+
+    private enum class Phase {
+        AWAIT_PULL_REQUESTS,
+        AWAIT_OFFER,
+        AWAIT_PUSH_REPORTS,
+    }
 
     private data class OutgoingFrame(
         val characteristic: BluetoothGattCharacteristic,
