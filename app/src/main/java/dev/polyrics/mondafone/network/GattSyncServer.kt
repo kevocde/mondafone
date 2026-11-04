@@ -103,7 +103,8 @@ class GattSyncServer(
             }
             val entries = inventoryProvider()
             val payload = codec.encode(entries)
-            respond(device, requestId, offset, payload.copyOfRange(offset.coerceAtMost(payload.size), payload.size))
+            val chunk = payload.copyOfRange(offset.coerceAtMost(payload.size), payload.size)
+            respond(device, requestId, offset, chunk)
             eventLog.log("state read: ${entries.size} entries")
         }
 
