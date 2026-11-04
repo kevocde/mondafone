@@ -68,7 +68,10 @@ class SqliteSpamReportStore(
             SQLiteDatabase.CONFLICT_IGNORE,
         )
         val accepted = inserted != INSERT_FAILED
-        if (accepted) notifyChanged()
+        if (accepted) {
+            peerStatusStore.recordReport(report.createdBy, report.seqNum, clock())
+            notifyChanged()
+        }
         return accepted
     }
 
@@ -142,6 +145,24 @@ class SqliteSpamReportStore(
                     while (cursor.moveToNext()) {
                         add(SequenceInventoryEntry(cursor.getString(0), cursor.getLong(1)))
                     }
+                }
+            }
+
+    override fun reportsByReporter(createdBy: String, fromSeq: Long, toSeq: Long): List<SpamReport> =
+        database()
+            .query(
+                VerdictContract.TABLE_SPAM_REPORTS,
+                null,
+                "${VerdictContract.COLUMN_CREATED_BY} = ? AND " +
+                    "${VerdictContract.COLUMN_SEQ_NUM} BETWEEN ? AND ?",
+                arrayOf(createdBy, fromSeq.toString(), toSeq.toString()),
+                null,
+                null,
+                VerdictContract.COLUMN_SEQ_NUM,
+            )
+            .use { cursor ->
+                buildList {
+                    while (cursor.moveToNext()) add(cursor.toSpamReport())
                 }
             }
 

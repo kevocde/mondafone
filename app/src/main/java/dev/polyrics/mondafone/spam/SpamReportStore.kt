@@ -7,6 +7,7 @@ interface SpamReportStore {
     fun foreignReportCount(canonicalNumber: String): Int
     fun ownReports(): List<OwnSpamReport>
     fun sequenceInventory(): List<SequenceInventoryEntry>
+    fun reportsByReporter(createdBy: String, fromSeq: Long, toSeq: Long): List<SpamReport>
     fun removeOwnReport(phoneHash: String)
     fun registerOnChangeListener(listener: () -> Unit)
     fun unregisterOnChangeListener()

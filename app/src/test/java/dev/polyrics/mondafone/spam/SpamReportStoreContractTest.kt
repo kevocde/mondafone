@@ -164,12 +164,52 @@ abstract class SpamReportStoreContractTest {
     }
 
     @Test
-    fun sequenceInventoryIgnoresRemoteReports() {
+    fun sequenceInventoryIncludesRemoteReporters() {
         val remote = TestIdentity()
         store.reportOwn(CANONICAL_A, DISPLAY_A)
         store.acceptRemoteReport(remote.signedReport(hashOf(CANONICAL_B), 7L, NOW))
 
-        assertEquals(mapOf(identity.publicKeyBase64() to 1L), inventoryByReporter())
+        assertEquals(
+            mapOf(identity.publicKeyBase64() to 1L, remote.publicKeyBase64() to 7L),
+            inventoryByReporter(),
+        )
+    }
+
+    @Test
+    fun sequenceInventoryKeepsHighestSequencePerReporter() {
+        val remote = TestIdentity()
+        store.acceptRemoteReport(remote.signedReport(hashOf(CANONICAL_A), 2L, NOW))
+        store.acceptRemoteReport(remote.signedReport(hashOf(CANONICAL_B), 5L, NOW))
+
+        assertEquals(mapOf(remote.publicKeyBase64() to 5L), inventoryByReporter())
+    }
+
+    @Test
+    fun reportsByReporterReturnsRequestedRangeInSequenceOrder() {
+        val remote = TestIdentity()
+        val first = remote.signedReport(hashOf(CANONICAL_A), 1L, NOW)
+        val second = remote.signedReport(hashOf(CANONICAL_B), 2L, NOW)
+        store.acceptRemoteReport(second)
+        store.acceptRemoteReport(first)
+
+        assertEquals(listOf(first, second), store.reportsByReporter(remote.publicKeyBase64(), 1L, 2L))
+    }
+
+    @Test
+    fun reportsByReporterFiltersSequencesOutsideRange() {
+        val remote = TestIdentity()
+        store.acceptRemoteReport(remote.signedReport(hashOf(CANONICAL_A), 1L, NOW))
+        store.acceptRemoteReport(remote.signedReport(hashOf(CANONICAL_B), 2L, NOW))
+
+        assertEquals(
+            listOf(2L),
+            store.reportsByReporter(remote.publicKeyBase64(), 2L, 5L).map { it.seqNum },
+        )
+    }
+
+    @Test
+    fun reportsByReporterIsEmptyForUnknownReporter() {
+        assertTrue(store.reportsByReporter("unknown-pubkey", 1L, 10L).isEmpty())
     }
 
     @Test
