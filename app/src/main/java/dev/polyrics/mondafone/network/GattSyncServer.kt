@@ -14,7 +14,6 @@ import android.content.Context
 import android.os.Build
 import dev.polyrics.mondafone.spam.SequenceInventoryEntry
 import dev.polyrics.mondafone.spam.SpamReport
-import java.io.ByteArrayOutputStream
 import java.util.UUID
 
 class GattSyncServer(
@@ -22,16 +21,21 @@ class GattSyncServer(
     private val inventoryProvider: () -> List<SequenceInventoryEntry>,
     private val reportsProvider: (createdBy: String, fromSeq: Long, toSeq: Long) -> List<SpamReport>,
     private val reportCountProvider: () -> Int,
+    private val ownPubkeyProvider: () -> String?,
+    private val ingesterFactory: () -> ReportIngester,
     private val eventLog: BeaconEventLog,
     private val inventoryCodec: SequenceInventoryCodec = SequenceInventoryCodec(),
-    private val requestCodec: ReportRequestCodec = ReportRequestCodec(),
-    private val packetCodec: ReportPacketCodec = ReportPacketCodec(),
+    private val pipeCodec: DataPipeCodec = DataPipeCodec(),
+    private val planner: SyncRequestPlanner = SyncRequestPlanner(),
 ) {
 
     private var server: BluetoothGattServer? = null
     private var stateCharacteristic: BluetoothGattCharacteristic? = null
     private var dataCharacteristic: BluetoothGattCharacteristic? = null
     private val mtuByDevice = mutableMapOf<String, Int>()
+    private val ingesters = mutableMapOf<String, ReportIngester>()
+    private val pendingFrames = mutableMapOf<String, ArrayDeque<OutgoingFrame>>()
+    private val notifyInFlight = mutableSetOf<String>()
 
     fun open(manager: BluetoothManager): Boolean {
         val newServer = manager.openGattServer(context, callback) ?: return false
@@ -54,6 +58,9 @@ class GattSyncServer(
         stateCharacteristic = null
         dataCharacteristic = null
         mtuByDevice.clear()
+        ingesters.clear()
+        pendingFrames.clear()
+        notifyInFlight.clear()
     }
 
     private fun buildService(): BluetoothGattService {
@@ -91,13 +98,21 @@ class GattSyncServer(
     private val callback = object : BluetoothGattServerCallback() {
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
             when (newState) {
-                BluetoothProfile.STATE_CONNECTED -> eventLog.log("connected ${device.address}")
-                BluetoothProfile.STATE_DISCONNECTED -> mtuByDevice.remove(device.address)
+                BluetoothProfile.STATE_CONNECTED -> {
+                    eventLog.log("connected ${device.address}")
+                    ingesters[device.address] = ingesterFactory()
+                }
+                BluetoothProfile.STATE_DISCONNECTED -> onDeviceDisconnected(device)
             }
         }
 
         override fun onMtuChanged(device: BluetoothDevice, mtu: Int) {
             mtuByDevice[device.address] = mtu
+        }
+
+        override fun onNotificationSent(device: BluetoothDevice, status: Int) {
+            notifyInFlight.remove(device.address)
+            pump(device)
         }
 
         override fun onCharacteristicReadRequest(
@@ -110,8 +125,7 @@ class GattSyncServer(
                 respond(device, requestId, offset, ByteArray(0))
                 return
             }
-            val entries = inventoryProvider()
-            val payload = inventoryCodec.encode(entries)
+            val payload = inventoryCodec.encode(inventoryProvider())
             val chunk = payload.copyOfRange(offset.coerceAtMost(payload.size), payload.size)
             respond(device, requestId, offset, chunk)
         }
@@ -126,7 +140,9 @@ class GattSyncServer(
             value: ByteArray,
         ) {
             if (responseNeeded) respond(device, requestId, offset, null)
-            if (characteristic.uuid == GattSyncProtocol.DATA_UUID) handleRequests(device, value)
+            if (characteristic.uuid == GattSyncProtocol.DATA_UUID) {
+                handlePipeFrame(device, pipeCodec.decode(value))
+            }
         }
 
         override fun onDescriptorWriteRequest(
@@ -140,56 +156,79 @@ class GattSyncServer(
         ) {
             if (responseNeeded) respond(device, requestId, offset, null)
             if (descriptor.characteristic.uuid != GattSyncProtocol.STATE_UUID) return
-            if (!isNotificationEnabled(value)) return
-            notifyState(device)
+            if (isNotificationEnabled(value)) notifyInventory(device)
         }
     }
 
-    private fun handleRequests(device: BluetoothDevice, value: ByteArray) {
-        val requests = requestCodec.decode(value) ?: return
-        val sent = requests.sumOf { request -> serve(device, request) }
-        if (sent > 0) eventLog.log("sync: sent $sent, total ${reportCountProvider()}")
+    private fun handlePipeFrame(device: BluetoothDevice, message: DataPipeMessage?) {
+        when (message) {
+            is DataPipeMessage.Requests -> serveRequests(device, message.requests)
+            is DataPipeMessage.OfferState -> replyWithRequests(device, message.entries)
+            is DataPipeMessage.Reports -> ingesterFor(device).ingest(message.reports)
+            DataPipeMessage.End, null -> Unit
+        }
     }
 
-    private fun serve(device: BluetoothDevice, request: ReportRequest): Int {
-        val data = dataCharacteristic ?: return 0
-        val reports = reportsProvider(request.createdBy, request.fromSeq, request.toSeq)
-        if (reports.isEmpty()) return 0
-        notifyInChunks(device, data, encodeReports(reports))
-        return reports.size
+    private fun serveRequests(device: BluetoothDevice, requests: List<ReportRequest>) {
+        val reports = requests.flatMap { request ->
+            reportsProvider(request.createdBy, request.fromSeq, request.toSeq)
+        }
+        val data = dataCharacteristic ?: return
+        enqueue(device, data, pipeCodec.encode(DataPipeMessage.Reports(reports), maxPayloadFor(device)))
+        enqueue(device, data, pipeCodec.encode(DataPipeMessage.End, maxPayloadFor(device)))
+        if (reports.isNotEmpty()) {
+            eventLog.log("sync: sent ${reports.size}, total ${reportCountProvider()}")
+        }
     }
 
-    private fun encodeReports(reports: List<SpamReport>): ByteArray =
-        ByteArrayOutputStream().apply {
-            reports.forEach { write(packetCodec.encode(it)) }
-        }.toByteArray()
+    private fun replyWithRequests(device: BluetoothDevice, offered: List<SequenceInventoryEntry>) {
+        val data = dataCharacteristic ?: return
+        val requests = planner.plan(offered, inventoryProvider(), ownPubkeyProvider())
+        enqueue(device, data, pipeCodec.encode(DataPipeMessage.Requests(requests), maxPayloadFor(device)))
+    }
 
-    private fun notifyInChunks(
+    private fun notifyInventory(device: BluetoothDevice) {
+        val state = stateCharacteristic ?: return
+        enqueue(device, state, listOf(inventoryCodec.encode(inventoryProvider())))
+    }
+
+    private fun enqueue(
         device: BluetoothDevice,
         characteristic: BluetoothGattCharacteristic,
-        payload: ByteArray,
+        frames: List<ByteArray>,
     ) {
-        val chunkSize = maxPayloadFor(device)
-        var offset = 0
-        while (offset < payload.size) {
-            val end = (offset + chunkSize).coerceAtMost(payload.size)
-            if (!notify(device, characteristic, payload.copyOfRange(offset, end))) {
-                eventLog.log("reports notify failed")
-                return
-            }
-            offset = end
+        if (frames.isEmpty()) return
+        val queue = pendingFrames.getOrPut(device.address) { ArrayDeque() }
+        frames.forEach { queue.addLast(OutgoingFrame(characteristic, it)) }
+        pump(device)
+    }
+
+    private fun pump(device: BluetoothDevice) {
+        val address = device.address
+        if (address in notifyInFlight) return
+        val queue = pendingFrames[address] ?: return
+        val frame = queue.removeFirstOrNull() ?: return
+        if (!notify(device, frame.characteristic, frame.payload)) {
+            queue.clear()
+            eventLog.log("notify failed")
+            return
         }
+        notifyInFlight.add(address)
+    }
+
+    private fun onDeviceDisconnected(device: BluetoothDevice) {
+        val address = device.address
+        mtuByDevice.remove(address)
+        pendingFrames.remove(address)
+        notifyInFlight.remove(address)
+        ingesters.remove(address)?.summaryLine(reportCountProvider())?.let(eventLog::log)
     }
 
     private fun maxPayloadFor(device: BluetoothDevice): Int =
         ((mtuByDevice[device.address] ?: DEFAULT_MTU) - ATT_OVERHEAD).coerceAtLeast(1)
 
-    private fun notifyState(device: BluetoothDevice) {
-        val characteristic = stateCharacteristic ?: return
-        if (!notify(device, characteristic, inventoryCodec.encode(inventoryProvider()))) {
-            eventLog.log("state notify failed")
-        }
-    }
+    private fun ingesterFor(device: BluetoothDevice): ReportIngester =
+        ingesters.getOrPut(device.address) { ingesterFactory() }
 
     @Suppress("DEPRECATION")
     private fun notify(
@@ -213,6 +252,11 @@ class GattSyncServer(
 
     private fun isNotificationEnabled(value: ByteArray): Boolean =
         value.isNotEmpty() && (value[0].toInt() and NOTIFY_FLAG) != 0
+
+    private data class OutgoingFrame(
+        val characteristic: BluetoothGattCharacteristic,
+        val payload: ByteArray,
+    )
 
     private companion object {
         const val NOTIFY_FLAG = 0x01

@@ -59,6 +59,12 @@ class BleBeaconService : Service() {
         ReportValidator(TimeUnit.DAYS.toMillis(BuildConfig.REPORT_MAX_AGE_DAYS))
     }
 
+    private fun reportIngester(): ReportIngester = ReportIngester(
+        validator = reportValidator,
+        persister = spamReportStore::acceptRemoteReport,
+        peerMaxSeqProvider = { pubkey -> peerStatusStore.find(pubkey)?.maxSeqNum ?: 0L },
+    )
+
     private val advertiseCallback = object : AdvertiseCallback() {
         override fun onStartFailure(errorCode: Int) {
             eventLog.log("advertise failed: $errorCode")
@@ -168,6 +174,8 @@ class BleBeaconService : Service() {
             inventoryProvider = { spamReportStore.sequenceInventory() },
             reportsProvider = spamReportStore::reportsByReporter,
             reportCountProvider = spamReportStore::reportCount,
+            ownPubkeyProvider = { identity.publicKeyBase64() },
+            ingesterFactory = ::reportIngester,
             eventLog = eventLog,
         )
         if (!server.open(bluetoothManager())) {
