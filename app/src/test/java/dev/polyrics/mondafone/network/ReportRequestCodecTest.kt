@@ -34,14 +34,6 @@ class ReportRequestCodecTest {
     }
 
     @Test
-    fun decodeRejectsUnknownFrameType() {
-        val encoded = codec.encode(listOf(ReportRequest("peer-a", 1L, 5L)))
-        encoded[0] = 0x7F
-
-        assertNull(codec.decode(encoded))
-    }
-
-    @Test
     fun decodeRejectsTruncatedPayload() {
         val encoded = codec.encode(listOf(ReportRequest("peer-a", 1L, 5L)))
 

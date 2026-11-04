@@ -6,7 +6,6 @@ class ReportRequestCodec {
 
     fun encode(requests: List<ReportRequest>): ByteArray {
         val buffer = ByteBuffer.allocate(encodedSize(requests))
-        buffer.put(FRAME_REQ)
         buffer.putShort(requests.size.toShort())
         requests.forEach { request ->
             val pubkey = request.createdBy.toByteArray(Charsets.UTF_8)
@@ -21,7 +20,6 @@ class ReportRequestCodec {
     fun decode(bytes: ByteArray?): List<ReportRequest>? {
         if (bytes == null || bytes.size < HEADER_BYTES) return null
         val buffer = ByteBuffer.wrap(bytes)
-        if (buffer.get() != FRAME_REQ) return null
         val count = buffer.short.toInt()
         if (count < 0) return null
         val requests = ArrayList<ReportRequest>(count)
@@ -49,8 +47,7 @@ class ReportRequestCodec {
     }
 
     private companion object {
-        const val FRAME_REQ: Byte = 0x01
-        const val HEADER_BYTES = 3
+        const val HEADER_BYTES = 2
         const val PUBKEY_LENGTH_BYTES = 1
         const val SEQUENCE_BYTES = 8
         const val BYTE_MASK = 0xFF
