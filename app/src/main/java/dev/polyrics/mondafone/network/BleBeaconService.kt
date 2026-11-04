@@ -22,9 +22,11 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.ParcelUuid
+import dev.polyrics.mondafone.BuildConfig
 import dev.polyrics.mondafone.MondafoneApp
 import dev.polyrics.mondafone.R
 import dev.polyrics.mondafone.spam.SpamDependencies
+import java.util.concurrent.TimeUnit
 
 class BleBeaconService : Service() {
 
@@ -50,6 +52,12 @@ class BleBeaconService : Service() {
     private val identity by lazy { (application as MondafoneApp).deviceIdentity }
 
     private val spamReportStore by lazy { (application as SpamDependencies).spamReportStore }
+
+    private val peerStatusStore by lazy { (application as SpamDependencies).peerStatusStore }
+
+    private val reportValidator by lazy {
+        ReportValidator(TimeUnit.DAYS.toMillis(BuildConfig.REPORT_MAX_AGE_DAYS))
+    }
 
     private val advertiseCallback = object : AdvertiseCallback() {
         override fun onStartFailure(errorCode: Int) {
@@ -148,6 +156,9 @@ class BleBeaconService : Service() {
             eventLog = eventLog,
             localInventoryProvider = { spamReportStore.sequenceInventory() },
             ownPubkeyProvider = { identity.publicKeyBase64() },
+            reportValidator = reportValidator,
+            reportPersister = spamReportStore::acceptRemoteReport,
+            peerMaxSeqProvider = { pubkey -> peerStatusStore.find(pubkey)?.maxSeqNum ?: 0L },
         )
         gattClients.add(client)
         client.connect()

@@ -10,6 +10,7 @@ import android.bluetooth.BluetoothStatusCodes
 import android.content.Context
 import android.os.Build
 import dev.polyrics.mondafone.spam.SequenceInventoryEntry
+import dev.polyrics.mondafone.spam.SpamReport
 
 class GattSyncClient(
     private val context: Context,
@@ -17,13 +18,19 @@ class GattSyncClient(
     private val eventLog: BeaconEventLog,
     private val localInventoryProvider: () -> List<SequenceInventoryEntry>,
     private val ownPubkeyProvider: () -> String?,
+    private val reportValidator: ReportValidator,
+    private val reportPersister: (SpamReport) -> Boolean,
+    private val peerMaxSeqProvider: (String) -> Long,
+    private val clock: () -> Long = System::currentTimeMillis,
     private val inventoryCodec: SequenceInventoryCodec = SequenceInventoryCodec(),
     private val requestCodec: ReportRequestCodec = ReportRequestCodec(),
     private val planner: SyncRequestPlanner = SyncRequestPlanner(),
+    private val reportDecoder: ReportStreamDecoder = ReportStreamDecoder(),
 ) {
 
     private var gatt: BluetoothGatt? = null
     private var syncRequested = false
+    private val lastSeqByPeer = mutableMapOf<String, Long>()
 
     fun connect() {
         eventLog.log("central connecting ${device.address}")
@@ -63,9 +70,7 @@ class GattSyncClient(
                 return
             }
             eventLog.log("services discovered")
-            val state = stateCharacteristic(gatt) ?: return
-            gatt.setCharacteristicNotification(state, true)
-            subscribe(gatt, state)
+            subscribe(gatt, GattSyncProtocol.STATE_UUID, STATE_LABEL)
         }
 
         override fun onCharacteristicRead(
@@ -89,7 +94,7 @@ class GattSyncClient(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
         ) {
-            handleNotification(characteristic, characteristic.value)
+            handleChanged(characteristic, characteristic.value)
         }
 
         override fun onCharacteristicChanged(
@@ -97,7 +102,7 @@ class GattSyncClient(
             characteristic: BluetoothGattCharacteristic,
             value: ByteArray,
         ) {
-            handleNotification(characteristic, value)
+            handleChanged(characteristic, value)
         }
 
         override fun onDescriptorWrite(
@@ -105,10 +110,16 @@ class GattSyncClient(
             descriptor: BluetoothGattDescriptor,
             status: Int,
         ) {
-            if (descriptor.characteristic.uuid != GattSyncProtocol.STATE_UUID) return
-            eventLog.log("state subscribed")
-            val state = stateCharacteristic(gatt) ?: return
-            if (!gatt.readCharacteristic(state)) eventLog.log("state read failed")
+            when (descriptor.characteristic.uuid) {
+                GattSyncProtocol.STATE_UUID -> {
+                    eventLog.log("state subscribed")
+                    subscribe(gatt, GattSyncProtocol.DATA_UUID, DATA_LABEL)
+                }
+                GattSyncProtocol.DATA_UUID -> {
+                    eventLog.log("data subscribed")
+                    readState(gatt)
+                }
+            }
         }
     }
 
@@ -118,9 +129,35 @@ class GattSyncClient(
         requestReports(entries)
     }
 
-    private fun handleNotification(characteristic: BluetoothGattCharacteristic, value: ByteArray?) {
-        val entries = decodeState(characteristic, value) ?: return
-        eventLog.log("state notified: ${entries.size} entries")
+    private fun handleChanged(characteristic: BluetoothGattCharacteristic, value: ByteArray?) {
+        when (characteristic.uuid) {
+            GattSyncProtocol.STATE_UUID -> {
+                val entries = decodeState(characteristic, value) ?: return
+                eventLog.log("state notified: ${entries.size} entries")
+            }
+            GattSyncProtocol.DATA_UUID -> handleReports(value)
+        }
+    }
+
+    private fun handleReports(value: ByteArray?) {
+        if (value == null) return
+        reportDecoder.feed(value).forEach(::handleReport)
+    }
+
+    private fun handleReport(report: SpamReport) {
+        val peer = report.createdBy.take(LOG_KEY_CHARS)
+        val lastKnown = lastSeqByPeer.getOrPut(report.createdBy) { peerMaxSeqProvider(report.createdBy) }
+        val verdict = reportValidator.validate(report, lastKnown, clock())
+        if (verdict != ReportVerdict.VALID) {
+            eventLog.log("report $peer#${report.seqNum} dropped: ${verdictLabel(verdict)}")
+            return
+        }
+        if (!reportPersister(report)) {
+            eventLog.log("report $peer#${report.seqNum} dropped: duplicate")
+            return
+        }
+        lastSeqByPeer[report.createdBy] = report.seqNum
+        eventLog.log("report $peer#${report.seqNum} ok")
     }
 
     private fun decodeState(
@@ -150,13 +187,7 @@ class GattSyncClient(
 
     private fun writeRequests(requests: List<ReportRequest>): Boolean {
         val current = gatt ?: return false
-        val data = current
-            .getService(GattSyncProtocol.SERVICE_UUID)
-            ?.getCharacteristic(GattSyncProtocol.DATA_UUID)
-        if (data == null) {
-            eventLog.log("data characteristic missing")
-            return false
-        }
+        val data = characteristic(current, GattSyncProtocol.DATA_UUID) ?: return false
         return writeData(current, data, requestCodec.encode(requests))
     }
 
@@ -174,19 +205,26 @@ class GattSyncClient(
         gatt.writeCharacteristic(data)
     }
 
-    private fun stateCharacteristic(gatt: BluetoothGatt): BluetoothGattCharacteristic? {
-        val characteristic = gatt
-            .getService(GattSyncProtocol.SERVICE_UUID)
-            ?.getCharacteristic(GattSyncProtocol.STATE_UUID)
-        if (characteristic == null) eventLog.log("state characteristic missing")
-        return characteristic
+    private fun readState(gatt: BluetoothGatt) {
+        val state = characteristic(gatt, GattSyncProtocol.STATE_UUID) ?: return
+        if (!gatt.readCharacteristic(state)) eventLog.log("state read failed")
+    }
+
+    private fun subscribe(gatt: BluetoothGatt, uuid: java.util.UUID, label: String) {
+        val characteristic = characteristic(gatt, uuid) ?: return
+        gatt.setCharacteristicNotification(characteristic, true)
+        writeDescriptor(gatt, characteristic, label)
     }
 
     @Suppress("DEPRECATION")
-    private fun subscribe(gatt: BluetoothGatt, state: BluetoothGattCharacteristic) {
-        val descriptor = state.getDescriptor(GattSyncProtocol.CCC_DESCRIPTOR_UUID)
+    private fun writeDescriptor(
+        gatt: BluetoothGatt,
+        characteristic: BluetoothGattCharacteristic,
+        label: String,
+    ) {
+        val descriptor = characteristic.getDescriptor(GattSyncProtocol.CCC_DESCRIPTOR_UUID)
         if (descriptor == null) {
-            eventLog.log("state descriptor missing")
+            eventLog.log("$label descriptor missing")
             return
         }
         val sent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -196,10 +234,31 @@ class GattSyncClient(
             descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
             gatt.writeDescriptor(descriptor)
         }
-        eventLog.log(if (sent) "state subscribe sent" else "state subscribe failed")
+        eventLog.log(if (sent) "$label subscribe sent" else "$label subscribe failed")
+    }
+
+    private fun characteristic(
+        gatt: BluetoothGatt,
+        uuid: java.util.UUID,
+    ): BluetoothGattCharacteristic? {
+        val characteristic = gatt
+            .getService(GattSyncProtocol.SERVICE_UUID)
+            ?.getCharacteristic(uuid)
+        if (characteristic == null) eventLog.log("$uuid characteristic missing")
+        return characteristic
+    }
+
+    private fun verdictLabel(verdict: ReportVerdict): String = when (verdict) {
+        ReportVerdict.INVALID_SIGNATURE -> "signature"
+        ReportVerdict.SEQUENCE_ROLLBACK -> "rollback"
+        ReportVerdict.FROM_FUTURE -> "future"
+        ReportVerdict.EXPIRED -> "expired"
+        ReportVerdict.VALID -> "ok"
     }
 
     private companion object {
         const val LOG_KEY_CHARS = 8
+        const val STATE_LABEL = "state"
+        const val DATA_LABEL = "data"
     }
 }
