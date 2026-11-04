@@ -166,6 +166,11 @@ class SqliteSpamReportStore(
                 }
             }
 
+    override fun reportCount(): Int =
+        database()
+            .rawQuery("SELECT COUNT(*) FROM ${VerdictContract.TABLE_SPAM_REPORTS}", null)
+            .use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
+
     override fun removeOwnReport(phoneHash: String) {
         val createdBy = myPublicKey() ?: return
         val database = database()

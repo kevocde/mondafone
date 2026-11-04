@@ -185,6 +185,19 @@ abstract class SpamReportStoreContractTest {
     }
 
     @Test
+    fun reportCountStartsAtZero() {
+        assertEquals(0, store.reportCount())
+    }
+
+    @Test
+    fun reportCountIncludesOwnAndRemoteReports() {
+        store.reportOwn(CANONICAL_A, DISPLAY_A)
+        store.acceptRemoteReport(TestIdentity().signedReport(hashOf(CANONICAL_B), 1L, NOW))
+
+        assertEquals(2, store.reportCount())
+    }
+
+    @Test
     fun reportsByReporterReturnsRequestedRangeInSequenceOrder() {
         val remote = TestIdentity()
         val first = remote.signedReport(hashOf(CANONICAL_A), 1L, NOW)
