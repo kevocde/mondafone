@@ -12,6 +12,7 @@ class SqliteSpamReportStore(
     private val identity: DeviceIdentity,
     private val hasher: SpamReportHasher,
     private val signer: ReportSigner,
+    private val peerStatusStore: PeerStatusStore = SqlitePeerStatusStore(helper),
     private val clock: () -> Long = System::currentTimeMillis,
 ) : SpamReportStore {
 
@@ -40,6 +41,7 @@ class SqliteSpamReportStore(
                     insertReport(database, saved)
                     saveAlias(database, phoneHash, displayNumber)
                     saveNextSeqNum(database, seqNum + 1)
+                    peerStatusStore.recordReport(createdBy, seqNum, createdAt)
                     database.setTransactionSuccessful()
                 }
             }
@@ -66,7 +68,10 @@ class SqliteSpamReportStore(
             SQLiteDatabase.CONFLICT_IGNORE,
         )
         val accepted = inserted != INSERT_FAILED
-        if (accepted) notifyChanged()
+        if (accepted) {
+            peerStatusStore.recordReport(report.createdBy, report.seqNum, clock())
+            notifyChanged()
+        }
         return accepted
     }
 
@@ -126,13 +131,14 @@ class SqliteSpamReportStore(
 
     override fun sequenceInventory(): List<SequenceInventoryEntry> =
         database()
-            .rawQuery(
-                "SELECT ${VerdictContract.COLUMN_CREATED_BY}, " +
-                    "MAX(${VerdictContract.COLUMN_SEQ_NUM}) " +
-                    "FROM ${VerdictContract.TABLE_SPAM_REPORTS} " +
-                    "GROUP BY ${VerdictContract.COLUMN_CREATED_BY} " +
-                    "ORDER BY ${VerdictContract.COLUMN_CREATED_BY}",
+            .query(
+                VerdictContract.TABLE_PEERS_STATUS,
+                arrayOf(VerdictContract.COLUMN_ID_PUBKEY, VerdictContract.COLUMN_MAX_SEQ_NUM),
                 null,
+                null,
+                null,
+                null,
+                VerdictContract.COLUMN_ID_PUBKEY,
             )
             .use { cursor ->
                 buildList {

@@ -185,6 +185,15 @@ abstract class SpamReportStoreContractTest {
     }
 
     @Test
+    fun sequenceInventoryKeepsHighWaterMarkAfterRemoval() {
+        store.reportOwn(CANONICAL_A, DISPLAY_A)
+        store.reportOwn(CANONICAL_B, DISPLAY_B)
+        store.removeOwnReport(hashOf(CANONICAL_B))
+
+        assertEquals(mapOf(identity.publicKeyBase64() to 2L), inventoryByReporter())
+    }
+
+    @Test
     fun notifiesListenerOnMutations() {
         var changes = 0
         store.registerOnChangeListener { changes++ }
