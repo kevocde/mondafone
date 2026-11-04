@@ -154,7 +154,12 @@ class BleBeaconService : Service() {
     }
 
     private fun openGattServer() {
-        val server = GattSyncServer(this, { spamReportStore.sequenceInventory() }, eventLog)
+        val server = GattSyncServer(
+            context = this,
+            inventoryProvider = { spamReportStore.sequenceInventory() },
+            reportsProvider = spamReportStore::reportsByReporter,
+            eventLog = eventLog,
+        )
         if (!server.open(bluetoothManager())) {
             eventLog.log("gatt server unavailable")
             return
