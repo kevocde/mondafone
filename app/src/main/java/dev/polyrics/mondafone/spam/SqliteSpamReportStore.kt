@@ -124,6 +124,24 @@ class SqliteSpamReportStore(
             }
     }
 
+    override fun sequenceInventory(): List<SequenceInventoryEntry> =
+        database()
+            .rawQuery(
+                "SELECT ${VerdictContract.COLUMN_CREATED_BY}, " +
+                    "MAX(${VerdictContract.COLUMN_SEQ_NUM}) " +
+                    "FROM ${VerdictContract.TABLE_SPAM_REPORTS} " +
+                    "GROUP BY ${VerdictContract.COLUMN_CREATED_BY} " +
+                    "ORDER BY ${VerdictContract.COLUMN_CREATED_BY}",
+                null,
+            )
+            .use { cursor ->
+                buildList {
+                    while (cursor.moveToNext()) {
+                        add(SequenceInventoryEntry(cursor.getString(0), cursor.getLong(1)))
+                    }
+                }
+            }
+
     override fun removeOwnReport(phoneHash: String) {
         val createdBy = myPublicKey() ?: return
         val database = database()

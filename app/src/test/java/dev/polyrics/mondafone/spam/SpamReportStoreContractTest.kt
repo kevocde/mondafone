@@ -148,6 +148,43 @@ abstract class SpamReportStoreContractTest {
     }
 
     @Test
+    fun sequenceInventoryIsEmptyWithoutReports() {
+        assertTrue(store.sequenceInventory().isEmpty())
+    }
+
+    @Test
+    fun sequenceInventoryReportsOwnMaxSequence() {
+        store.reportOwn(CANONICAL_A, DISPLAY_A)
+        store.reportOwn(CANONICAL_B, DISPLAY_B)
+
+        assertEquals(
+            mapOf(identity.publicKeyBase64() to 2L),
+            inventoryByReporter(),
+        )
+    }
+
+    @Test
+    fun sequenceInventoryIncludesRemoteReporters() {
+        val remote = TestIdentity()
+        store.reportOwn(CANONICAL_A, DISPLAY_A)
+        store.acceptRemoteReport(remote.signedReport(hashOf(CANONICAL_B), 7L, NOW))
+
+        assertEquals(
+            mapOf(identity.publicKeyBase64() to 1L, remote.publicKeyBase64() to 7L),
+            inventoryByReporter(),
+        )
+    }
+
+    @Test
+    fun sequenceInventoryKeepsHighestSequencePerReporter() {
+        val remote = TestIdentity()
+        store.acceptRemoteReport(remote.signedReport(hashOf(CANONICAL_A), 2L, NOW))
+        store.acceptRemoteReport(remote.signedReport(hashOf(CANONICAL_B), 5L, NOW))
+
+        assertEquals(mapOf(remote.publicKeyBase64() to 5L), inventoryByReporter())
+    }
+
+    @Test
     fun notifiesListenerOnMutations() {
         var changes = 0
         store.registerOnChangeListener { changes++ }
@@ -160,6 +197,9 @@ abstract class SpamReportStoreContractTest {
     }
 
     protected fun hashOf(canonicalNumber: String): String = SpamReportHasher(SECRET).hash(canonicalNumber)
+
+    private fun inventoryByReporter(): Map<String, Long> =
+        store.sequenceInventory().associate { it.createdBy to it.maxSeqNum }
 
     protected companion object {
         const val SECRET = "test-secret"
