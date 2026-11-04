@@ -9,16 +9,21 @@ import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothStatusCodes
 import android.content.Context
 import android.os.Build
+import dev.polyrics.mondafone.spam.SequenceInventoryEntry
 
 class GattSyncClient(
     private val context: Context,
     private val device: BluetoothDevice,
     private val eventLog: BeaconEventLog,
-    private val codec: SequenceInventoryCodec = SequenceInventoryCodec(),
+    private val localInventoryProvider: () -> List<SequenceInventoryEntry>,
+    private val ownPubkeyProvider: () -> String?,
+    private val inventoryCodec: SequenceInventoryCodec = SequenceInventoryCodec(),
+    private val requestCodec: ReportRequestCodec = ReportRequestCodec(),
+    private val planner: SyncRequestPlanner = SyncRequestPlanner(),
 ) {
 
     private var gatt: BluetoothGatt? = null
-    private var probeSent = false
+    private var syncRequested = false
 
     fun connect() {
         eventLog.log("central connecting ${device.address}")
@@ -68,7 +73,7 @@ class GattSyncClient(
             characteristic: BluetoothGattCharacteristic,
             status: Int,
         ) {
-            handleState("state read", characteristic, characteristic.value)
+            handleRead(characteristic, characteristic.value)
         }
 
         override fun onCharacteristicRead(
@@ -77,14 +82,14 @@ class GattSyncClient(
             value: ByteArray,
             status: Int,
         ) {
-            handleState("state read", characteristic, value)
+            handleRead(characteristic, value)
         }
 
         override fun onCharacteristicChanged(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
         ) {
-            handleState("state notified", characteristic, characteristic.value)
+            handleNotification(characteristic, characteristic.value)
         }
 
         override fun onCharacteristicChanged(
@@ -92,7 +97,7 @@ class GattSyncClient(
             characteristic: BluetoothGattCharacteristic,
             value: ByteArray,
         ) {
-            handleState("state notified", characteristic, value)
+            handleNotification(characteristic, value)
         }
 
         override fun onDescriptorWrite(
@@ -107,15 +112,66 @@ class GattSyncClient(
         }
     }
 
-    private fun handleState(label: String, characteristic: BluetoothGattCharacteristic, value: ByteArray?) {
-        if (characteristic.uuid != GattSyncProtocol.STATE_UUID) return
-        val entries = codec.decode(value)
-        if (entries == null) {
-            eventLog.log("$label decode failed")
+    private fun handleRead(characteristic: BluetoothGattCharacteristic, value: ByteArray?) {
+        val entries = decodeState(characteristic, value) ?: return
+        eventLog.log("state read: ${entries.size} entries")
+        requestReports(entries)
+    }
+
+    private fun handleNotification(characteristic: BluetoothGattCharacteristic, value: ByteArray?) {
+        val entries = decodeState(characteristic, value) ?: return
+        eventLog.log("state notified: ${entries.size} entries")
+    }
+
+    private fun decodeState(
+        characteristic: BluetoothGattCharacteristic,
+        value: ByteArray?,
+    ): List<SequenceInventoryEntry>? {
+        if (characteristic.uuid != GattSyncProtocol.STATE_UUID) return null
+        val entries = inventoryCodec.decode(value)
+        if (entries == null) eventLog.log("state decode failed")
+        return entries
+    }
+
+    private fun requestReports(remote: List<SequenceInventoryEntry>) {
+        if (syncRequested) return
+        syncRequested = true
+        val requests = planner.plan(remote, localInventoryProvider(), ownPubkeyProvider())
+        if (requests.isEmpty()) {
+            eventLog.log("sync up to date")
             return
         }
-        eventLog.log("$label: ${entries.size} entries")
-        if (label == READ_LABEL) sendProbeOnce()
+        requests.forEach { request ->
+            eventLog.log("REQ: ${request.createdBy.take(LOG_KEY_CHARS)} [${request.fromSeq}..${request.toSeq}]")
+        }
+        val sent = writeRequests(requests)
+        eventLog.log(if (sent) "req sent: ${requests.size}" else "req send failed")
+    }
+
+    private fun writeRequests(requests: List<ReportRequest>): Boolean {
+        val current = gatt ?: return false
+        val data = current
+            .getService(GattSyncProtocol.SERVICE_UUID)
+            ?.getCharacteristic(GattSyncProtocol.DATA_UUID)
+        if (data == null) {
+            eventLog.log("data characteristic missing")
+            return false
+        }
+        return writeData(current, data, requestCodec.encode(requests))
+    }
+
+    @Suppress("DEPRECATION")
+    private fun writeData(
+        gatt: BluetoothGatt,
+        data: BluetoothGattCharacteristic,
+        payload: ByteArray,
+    ): Boolean = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        gatt.writeCharacteristic(data, payload, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE) ==
+            BluetoothStatusCodes.SUCCESS
+    } else {
+        data.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
+        data.value = payload
+        gatt.writeCharacteristic(data)
     }
 
     private fun stateCharacteristic(gatt: BluetoothGatt): BluetoothGattCharacteristic? {
@@ -143,31 +199,7 @@ class GattSyncClient(
         eventLog.log(if (sent) "state subscribe sent" else "state subscribe failed")
     }
 
-    @Suppress("DEPRECATION")
-    private fun sendProbeOnce() {
-        if (probeSent) return
-        val current = gatt ?: return
-        val data = current
-            .getService(GattSyncProtocol.SERVICE_UUID)
-            ?.getCharacteristic(GattSyncProtocol.DATA_UUID)
-        if (data == null) {
-            eventLog.log("data characteristic missing")
-            return
-        }
-        probeSent = true
-        val sent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            current.writeCharacteristic(data, DATA_PROBE, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE) ==
-                BluetoothStatusCodes.SUCCESS
-        } else {
-            data.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
-            data.value = DATA_PROBE
-            current.writeCharacteristic(data)
-        }
-        eventLog.log(if (sent) "data probe sent" else "data probe failed")
-    }
-
     private companion object {
-        const val READ_LABEL = "state read"
-        val DATA_PROBE = byteArrayOf(0x01)
+        const val LOG_KEY_CHARS = 8
     }
 }

@@ -142,7 +142,13 @@ class BleBeaconService : Service() {
     private fun connectCentral(peerId: String, device: BluetoothDevice) {
         if (!connectingAddresses.add(device.address)) return
         eventLog.log("peer $peerId -> central")
-        val client = GattSyncClient(this, device, eventLog)
+        val client = GattSyncClient(
+            context = this,
+            device = device,
+            eventLog = eventLog,
+            localInventoryProvider = { spamReportStore.sequenceInventory() },
+            ownPubkeyProvider = { identity.publicKeyBase64() },
+        )
         gattClients.add(client)
         client.connect()
     }
