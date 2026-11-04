@@ -21,6 +21,7 @@ class GattSyncClient(
     private val reportValidator: ReportValidator,
     private val reportPersister: (SpamReport) -> Boolean,
     private val peerMaxSeqProvider: (String) -> Long,
+    private val reportCountProvider: () -> Int,
     private val clock: () -> Long = System::currentTimeMillis,
     private val inventoryCodec: SequenceInventoryCodec = SequenceInventoryCodec(),
     private val requestCodec: ReportRequestCodec = ReportRequestCodec(),
@@ -30,14 +31,16 @@ class GattSyncClient(
 
     private var gatt: BluetoothGatt? = null
     private var syncRequested = false
+    private var receivedCount = 0
+    private var droppedCount = 0
     private val lastSeqByPeer = mutableMapOf<String, Long>()
 
     fun connect() {
-        eventLog.log("central connecting ${device.address}")
         gatt = device.connectGatt(context, false, callback, BluetoothDevice.TRANSPORT_LE)
     }
 
     fun close() {
+        logSummary()
         val current = gatt ?: return
         runCatching { current.disconnect() }
         runCatching { current.close() }
@@ -48,11 +51,10 @@ class GattSyncClient(
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             when (newState) {
                 BluetoothProfile.STATE_CONNECTED -> {
-                    eventLog.log("central connected ${gatt.device.address}")
+                    eventLog.log("connected ${gatt.device.address}")
                     gatt.requestMtu(GattSyncProtocol.TARGET_MTU)
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
-                    eventLog.log("central disconnected ${gatt.device.address}")
                     runCatching { gatt.close() }
                     this@GattSyncClient.gatt = null
                 }
@@ -60,7 +62,6 @@ class GattSyncClient(
         }
 
         override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
-            eventLog.log("central mtu $mtu")
             gatt.discoverServices()
         }
 
@@ -69,7 +70,6 @@ class GattSyncClient(
                 eventLog.log("services discovery failed: $status")
                 return
             }
-            eventLog.log("services discovered")
             subscribe(gatt, GattSyncProtocol.STATE_UUID, STATE_LABEL)
         }
 
@@ -111,32 +111,18 @@ class GattSyncClient(
             status: Int,
         ) {
             when (descriptor.characteristic.uuid) {
-                GattSyncProtocol.STATE_UUID -> {
-                    eventLog.log("state subscribed")
-                    subscribe(gatt, GattSyncProtocol.DATA_UUID, DATA_LABEL)
-                }
-                GattSyncProtocol.DATA_UUID -> {
-                    eventLog.log("data subscribed")
-                    readState(gatt)
-                }
+                GattSyncProtocol.STATE_UUID -> subscribe(gatt, GattSyncProtocol.DATA_UUID, DATA_LABEL)
+                GattSyncProtocol.DATA_UUID -> readState(gatt)
             }
         }
     }
 
     private fun handleRead(characteristic: BluetoothGattCharacteristic, value: ByteArray?) {
-        val entries = decodeState(characteristic, value) ?: return
-        eventLog.log("state read: ${entries.size} entries")
-        requestReports(entries)
+        requestReports(decodeState(characteristic, value) ?: return)
     }
 
     private fun handleChanged(characteristic: BluetoothGattCharacteristic, value: ByteArray?) {
-        when (characteristic.uuid) {
-            GattSyncProtocol.STATE_UUID -> {
-                val entries = decodeState(characteristic, value) ?: return
-                eventLog.log("state notified: ${entries.size} entries")
-            }
-            GattSyncProtocol.DATA_UUID -> handleReports(value)
-        }
+        if (characteristic.uuid == GattSyncProtocol.DATA_UUID) handleReports(value)
     }
 
     private fun handleReports(value: ByteArray?) {
@@ -145,19 +131,22 @@ class GattSyncClient(
     }
 
     private fun handleReport(report: SpamReport) {
-        val peer = report.createdBy.take(LOG_KEY_CHARS)
         val lastKnown = lastSeqByPeer.getOrPut(report.createdBy) { peerMaxSeqProvider(report.createdBy) }
         val verdict = reportValidator.validate(report, lastKnown, clock())
-        if (verdict != ReportVerdict.VALID) {
-            eventLog.log("report $peer#${report.seqNum} dropped: ${verdictLabel(verdict)}")
-            return
-        }
-        if (!reportPersister(report)) {
-            eventLog.log("report $peer#${report.seqNum} dropped: duplicate")
+        if (verdict != ReportVerdict.VALID || !reportPersister(report)) {
+            droppedCount++
             return
         }
         lastSeqByPeer[report.createdBy] = report.seqNum
-        eventLog.log("report $peer#${report.seqNum} ok")
+        receivedCount++
+    }
+
+    private fun logSummary() {
+        if (receivedCount == 0 && droppedCount == 0) return
+        val dropped = if (droppedCount > 0) ", dropped $droppedCount" else ""
+        eventLog.log("sync: got $receivedCount$dropped, total ${reportCountProvider()}")
+        receivedCount = 0
+        droppedCount = 0
     }
 
     private fun decodeState(
@@ -174,15 +163,8 @@ class GattSyncClient(
         if (syncRequested) return
         syncRequested = true
         val requests = planner.plan(remote, localInventoryProvider(), ownPubkeyProvider())
-        if (requests.isEmpty()) {
-            eventLog.log("sync up to date")
-            return
-        }
-        requests.forEach { request ->
-            eventLog.log("REQ: ${request.createdBy.take(LOG_KEY_CHARS)} [${request.fromSeq}..${request.toSeq}]")
-        }
-        val sent = writeRequests(requests)
-        eventLog.log(if (sent) "req sent: ${requests.size}" else "req send failed")
+        if (requests.isEmpty()) return
+        if (!writeRequests(requests)) eventLog.log("req send failed")
     }
 
     private fun writeRequests(requests: List<ReportRequest>): Boolean {
@@ -234,7 +216,7 @@ class GattSyncClient(
             descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
             gatt.writeDescriptor(descriptor)
         }
-        eventLog.log(if (sent) "$label subscribe sent" else "$label subscribe failed")
+        if (!sent) eventLog.log("$label subscribe failed")
     }
 
     private fun characteristic(
@@ -248,16 +230,7 @@ class GattSyncClient(
         return characteristic
     }
 
-    private fun verdictLabel(verdict: ReportVerdict): String = when (verdict) {
-        ReportVerdict.INVALID_SIGNATURE -> "signature"
-        ReportVerdict.SEQUENCE_ROLLBACK -> "rollback"
-        ReportVerdict.FROM_FUTURE -> "future"
-        ReportVerdict.EXPIRED -> "expired"
-        ReportVerdict.VALID -> "ok"
-    }
-
     private companion object {
-        const val LOG_KEY_CHARS = 8
         const val STATE_LABEL = "state"
         const val DATA_LABEL = "data"
     }

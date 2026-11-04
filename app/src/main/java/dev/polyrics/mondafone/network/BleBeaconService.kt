@@ -69,10 +69,7 @@ class BleBeaconService : Service() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             val id = codec.decode(result.scanRecord?.getServiceData(serviceUuid)) ?: return
             if (id == activeId) return
-            if (counter.record(id)) {
-                eventLog.log("received id $id")
-                resolvePeer(id, result.device)
-            }
+            if (counter.record(id)) resolvePeer(id, result.device)
         }
 
         override fun onScanFailed(errorCode: Int) {
@@ -159,6 +156,7 @@ class BleBeaconService : Service() {
             reportValidator = reportValidator,
             reportPersister = spamReportStore::acceptRemoteReport,
             peerMaxSeqProvider = { pubkey -> peerStatusStore.find(pubkey)?.maxSeqNum ?: 0L },
+            reportCountProvider = spamReportStore::reportCount,
         )
         gattClients.add(client)
         client.connect()
@@ -169,6 +167,7 @@ class BleBeaconService : Service() {
             context = this,
             inventoryProvider = { spamReportStore.sequenceInventory() },
             reportsProvider = spamReportStore::reportsByReporter,
+            reportCountProvider = spamReportStore::reportCount,
             eventLog = eventLog,
         )
         if (!server.open(bluetoothManager())) {

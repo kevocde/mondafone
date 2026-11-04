@@ -82,7 +82,7 @@ Retro pastel design system for all UI:
 2. Build both debug and release variants when changing Kotlin, the manifest, or Gradle configuration.
 3. Check the release APK size after dependency or resource changes.
 4. Test screening role grant/revocation, block rule matching, and in-app pending review on a physical device with real incoming calls.
-5. Test the BLE beacon on physical devices (ideally two) and confirm the `Beacon active`, `received id ...`, and `count: ...` lines in the debug box. Also verify a window still fires while the device is idle (`adb shell dumpsys deviceidle force-idle`) and after a reboot. On aggressive OEMs (e.g., Xiaomi/HyperOS) verify with the screen off for several minutes that windows stay on schedule and no `window late` lines appear.
+5. Test the BLE beacon on physical devices (ideally two) and confirm the `Beacon active`, `peer <id> -> central/peripheral`, `sync: sent/got ...`, and `count: ...` lines in the debug box. Also verify a window still fires while the device is idle (`adb shell dumpsys deviceidle force-idle`) and after a reboot. On aggressive OEMs (e.g., Xiaomi/HyperOS) verify with the screen off for several minutes that windows stay on schedule and no `window late` lines appear.
 
 ## Code Rules
 1. KISS for all the code

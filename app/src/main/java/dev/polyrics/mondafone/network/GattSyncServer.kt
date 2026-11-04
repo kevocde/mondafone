@@ -21,6 +21,7 @@ class GattSyncServer(
     private val context: Context,
     private val inventoryProvider: () -> List<SequenceInventoryEntry>,
     private val reportsProvider: (createdBy: String, fromSeq: Long, toSeq: Long) -> List<SpamReport>,
+    private val reportCountProvider: () -> Int,
     private val eventLog: BeaconEventLog,
     private val inventoryCodec: SequenceInventoryCodec = SequenceInventoryCodec(),
     private val requestCodec: ReportRequestCodec = ReportRequestCodec(),
@@ -42,7 +43,6 @@ class GattSyncServer(
         stateCharacteristic = service.getCharacteristic(GattSyncProtocol.STATE_UUID)
         dataCharacteristic = service.getCharacteristic(GattSyncProtocol.DATA_UUID)
         server = newServer
-        eventLog.log("gatt server open")
         return true
     }
 
@@ -54,7 +54,6 @@ class GattSyncServer(
         stateCharacteristic = null
         dataCharacteristic = null
         mtuByDevice.clear()
-        eventLog.log("gatt server closed")
     }
 
     private fun buildService(): BluetoothGattService {
@@ -92,17 +91,13 @@ class GattSyncServer(
     private val callback = object : BluetoothGattServerCallback() {
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
             when (newState) {
-                BluetoothProfile.STATE_CONNECTED -> eventLog.log("peripheral link up ${device.address}")
-                BluetoothProfile.STATE_DISCONNECTED -> {
-                    mtuByDevice.remove(device.address)
-                    eventLog.log("peripheral link down ${device.address}")
-                }
+                BluetoothProfile.STATE_CONNECTED -> eventLog.log("connected ${device.address}")
+                BluetoothProfile.STATE_DISCONNECTED -> mtuByDevice.remove(device.address)
             }
         }
 
         override fun onMtuChanged(device: BluetoothDevice, mtu: Int) {
             mtuByDevice[device.address] = mtu
-            eventLog.log("peripheral mtu $mtu")
         }
 
         override fun onCharacteristicReadRequest(
@@ -119,7 +114,6 @@ class GattSyncServer(
             val payload = inventoryCodec.encode(entries)
             val chunk = payload.copyOfRange(offset.coerceAtMost(payload.size), payload.size)
             respond(device, requestId, offset, chunk)
-            eventLog.log("state read: ${entries.size} entries")
         }
 
         override fun onCharacteristicWriteRequest(
@@ -147,34 +141,22 @@ class GattSyncServer(
             if (responseNeeded) respond(device, requestId, offset, null)
             if (descriptor.characteristic.uuid != GattSyncProtocol.STATE_UUID) return
             if (!isNotificationEnabled(value)) return
-            eventLog.log("state notify on ${device.address}")
             notifyState(device)
         }
     }
 
     private fun handleRequests(device: BluetoothDevice, value: ByteArray) {
-        val requests = requestCodec.decode(value)
-        if (requests == null) {
-            eventLog.log("data write: ${value.size} bytes")
-            return
-        }
-        requests.forEach { request ->
-            eventLog.log("REQ: ${request.createdBy.take(LOG_KEY_CHARS)} [${request.fromSeq}..${request.toSeq}]")
-        }
-        serve(device, requests)
+        val requests = requestCodec.decode(value) ?: return
+        val sent = requests.sumOf { request -> serve(device, request) }
+        if (sent > 0) eventLog.log("sync: sent $sent, total ${reportCountProvider()}")
     }
 
-    private fun serve(device: BluetoothDevice, requests: List<ReportRequest>) {
-        val data = dataCharacteristic ?: return
-        requests.forEach { request ->
-            val reports = reportsProvider(request.createdBy, request.fromSeq, request.toSeq)
-            if (reports.isEmpty()) return@forEach
-            notifyInChunks(device, data, encodeReports(reports))
-            eventLog.log(
-                "REPORTS: ${request.createdBy.take(LOG_KEY_CHARS)} " +
-                    "[${request.fromSeq}..${request.toSeq}] (${reports.size})",
-            )
-        }
+    private fun serve(device: BluetoothDevice, request: ReportRequest): Int {
+        val data = dataCharacteristic ?: return 0
+        val reports = reportsProvider(request.createdBy, request.fromSeq, request.toSeq)
+        if (reports.isEmpty()) return 0
+        notifyInChunks(device, data, encodeReports(reports))
+        return reports.size
     }
 
     private fun encodeReports(reports: List<SpamReport>): ByteArray =
@@ -204,8 +186,9 @@ class GattSyncServer(
 
     private fun notifyState(device: BluetoothDevice) {
         val characteristic = stateCharacteristic ?: return
-        val sent = notify(device, characteristic, inventoryCodec.encode(inventoryProvider()))
-        eventLog.log(if (sent) "state notified" else "state notify failed")
+        if (!notify(device, characteristic, inventoryCodec.encode(inventoryProvider()))) {
+            eventLog.log("state notify failed")
+        }
     }
 
     @Suppress("DEPRECATION")
@@ -233,7 +216,6 @@ class GattSyncServer(
 
     private companion object {
         const val NOTIFY_FLAG = 0x01
-        const val LOG_KEY_CHARS = 8
         const val DEFAULT_MTU = 23
         const val ATT_OVERHEAD = 3
     }
