@@ -173,6 +173,13 @@ class TrustCallScreeningServiceTest {
             override fun isReportedByMe(canonicalNumber: String) = canonicalNumber in ownReported
             override fun foreignReportCount(canonicalNumber: String) = foreignReports[canonicalNumber] ?: 0
             override fun ownReports(): List<OwnSpamReport> = emptyList()
+            override fun sequenceInventory(): List<SequenceInventoryEntry> = emptyList()
+            override fun reportsByReporter(
+                createdBy: String,
+                fromSeq: Long,
+                toSeq: Long,
+            ): List<SpamReport> = emptyList()
+            override fun reportCount(): Int = 0
             override fun removeOwnReport(phoneHash: String) = Unit
             override fun registerOnChangeListener(listener: () -> Unit) {}
             override fun unregisterOnChangeListener() {}
@@ -182,6 +189,9 @@ class TrustCallScreeningServiceTest {
             private val peers = mutableMapOf<String, PeerStatus>()
             override fun upsert(peer: PeerStatus) {
                 peers[peer.idPubkey] = peer
+            }
+            override fun recordReport(idPubkey: String, seqNum: Long, syncedAt: Long) {
+                upsert(PeerStatus(idPubkey, seqNum, syncedAt))
             }
             override fun find(idPubkey: String): PeerStatus? = peers[idPubkey]
             override fun all(): List<PeerStatus> = peers.values.toList()
