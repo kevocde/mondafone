@@ -61,6 +61,17 @@ class RetroViewsAccessibilityTest {
     }
 
     @Test
+    fun retroStatsBarExposesEachValueToAccessibility() {
+        val statsBar = RetroStatsBar(context, listOf("Blocked calls", "Spam numbers", "Devices"))
+        statsBar.setValues(listOf(3, 12, 2))
+
+        assertEquals(3, statsBar.childCount)
+        assertEquals("Blocked calls: 3", statsBar.getChildAt(0).contentDescription.toString())
+        assertEquals("Spam numbers: 12", statsBar.getChildAt(1).contentDescription.toString())
+        assertEquals("Devices: 2", statsBar.getChildAt(2).contentDescription.toString())
+    }
+
+    @Test
     fun retroDebugBoxAggregatesLinesAndHidesDynamicDescendantsFromFocus() {
         val debugBox = RetroDebugBox(context)
         debugBox.setLines(listOf("Device ID: abc", "Power: unrestricted"))

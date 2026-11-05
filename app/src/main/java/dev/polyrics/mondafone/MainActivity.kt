@@ -21,18 +21,22 @@ import dev.polyrics.mondafone.spam.PhoneNumberDisplay
 import dev.polyrics.mondafone.ui.RetroButton
 import dev.polyrics.mondafone.ui.RetroDebugBox
 import dev.polyrics.mondafone.ui.RetroPanel
+import dev.polyrics.mondafone.ui.RetroStatsBar
 import dev.polyrics.mondafone.ui.RetroTabBar
 import dev.polyrics.mondafone.ui.RetroTitle
 import dev.polyrics.mondafone.ui.VerdictListItemView
+import java.util.concurrent.TimeUnit
 
 class MainActivity : Activity() {
 
     private val store by lazy { (application as MondafoneApp).verdictStore }
     private val reports by lazy { (application as MondafoneApp).spamReportStore }
     private val identity by lazy { (application as MondafoneApp).deviceIdentity }
+    private val blockedCalls by lazy { (application as MondafoneApp).blockedCallStore }
     private val beaconLog by lazy { (application as MondafoneApp).beaconEventLog }
     private lateinit var listContainer: LinearLayout
     private lateinit var tabBar: RetroTabBar
+    private lateinit var statsBar: RetroStatsBar
     private var debugBox: RetroDebugBox? = null
     private var currentTab = 0
     private var batteryExemptionPrompted = false
@@ -95,7 +99,22 @@ class MainActivity : Activity() {
             setBackgroundColor(getColor(R.color.background))
             clipChildren = false
             addView(RetroTitle(this@MainActivity, getString(R.string.app_name)))
-            addView(textLabel(getString(R.string.app_subtitle), 18f, bold = true), marginParams(bottom = gap * 2))
+            addView(textLabel(getString(R.string.app_subtitle), 18f, bold = true), marginParams(bottom = gap))
+            statsBar = RetroStatsBar(
+                this@MainActivity,
+                listOf(
+                    getString(R.string.stat_blocked_calls),
+                    getString(R.string.stat_spam_numbers),
+                    getString(R.string.stat_network_devices),
+                ),
+            )
+            addView(
+                statsBar,
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { bottomMargin = gap * 2 },
+            )
             tabBar = RetroTabBar(
                 this@MainActivity,
                 listOf(
@@ -197,12 +216,24 @@ class MainActivity : Activity() {
                 reports.ownReports().size,
             ),
         )
+        renderStats()
         listContainer.removeAllViews()
         when (currentTab) {
             0 -> renderPendingItems()
             1 -> renderWhitelistItems()
             2 -> renderBlacklistItems()
         }
+    }
+
+    private fun renderStats() {
+        val cutoff = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(BuildConfig.REPORT_MAX_AGE_DAYS)
+        statsBar.setValues(
+            listOf(
+                blockedCalls.count(),
+                reports.spamNumberCount(cutoff),
+                reports.networkDeviceCount(cutoff, identity.publicKeyBase64() ?: ""),
+            ),
+        )
     }
 
     private fun renderPendingItems() {

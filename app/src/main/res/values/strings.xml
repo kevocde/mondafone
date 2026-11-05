@@ -20,6 +20,9 @@
     <string name="spam_prompt_channel_name">Spam verdict prompt</string>
     <string name="spam_prompt_title">Was this call spam?</string>
     <string name="spam_prompt_text">From %1$s</string>
+    <string name="stat_blocked_calls">Blocked calls</string>
+    <string name="stat_spam_numbers">Spam numbers</string>
+    <string name="stat_network_devices">Devices</string>
     <string name="tab_pending">Pending</string>
     <string name="tab_whitelist">Whitelist</string>
     <string name="tab_blacklist">Blacklist</string>
