@@ -8,6 +8,7 @@ import dev.polyrics.mondafone.network.BeaconConfig
 import dev.polyrics.mondafone.network.BeaconEventLog
 import dev.polyrics.mondafone.network.InMemoryBeaconEventLog
 import dev.polyrics.mondafone.spam.BlockedCallNotifier
+import dev.polyrics.mondafone.spam.BlockedCallStore
 import dev.polyrics.mondafone.spam.CallVerdictStore
 import dev.polyrics.mondafone.spam.CanonicalVerdictMigrator
 import dev.polyrics.mondafone.spam.DeviceReportSigner
@@ -21,6 +22,7 @@ import dev.polyrics.mondafone.spam.SpamDependencies
 import dev.polyrics.mondafone.spam.SpamReportHasher
 import dev.polyrics.mondafone.spam.SpamReportStore
 import dev.polyrics.mondafone.spam.SpamVerdictPromptNotifier
+import dev.polyrics.mondafone.spam.SqliteBlockedCallStore
 import dev.polyrics.mondafone.spam.SqliteCallVerdictStore
 import dev.polyrics.mondafone.spam.SqliteLegacyBlacklistReader
 import dev.polyrics.mondafone.spam.SqlitePeerStatusStore
@@ -51,6 +53,7 @@ open class MondafoneApp : Application(), SpamDependencies {
         )
     }
     override val peerStatusStore: PeerStatusStore by lazy { SqlitePeerStatusStore(this) }
+    override val blockedCallStore: BlockedCallStore by lazy { SqliteBlockedCallStore(this) }
     override val phoneNumberNormalizer: PhoneNumberNormalizer by lazy {
         PhoneNumberNormalizer(FrameworkRegionProvider(this))
     }

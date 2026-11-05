@@ -67,6 +67,24 @@ class TrustCallScreeningServiceTest {
     }
 
     @Test
+    fun blockedIncomingCallIsCounted() {
+        app.ownReported += CANONICAL
+
+        screen(NATIONAL)
+
+        assertEquals(listOf(CANONICAL), app.blockedCalls)
+    }
+
+    @Test
+    fun allowedIncomingCallIsNotCounted() {
+        app.whitelisted += CANONICAL
+
+        screen(NATIONAL)
+
+        assertTrue(app.blockedCalls.isEmpty())
+    }
+
+    @Test
     fun globalChanceBlocksWhenDrawIsBelowProbability() {
         app.foreignReports[CANONICAL] = 1
         screeningService.globalSpamProbability = GlobalSpamProbability(FixedRandom(0.4))
@@ -136,6 +154,7 @@ class TrustCallScreeningServiceTest {
         val ownReported = mutableSetOf<String>()
         val foreignReports = mutableMapOf<String, Int>()
         val blockedNumbers = mutableListOf<String>()
+        val blockedCalls = mutableListOf<String>()
         val promptedNumbers = mutableListOf<String>()
 
         override fun onCreate() = Unit
@@ -201,6 +220,14 @@ class TrustCallScreeningServiceTest {
             PhoneNumberNormalizer(object : RegionProvider {
                 override fun regionIso(): String = "ES"
             })
+
+        override val blockedCallStore: BlockedCallStore = object : BlockedCallStore {
+            override fun record(number: String, at: Long) {
+                blockedCalls += number
+            }
+
+            override fun count(): Int = blockedCalls.size
+        }
 
         override val blockedCallNotifier: BlockedCallNotifier = object : BlockedCallNotifier {
             override fun notifyBlocked(number: String) {

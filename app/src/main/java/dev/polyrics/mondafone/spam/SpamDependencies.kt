@@ -6,6 +6,7 @@ interface SpamDependencies {
     val verdictStore: CallVerdictStore
     val spamReportStore: SpamReportStore
     val peerStatusStore: PeerStatusStore
+    val blockedCallStore: BlockedCallStore
     val phoneNumberNormalizer: PhoneNumberNormalizer
     val blockedCallNotifier: BlockedCallNotifier
     val verdictPromptNotifier: SpamVerdictPromptNotifier
