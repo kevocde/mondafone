@@ -32,6 +32,7 @@ class VerdictDbHelperTest {
             VerdictContract.TABLE_SPAM_REPORT_ALIASES,
             VerdictContract.TABLE_PEERS_STATUS,
             VerdictContract.TABLE_LOCAL_SYNC_STATE,
+            VerdictContract.TABLE_BLOCKED_CALLS,
         ).forEach { assertTrue("missing table $it", db.tableExists(it)) }
     }
 
@@ -56,15 +57,30 @@ class VerdictDbHelperTest {
         assertEquals(2L, db.maxSeqNumOf("pubkey-b"))
     }
 
+    @Test
+    fun createsBlockedCallsWhenUpgradingFromVersionThree() {
+        createDatabase(version = 3)
+
+        val db = VerdictDbHelper(app).writableDatabase
+
+        assertTrue(db.tableExists(VerdictContract.TABLE_BLOCKED_CALLS))
+    }
+
     private fun createVersionTwoDatabase() {
-        val path = app.getDatabasePath(VerdictContract.DATABASE_NAME)
-        path.parentFile?.mkdirs()
-        SQLiteDatabase.openOrCreateDatabase(path, null).use { db ->
-            VerdictContract.CREATE_ALL_TABLES.forEach(db::execSQL)
+        createDatabase(version = 2) { db ->
             db.insertReport("hash-a", "pubkey-a", 5L)
             db.insertReport("hash-b", "pubkey-a", 2L)
             db.insertReport("hash-c", "pubkey-b", 2L)
-            db.version = 2
+        }
+    }
+
+    private fun createDatabase(version: Int, populate: (SQLiteDatabase) -> Unit = {}) {
+        val path = app.getDatabasePath(VerdictContract.DATABASE_NAME)
+        path.parentFile?.mkdirs()
+        SQLiteDatabase.openOrCreateDatabase(path, null).use { db ->
+            VerdictContract.CREATE_TABLES_BEFORE_VERSION_FOUR.forEach(db::execSQL)
+            populate(db)
+            db.version = version
         }
     }
 
