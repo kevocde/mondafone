@@ -199,6 +199,8 @@ class TrustCallScreeningServiceTest {
                 toSeq: Long,
             ): List<SpamReport> = emptyList()
             override fun reportCount(): Int = 0
+            override fun spamNumberCount(notOlderThan: Long): Int = 0
+            override fun networkDeviceCount(notOlderThan: Long, excludePubkey: String): Int = 0
             override fun removeOwnReport(phoneHash: String) = Unit
             override fun registerOnChangeListener(listener: () -> Unit) {}
             override fun unregisterOnChangeListener() {}

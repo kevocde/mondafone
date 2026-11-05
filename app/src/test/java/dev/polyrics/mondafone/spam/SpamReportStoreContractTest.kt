@@ -198,6 +198,61 @@ abstract class SpamReportStoreContractTest {
     }
 
     @Test
+    fun spamNumberCountStartsAtZero() {
+        assertEquals(0, store.spamNumberCount(System.currentTimeMillis()))
+    }
+
+    @Test
+    fun spamNumberCountDeduplicatesByHash() {
+        store.reportOwn(CANONICAL_A, DISPLAY_A)
+        store.acceptRemoteReport(
+            TestIdentity().signedReport(hashOf(CANONICAL_A), 1L, System.currentTimeMillis()),
+        )
+
+        assertEquals(1, store.spamNumberCount(System.currentTimeMillis() - 1_000))
+    }
+
+    @Test
+    fun spamNumberCountIgnoresExpiredReports() {
+        store.reportOwn(CANONICAL_A, DISPLAY_A)
+
+        assertEquals(0, store.spamNumberCount(System.currentTimeMillis() + 1_000))
+    }
+
+    @Test
+    fun networkDeviceCountExcludesOwnReporter() {
+        store.reportOwn(CANONICAL_A, DISPLAY_A)
+        store.acceptRemoteReport(
+            TestIdentity().signedReport(hashOf(CANONICAL_B), 1L, System.currentTimeMillis()),
+        )
+
+        assertEquals(
+            1,
+            store.networkDeviceCount(System.currentTimeMillis() - 1_000, identity.publicKeyBase64()),
+        )
+    }
+
+    @Test
+    fun networkDeviceCountDeduplicatesReporters() {
+        val remote = TestIdentity()
+        val now = System.currentTimeMillis()
+        store.acceptRemoteReport(remote.signedReport(hashOf(CANONICAL_A), 1L, now))
+        store.acceptRemoteReport(remote.signedReport(hashOf(CANONICAL_B), 2L, now))
+
+        assertEquals(1, store.networkDeviceCount(now - 1_000, identity.publicKeyBase64()))
+    }
+
+    @Test
+    fun networkDeviceCountIgnoresExpiredReports() {
+        store.acceptRemoteReport(TestIdentity().signedReport(hashOf(CANONICAL_A), 1L, NOW))
+
+        assertEquals(
+            0,
+            store.networkDeviceCount(System.currentTimeMillis() - 1_000, identity.publicKeyBase64()),
+        )
+    }
+
+    @Test
     fun reportsByReporterReturnsRequestedRangeInSequenceOrder() {
         val remote = TestIdentity()
         val first = remote.signedReport(hashOf(CANONICAL_A), 1L, NOW)

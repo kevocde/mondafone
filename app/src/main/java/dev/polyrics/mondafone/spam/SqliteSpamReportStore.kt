@@ -171,6 +171,23 @@ class SqliteSpamReportStore(
             .rawQuery("SELECT COUNT(*) FROM ${VerdictContract.TABLE_SPAM_REPORTS}", null)
             .use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
 
+    override fun spamNumberCount(notOlderThan: Long): Int =
+        count(
+            "SELECT COUNT(DISTINCT ${VerdictContract.COLUMN_PHONE_HASH}) " +
+                "FROM ${VerdictContract.TABLE_SPAM_REPORTS} " +
+                "WHERE ${VerdictContract.COLUMN_CREATED_AT} > ?",
+            arrayOf(notOlderThan.toString()),
+        )
+
+    override fun networkDeviceCount(notOlderThan: Long, excludePubkey: String): Int =
+        count(
+            "SELECT COUNT(DISTINCT ${VerdictContract.COLUMN_CREATED_BY}) " +
+                "FROM ${VerdictContract.TABLE_SPAM_REPORTS} " +
+                "WHERE ${VerdictContract.COLUMN_CREATED_AT} > ? " +
+                "AND ${VerdictContract.COLUMN_CREATED_BY} != ?",
+            arrayOf(notOlderThan.toString(), excludePubkey),
+        )
+
     override fun removeOwnReport(phoneHash: String) {
         val createdBy = myPublicKey() ?: return
         val database = database()
@@ -268,6 +285,11 @@ class SqliteSpamReportStore(
         createdAt = getLong(getColumnIndexOrThrow(VerdictContract.COLUMN_CREATED_AT)),
         signature = getString(getColumnIndexOrThrow(VerdictContract.COLUMN_SIGNATURE)),
     )
+
+    private fun count(sql: String, arguments: Array<String>): Int =
+        database()
+            .rawQuery(sql, arguments)
+            .use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
 
     private fun myPublicKey(): String? = identity.publicKeyBase64()
 
