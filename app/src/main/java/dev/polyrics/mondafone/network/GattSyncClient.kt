@@ -43,6 +43,7 @@ class GattSyncClient(
     private val idleTimeout = Runnable { disconnect() }
 
     private var completed = false
+    private var cacheRefreshed = false
 
     fun connect() {
         gatt = device.connectGatt(context, false, callback, BluetoothDevice.TRANSPORT_LE)
@@ -102,6 +103,10 @@ class GattSyncClient(
                 eventLog.log("services discovery failed: $status")
                 disconnect()
                 return
+            }
+            if (gatt.getService(GattSyncProtocol.SERVICE_UUID) == null && !cacheRefreshed) {
+                cacheRefreshed = true
+                if (refreshDeviceCache(gatt) && gatt.discoverServices()) return
             }
             restartIdleTimer()
             subscribe(gatt, GattSyncProtocol.DATA_UUID, DATA_LABEL)
@@ -282,12 +287,21 @@ class GattSyncClient(
     }
 
     private fun readState(gatt: BluetoothGatt) {
-        val state = characteristic(gatt, GattSyncProtocol.STATE_UUID) ?: return
-        if (!gatt.readCharacteristic(state)) eventLog.log("state read failed")
+        val state = characteristic(gatt, GattSyncProtocol.STATE_UUID) ?: run {
+            disconnect()
+            return
+        }
+        if (!gatt.readCharacteristic(state)) {
+            eventLog.log("state read failed")
+            disconnect()
+        }
     }
 
     private fun subscribe(gatt: BluetoothGatt, uuid: UUID, label: String) {
-        val characteristic = characteristic(gatt, uuid) ?: return
+        val characteristic = characteristic(gatt, uuid) ?: run {
+            disconnect()
+            return
+        }
         gatt.setCharacteristicNotification(characteristic, true)
         writeDescriptor(gatt, characteristic, label)
     }
@@ -301,6 +315,7 @@ class GattSyncClient(
         val descriptor = characteristic.getDescriptor(GattSyncProtocol.CCC_DESCRIPTOR_UUID)
         if (descriptor == null) {
             eventLog.log("$label descriptor missing")
+            disconnect()
             return
         }
         val sent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -310,7 +325,10 @@ class GattSyncClient(
             descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
             gatt.writeDescriptor(descriptor)
         }
-        if (!sent) eventLog.log("$label subscribe failed")
+        if (!sent) {
+            eventLog.log("$label subscribe failed")
+            disconnect()
+        }
     }
 
     private fun characteristic(gatt: BluetoothGatt, uuid: UUID): BluetoothGattCharacteristic? {
@@ -320,6 +338,10 @@ class GattSyncClient(
         if (characteristic == null) eventLog.log("$uuid characteristic missing")
         return characteristic
     }
+
+    private fun refreshDeviceCache(gatt: BluetoothGatt): Boolean =
+        runCatching { gatt.javaClass.getMethod("refresh").invoke(gatt) as? Boolean == true }
+            .getOrDefault(false)
 
     private enum class Phase {
         AWAIT_PULL_RESPONSE,
