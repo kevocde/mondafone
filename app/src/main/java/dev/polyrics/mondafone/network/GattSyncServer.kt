@@ -78,7 +78,8 @@ class GattSyncServer(
         )
         val data = characteristic(
             uuid = GattSyncProtocol.DATA_UUID,
-            properties = BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE or
+            properties = BluetoothGattCharacteristic.PROPERTY_WRITE or
+                BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE or
                 BluetoothGattCharacteristic.PROPERTY_NOTIFY,
             permissions = BluetoothGattCharacteristic.PERMISSION_WRITE,
         )
@@ -162,8 +163,6 @@ class GattSyncServer(
             value: ByteArray,
         ) {
             if (responseNeeded) respond(device, requestId, offset, null)
-            if (descriptor.characteristic.uuid != GattSyncProtocol.STATE_UUID) return
-            if (isNotificationEnabled(value)) notifyInventory(device)
         }
     }
 
@@ -219,11 +218,7 @@ class GattSyncServer(
         val data = dataCharacteristic ?: return
         val requests = planner.plan(offered, inventoryProvider(), ownPubkeyProvider())
         enqueue(device, data, pipeCodec.encode(DataPipeMessage.Requests(requests), maxPayloadFor(device)))
-    }
-
-    private fun notifyInventory(device: BluetoothDevice) {
-        val state = stateCharacteristic ?: return
-        enqueue(device, state, listOf(inventoryCodec.encode(inventoryProvider())))
+        enqueue(device, data, pipeCodec.encode(DataPipeMessage.End, maxPayloadFor(device)))
     }
 
     private fun enqueue(
@@ -287,9 +282,6 @@ class GattSyncServer(
         runCatching { server?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value) }
     }
 
-    private fun isNotificationEnabled(value: ByteArray): Boolean =
-        value.isNotEmpty() && (value[0].toInt() and NOTIFY_FLAG) != 0
-
     private enum class Phase {
         AWAIT_PULL_REQUESTS,
         AWAIT_OFFER,
@@ -302,7 +294,6 @@ class GattSyncServer(
     )
 
     private companion object {
-        const val NOTIFY_FLAG = 0x01
         const val DEFAULT_MTU = 23
         const val ATT_OVERHEAD = 3
     }
