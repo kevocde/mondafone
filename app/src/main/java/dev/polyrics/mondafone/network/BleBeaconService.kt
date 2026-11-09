@@ -42,8 +42,9 @@ class BleBeaconService : Service() {
     private var scanner: BluetoothLeScanner? = null
     private var activeId = ""
     private val roleResolver = PeerRoleResolver()
-    private val connectingAddresses = mutableSetOf<String>()
-    private val gattClients = mutableListOf<GattSyncClient>()
+    private val discoveredPeers = mutableMapOf<String, BluetoothDevice>()
+    private val centralQueue = CentralSyncQueue<BluetoothDevice>()
+    private var activeClient: GattSyncClient? = null
     private var gattServer: GattSyncServer? = null
 
     private val eventLog: BeaconEventLog
@@ -75,7 +76,8 @@ class BleBeaconService : Service() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             val id = codec.decode(result.scanRecord?.getServiceData(serviceUuid)) ?: return
             if (id == activeId) return
-            if (counter.record(id)) resolvePeer(id, result.device)
+            counter.record(id)
+            discoveredPeers[id] = result.device
         }
 
         override fun onScanFailed(errorCode: Int) {
@@ -93,8 +95,9 @@ class BleBeaconService : Service() {
         if (schedule == null) eventLog.log("invalid schedule")
         logLateness(intent)
         scheduler.scheduleNext()
-        startCycle()
-        handler.postDelayed({ finishWindow() }, config.windowMs)
+        startDiscoveryPhase()
+        handler.postDelayed({ startTransmissionPhase() }, config.windowMs)
+        handler.postDelayed({ finishWindow() }, config.windowMs + config.gattLifetimeMs)
         return START_NOT_STICKY
     }
 
@@ -106,7 +109,7 @@ class BleBeaconService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    private fun startCycle() {
+    private fun startDiscoveryPhase() {
         if (!hasBluetoothPermissions()) {
             eventLog.log("ble permission missing")
             return
@@ -136,26 +139,32 @@ class BleBeaconService : Service() {
         scanner = newScanner
         activeId = beaconId
         counter = BeaconCycleCounter()
+        discoveredPeers.clear()
+        centralQueue.clear()
         eventLog.log("Beacon active")
         openGattServer()
         startAdvertising(newAdvertiser, beaconId)
         startScanning(newScanner)
     }
 
-    private fun resolvePeer(peerId: String, device: BluetoothDevice) {
-        when (roleResolver.roleFor(activeId, peerId)) {
-            PeerRole.CENTRAL -> connectCentral(peerId, device)
-            PeerRole.PERIPHERAL -> eventLog.log("peer $peerId -> peripheral")
-            null -> Unit
+    private fun startTransmissionPhase() {
+        stopScanning()
+        discoveredPeers.forEach { (peerId, device) ->
+            when (roleResolver.roleFor(activeId, peerId)) {
+                PeerRole.CENTRAL -> centralQueue.enqueue(CentralPeer(peerId, device.address, device))
+                PeerRole.PERIPHERAL -> eventLog.log("peer $peerId -> peripheral")
+                null -> Unit
+            }
         }
+        processNextCentral()
     }
 
-    private fun connectCentral(peerId: String, device: BluetoothDevice) {
-        if (!connectingAddresses.add(device.address)) return
-        eventLog.log("peer $peerId -> central")
+    private fun processNextCentral() {
+        val next = centralQueue.pollNext() ?: return
+        eventLog.log("peer ${next.peerId} -> central")
         val client = GattSyncClient(
             context = this,
-            device = device,
+            device = next.device,
             eventLog = eventLog,
             localInventoryProvider = { spamReportStore.sequenceInventory() },
             ownPubkeyProvider = { identity.publicKeyBase64() },
@@ -163,9 +172,19 @@ class BleBeaconService : Service() {
             reportCountProvider = spamReportStore::reportCount,
             ingester = reportIngester(),
             idleTimeoutMs = BuildConfig.SYNC_IDLE_TIMEOUT_MS,
+            onFinished = {
+                centralQueue.completeCurrent()
+                activeClient = null
+                processNextCentral()
+            },
         )
-        gattClients.add(client)
+        activeClient = client
         client.connect()
+    }
+
+    private fun stopScanning() {
+        scanner?.let { runCatching { it.stopScan(scanCallback) } }
+        scanner = null
     }
 
     private fun openGattServer() {
@@ -220,24 +239,17 @@ class BleBeaconService : Service() {
     }
 
     private fun stopWindow() {
-        val activeAdvertiser = advertiser
-        val activeScanner = scanner
-        if (activeAdvertiser == null && activeScanner == null) {
-            closeGatt()
-            return
-        }
-        activeAdvertiser?.let { runCatching { it.stopAdvertising(advertiseCallback) } }
-        activeScanner?.let { runCatching { it.stopScan(scanCallback) } }
+        stopScanning()
+        advertiser?.let { runCatching { it.stopAdvertising(advertiseCallback) } }
         advertiser = null
-        scanner = null
         closeGatt()
         eventLog.log("count: ${counter.count()}")
     }
 
     private fun closeGatt() {
-        gattClients.forEach { it.close() }
-        gattClients.clear()
-        connectingAddresses.clear()
+        centralQueue.clear()
+        activeClient?.close()
+        activeClient = null
         gattServer?.close()
         gattServer = null
     }
