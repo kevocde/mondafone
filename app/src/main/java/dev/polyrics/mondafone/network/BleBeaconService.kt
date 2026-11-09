@@ -142,13 +142,13 @@ class BleBeaconService : Service() {
         discoveredPeers.clear()
         centralQueue.clear()
         eventLog.log("Beacon active")
-        openGattServer()
         startAdvertising(newAdvertiser, beaconId)
         startScanning(newScanner)
     }
 
     private fun startTransmissionPhase() {
         stopScanning()
+        openGattServer()
         discoveredPeers.forEach { (peerId, device) ->
             when (roleResolver.roleFor(activeId, peerId)) {
                 PeerRole.CENTRAL -> centralQueue.enqueue(CentralPeer(peerId, device.address, device))
@@ -239,8 +239,13 @@ class BleBeaconService : Service() {
     }
 
     private fun stopWindow() {
+        val activeAdvertiser = advertiser
+        if (activeAdvertiser == null && scanner == null) {
+            closeGatt()
+            return
+        }
         stopScanning()
-        advertiser?.let { runCatching { it.stopAdvertising(advertiseCallback) } }
+        activeAdvertiser?.let { runCatching { it.stopAdvertising(advertiseCallback) } }
         advertiser = null
         closeGatt()
         eventLog.log("count: ${counter.count()}")

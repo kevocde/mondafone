@@ -104,13 +104,8 @@ class GattSyncServer(
 
     private val callback = object : BluetoothGattServerCallback() {
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
-            when (newState) {
-                BluetoothProfile.STATE_CONNECTED -> {
-                    eventLog.log("connected ${device.address}")
-                    ingesters[device.address] = ingesterFactory()
-                    phases[device.address] = Phase.AWAIT_PULL_REQUESTS
-                }
-                BluetoothProfile.STATE_DISCONNECTED -> onDeviceDisconnected(device)
+            if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                onDeviceDisconnected(device)
             }
         }
 
@@ -133,6 +128,7 @@ class GattSyncServer(
                 respond(device, requestId, offset, ByteArray(0))
                 return
             }
+            ensureSession(device)
             val payload = inventoryCodec.encode(inventoryProvider())
             val chunk = payload.copyOfRange(offset.coerceAtMost(payload.size), payload.size)
             respond(device, requestId, offset, chunk)
@@ -149,6 +145,7 @@ class GattSyncServer(
         ) {
             if (responseNeeded) respond(device, requestId, offset, null)
             if (characteristic.uuid == GattSyncProtocol.DATA_UUID) {
+                ensureSession(device)
                 handlePipeFrame(device, pipeCodec.decode(value))
             }
         }
@@ -163,7 +160,18 @@ class GattSyncServer(
             value: ByteArray,
         ) {
             if (responseNeeded) respond(device, requestId, offset, null)
+            if (descriptor.characteristic.service?.uuid == GattSyncProtocol.SERVICE_UUID) {
+                ensureSession(device)
+            }
         }
+    }
+
+    private fun ensureSession(device: BluetoothDevice) {
+        val address = device.address
+        if (address in phases) return
+        eventLog.log("connected $address")
+        ingesters[address] = ingesterFactory()
+        phases[address] = Phase.AWAIT_PULL_REQUESTS
     }
 
     private fun handlePipeFrame(device: BluetoothDevice, message: DataPipeMessage?) {
