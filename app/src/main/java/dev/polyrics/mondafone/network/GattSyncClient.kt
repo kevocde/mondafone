@@ -25,6 +25,7 @@ class GattSyncClient(
     private val reportCountProvider: () -> Int,
     private val ingester: ReportIngester,
     private val idleTimeoutMs: Long,
+    private val onFinished: () -> Unit = {},
     private val inventoryCodec: SequenceInventoryCodec = SequenceInventoryCodec(),
     private val pipeCodec: DataPipeCodec = DataPipeCodec(),
     private val planner: SyncRequestPlanner = SyncRequestPlanner(),
@@ -41,6 +42,8 @@ class GattSyncClient(
     private val handler = Handler(Looper.getMainLooper())
     private val idleTimeout = Runnable { disconnect() }
 
+    private var completed = false
+
     fun connect() {
         gatt = device.connectGatt(context, false, callback, BluetoothDevice.TRANSPORT_LE)
     }
@@ -48,39 +51,60 @@ class GattSyncClient(
     fun close() {
         cancelIdleTimer()
         logSummary()
-        val current = gatt ?: return
-        runCatching { current.disconnect() }
-        runCatching { current.close() }
+        val current = gatt
         gatt = null
+        if (current != null) {
+            runCatching { current.disconnect() }
+            runCatching { current.close() }
+        }
+        notifyFinished()
+    }
+
+    private fun notifyFinished() {
+        if (!completed) {
+            completed = true
+            onFinished()
+        }
     }
 
     private val callback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             when (newState) {
                 BluetoothProfile.STATE_CONNECTED -> {
+                    if (status != BluetoothGatt.GATT_SUCCESS) {
+                        eventLog.log("connect failed: $status")
+                        disconnect()
+                        return
+                    }
                     eventLog.log("connected ${gatt.device.address}")
-                    gatt.requestMtu(GattSyncProtocol.TARGET_MTU)
+                    if (!gatt.requestMtu(GattSyncProtocol.TARGET_MTU)) {
+                        gatt.discoverServices()
+                    }
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     logSummary()
                     runCatching { gatt.close() }
                     this@GattSyncClient.gatt = null
+                    notifyFinished()
                 }
             }
         }
 
         override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
-            this@GattSyncClient.mtu = mtu
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                this@GattSyncClient.mtu = mtu
+            }
             gatt.discoverServices()
         }
 
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 eventLog.log("services discovery failed: $status")
+                disconnect()
                 return
             }
             restartIdleTimer()
-            subscribe(gatt, GattSyncProtocol.STATE_UUID, STATE_LABEL)
+            subscribe(gatt, GattSyncProtocol.DATA_UUID, DATA_LABEL)
         }
 
         override fun onCharacteristicRead(
@@ -128,16 +152,20 @@ class GattSyncClient(
             descriptor: BluetoothGattDescriptor,
             status: Int,
         ) {
-            when (descriptor.characteristic.uuid) {
-                GattSyncProtocol.STATE_UUID -> subscribe(gatt, GattSyncProtocol.DATA_UUID, DATA_LABEL)
-                GattSyncProtocol.DATA_UUID -> readState(gatt)
+            if (status != BluetoothGatt.GATT_SUCCESS) {
+                eventLog.log("descriptor write failed: $status")
+                disconnect()
+                return
+            }
+            if (descriptor.characteristic.uuid == GattSyncProtocol.DATA_UUID) {
+                readState(gatt)
             }
         }
     }
 
     private fun handleRead(characteristic: BluetoothGattCharacteristic, value: ByteArray?) {
         if (characteristic.uuid != GattSyncProtocol.STATE_UUID) return
-        val inventory = inventoryCodec.decode(value) ?: return
+        val inventory = inventoryCodec.decode(value) ?: emptyList()
         startSession(inventory)
     }
 
@@ -211,6 +239,7 @@ class GattSyncClient(
         val data = characteristic(current, GattSyncProtocol.DATA_UUID) ?: return
         if (!writeData(current, data, frame)) {
             eventLog.log("write failed")
+            disconnect()
             return
         }
         writeInFlight = true
@@ -244,10 +273,10 @@ class GattSyncClient(
         data: BluetoothGattCharacteristic,
         payload: ByteArray,
     ): Boolean = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        gatt.writeCharacteristic(data, payload, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE) ==
+        gatt.writeCharacteristic(data, payload, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT) ==
             BluetoothStatusCodes.SUCCESS
     } else {
-        data.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
+        data.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         data.value = payload
         gatt.writeCharacteristic(data)
     }
