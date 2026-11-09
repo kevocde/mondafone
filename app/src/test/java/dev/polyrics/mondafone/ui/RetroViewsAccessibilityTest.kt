@@ -73,11 +73,14 @@ class RetroViewsAccessibilityTest {
 
     @Test
     fun retroDebugBoxAggregatesLinesAndHidesDynamicDescendantsFromFocus() {
-        val debugBox = RetroDebugBox(context)
+        var cleared = false
+        val debugBox = RetroDebugBox(context) { cleared = true }
         debugBox.setLines(listOf("Device ID: abc", "Power: unrestricted"))
 
         val info = debugBox.createAccessibilityNodeInfo()
         val summary = info.contentDescription.toString()
+        val header = debugBox.getChildAt(0) as android.widget.LinearLayout
+        val clearButton = header.getChildAt(1)
 
         assertTrue(debugBox.isScreenReaderFocusable)
         assertTrue(summary.contains("Debug:"))
@@ -87,6 +90,8 @@ class RetroViewsAccessibilityTest {
             View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS,
             debugBox.getChildAt(1).importantForAccessibility,
         )
+        assertTrue(clearButton.performAccessibilityAction(AccessibilityNodeInfo.ACTION_CLICK, null))
+        assertTrue(cleared)
     }
 
     @Test

@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
+import android.view.Gravity
 import android.view.View
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.LinearLayout
@@ -13,6 +14,7 @@ import dev.polyrics.mondafone.R
 
 class RetroDebugBox(
     context: Context,
+    private val onClear: () -> Unit = {},
 ) : LinearLayout(context) {
 
     private val density = resources.displayMetrics.density
@@ -42,7 +44,7 @@ class RetroDebugBox(
         isScreenReaderFocusable = true
         val pad = (12 * density).toInt()
         setPadding(pad, pad, pad + shadowPx.toInt(), pad + shadowPx.toInt())
-        addView(titleView(context))
+        addView(headerView(context))
         addView(linesContainer)
         contentDescription = buildAccessibilitySummary()
         accessibilityDelegate = object : AccessibilityDelegate() {
@@ -80,6 +82,22 @@ class RetroDebugBox(
         canvas.drawRect(0f, 0f, surfaceWidth, surfaceHeight, borderPaint)
         super.onDraw(canvas)
     }
+
+    private fun headerView(context: Context): LinearLayout =
+        LinearLayout(context).apply {
+            orientation = HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(titleView(context), LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
+            addView(
+                RetroButton(
+                    context = context,
+                    label = context.getString(R.string.clear_store),
+                    fillColor = context.getColor(R.color.secondary),
+                    compact = true,
+                    onTap = onClear,
+                ),
+            )
+        }
 
     private fun titleView(context: Context): TextView =
         TextView(context).apply {

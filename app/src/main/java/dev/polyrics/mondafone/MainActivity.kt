@@ -148,7 +148,7 @@ class MainActivity : Activity() {
                     1f,
                 ),
             )
-            debugBox = RetroDebugBox(this@MainActivity)
+            debugBox = RetroDebugBox(this@MainActivity) { beaconLog.clear() }
             addView(
                 debugBox,
                 LinearLayout.LayoutParams(

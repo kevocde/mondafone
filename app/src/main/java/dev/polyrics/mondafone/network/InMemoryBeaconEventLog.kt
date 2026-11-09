@@ -22,6 +22,13 @@ class InMemoryBeaconEventLog(
         listener?.invoke(snapshot)
     }
 
+    override fun clear() {
+        synchronized(this) {
+            entries.clear()
+        }
+        listener?.invoke(emptyList())
+    }
+
     override fun lines(): List<String> = synchronized(this) { entries.toList() }
 
     override fun setListener(listener: ((List<String>) -> Unit)?) {
