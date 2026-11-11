@@ -24,6 +24,8 @@ class GattSyncServer(
     private val ownPubkeyProvider: () -> String?,
     private val ingesterFactory: () -> ReportIngester,
     private val eventLog: BeaconEventLog,
+    private val outbox: GattOutbox = GattOutbox(),
+    private val turnCoordinator: SyncTurnCoordinator = SyncTurnCoordinator(),
     private val inventoryCodec: SequenceInventoryCodec = SequenceInventoryCodec(),
     private val pipeCodec: DataPipeCodec = DataPipeCodec(),
     private val planner: SyncRequestPlanner = SyncRequestPlanner(),
@@ -37,8 +39,6 @@ class GattSyncServer(
     private val phases = mutableMapOf<String, Phase>()
     private val pendingRequests = mutableMapOf<String, MutableList<ReportRequest>>()
     private val pendingOffers = mutableMapOf<String, MutableList<SequenceInventoryEntry>>()
-    private val pendingFrames = mutableMapOf<String, ArrayDeque<OutgoingFrame>>()
-    private val notifyInFlight = mutableSetOf<String>()
 
     fun open(manager: BluetoothManager): Boolean {
         val newServer = manager.openGattServer(context, callback) ?: return false
@@ -55,6 +55,11 @@ class GattSyncServer(
 
     fun close() {
         val current = server ?: return
+        phases.keys.forEach { address ->
+            val id = turnId(address)
+            outbox.cancel(id)
+            turnCoordinator.releaseTurn(id)
+        }
         runCatching { current.clearServices() }
         runCatching { current.close() }
         server = null
@@ -65,8 +70,6 @@ class GattSyncServer(
         phases.clear()
         pendingRequests.clear()
         pendingOffers.clear()
-        pendingFrames.clear()
-        notifyInFlight.clear()
     }
 
     private fun buildService(): BluetoothGattService {
@@ -114,8 +117,7 @@ class GattSyncServer(
         }
 
         override fun onNotificationSent(device: BluetoothDevice, status: Int) {
-            notifyInFlight.remove(device.address)
-            pump(device)
+            outbox.onPacketSent()
         }
 
         override fun onCharacteristicReadRequest(
@@ -160,8 +162,13 @@ class GattSyncServer(
             value: ByteArray,
         ) {
             if (responseNeeded) respond(device, requestId, offset, null)
-            if (descriptor.characteristic.service?.uuid == GattSyncProtocol.SERVICE_UUID) {
+            if (descriptor.characteristic.uuid == GattSyncProtocol.DATA_UUID) {
                 ensureSession(device)
+                turnCoordinator.requestTurn(
+                    id = turnId(device.address),
+                    onWait = { sendControl(device, DataPipeMessage.Wait) },
+                    onReady = { sendControl(device, DataPipeMessage.Ready) },
+                )
             }
         }
     }
@@ -195,13 +202,13 @@ class GattSyncServer(
                 replyWithRequests(device, pendingOffers.remove(address).orEmpty())
                 phases[address] = Phase.AWAIT_PUSH_REPORTS
             }
-            Phase.AWAIT_PUSH_REPORTS -> acknowledge(device)
+            Phase.AWAIT_PUSH_REPORTS -> sendControl(device, DataPipeMessage.End)
         }
     }
 
-    private fun acknowledge(device: BluetoothDevice) {
+    private fun sendControl(device: BluetoothDevice, message: DataPipeMessage) {
         val data = dataCharacteristic ?: return
-        enqueue(device, data, pipeCodec.encode(DataPipeMessage.End, maxPayloadFor(device)))
+        enqueue(device, data, pipeCodec.encode(message, maxPayloadFor(device)))
     }
 
     private fun requestsFor(device: BluetoothDevice): MutableList<ReportRequest> =
@@ -234,35 +241,29 @@ class GattSyncServer(
         characteristic: BluetoothGattCharacteristic,
         frames: List<ByteArray>,
     ) {
-        if (frames.isEmpty()) return
-        val queue = pendingFrames.getOrPut(device.address) { ArrayDeque() }
-        frames.forEach { queue.addLast(OutgoingFrame(characteristic, it)) }
-        pump(device)
-    }
-
-    private fun pump(device: BluetoothDevice) {
-        val address = device.address
-        if (address in notifyInFlight) return
-        val queue = pendingFrames[address] ?: return
-        val frame = queue.removeFirstOrNull() ?: return
-        if (!notify(device, frame.characteristic, frame.payload)) {
-            queue.clear()
-            eventLog.log("notify failed")
-            return
+        val tag = turnId(device.address)
+        frames.forEach { payload ->
+            outbox.enqueue(
+                tag = tag,
+                send = { notify(device, characteristic, payload) },
+                onFailure = { eventLog.log("notify failed") },
+            )
         }
-        notifyInFlight.add(address)
     }
 
     private fun onDeviceDisconnected(device: BluetoothDevice) {
         val address = device.address
+        val id = turnId(address)
+        outbox.cancel(id)
+        turnCoordinator.releaseTurn(id)
         mtuByDevice.remove(address)
-        pendingFrames.remove(address)
-        notifyInFlight.remove(address)
         phases.remove(address)
         pendingRequests.remove(address)
         pendingOffers.remove(address)
         ingesters.remove(address)?.consumeSummaryLine(reportCountProvider())?.let(eventLog::log)
     }
+
+    private fun turnId(address: String): String = "server:$address"
 
     private fun maxPayloadFor(device: BluetoothDevice): Int =
         ((mtuByDevice[device.address] ?: DEFAULT_MTU) - ATT_OVERHEAD).coerceAtLeast(1)
@@ -295,11 +296,6 @@ class GattSyncServer(
         AWAIT_OFFER,
         AWAIT_PUSH_REPORTS,
     }
-
-    private data class OutgoingFrame(
-        val characteristic: BluetoothGattCharacteristic,
-        val payload: ByteArray,
-    )
 
     private companion object {
         const val DEFAULT_MTU = 23
