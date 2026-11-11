@@ -6,6 +6,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.AdvertiseCallback
 import android.bluetooth.le.AdvertiseData
@@ -21,8 +22,11 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.ParcelUuid
+import dev.polyrics.mondafone.BuildConfig
 import dev.polyrics.mondafone.MondafoneApp
 import dev.polyrics.mondafone.R
+import dev.polyrics.mondafone.spam.SpamDependencies
+import java.util.concurrent.TimeUnit
 
 class BleBeaconService : Service() {
 
@@ -37,11 +41,32 @@ class BleBeaconService : Service() {
     private var advertiser: BluetoothLeAdvertiser? = null
     private var scanner: BluetoothLeScanner? = null
     private var activeId = ""
+    private val roleResolver = PeerRoleResolver()
+    private val discoveredPeers = mutableMapOf<String, BluetoothDevice>()
+    private val centralQueue = CentralSyncQueue<BluetoothDevice>()
+    private val outbox = GattOutbox()
+    private val turnCoordinator = SyncTurnCoordinator()
+    private var activeClient: GattSyncClient? = null
+    private var gattServer: GattSyncServer? = null
 
     private val eventLog: BeaconEventLog
         get() = (application as MondafoneApp).beaconEventLog
 
     private val identity by lazy { (application as MondafoneApp).deviceIdentity }
+
+    private val spamReportStore by lazy { (application as SpamDependencies).spamReportStore }
+
+    private val peerStatusStore by lazy { (application as SpamDependencies).peerStatusStore }
+
+    private val reportValidator by lazy {
+        ReportValidator(TimeUnit.DAYS.toMillis(BuildConfig.REPORT_MAX_AGE_DAYS))
+    }
+
+    private fun reportIngester(): ReportIngester = ReportIngester(
+        validator = reportValidator,
+        persister = spamReportStore::acceptRemoteReport,
+        peerMaxSeqProvider = { pubkey -> peerStatusStore.find(pubkey)?.maxSeqNum ?: 0L },
+    )
 
     private val advertiseCallback = object : AdvertiseCallback() {
         override fun onStartFailure(errorCode: Int) {
@@ -53,7 +78,8 @@ class BleBeaconService : Service() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             val id = codec.decode(result.scanRecord?.getServiceData(serviceUuid)) ?: return
             if (id == activeId) return
-            if (counter.record(id)) eventLog.log("received id $id")
+            counter.record(id)
+            discoveredPeers[id] = result.device
         }
 
         override fun onScanFailed(errorCode: Int) {
@@ -71,8 +97,9 @@ class BleBeaconService : Service() {
         if (schedule == null) eventLog.log("invalid schedule")
         logLateness(intent)
         scheduler.scheduleNext()
-        startCycle()
-        handler.postDelayed({ finishWindow() }, config.windowMs)
+        startDiscoveryPhase()
+        handler.postDelayed({ startTransmissionPhase() }, config.windowMs)
+        handler.postDelayed({ finishWindow() }, config.windowMs + config.gattLifetimeMs)
         return START_NOT_STICKY
     }
 
@@ -84,7 +111,7 @@ class BleBeaconService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    private fun startCycle() {
+    private fun startDiscoveryPhase() {
         if (!hasBluetoothPermissions()) {
             eventLog.log("ble permission missing")
             return
@@ -114,16 +141,90 @@ class BleBeaconService : Service() {
         scanner = newScanner
         activeId = beaconId
         counter = BeaconCycleCounter()
+        discoveredPeers.clear()
+        centralQueue.clear()
+        outbox.clear()
+        turnCoordinator.clear()
         eventLog.log("Beacon active")
+        openGattServer()
         startAdvertising(newAdvertiser, beaconId)
         startScanning(newScanner)
+    }
+
+    private fun startTransmissionPhase() {
+        stopScanning()
+        discoveredPeers.forEach { (peerId, device) ->
+            when (roleResolver.roleFor(activeId, peerId)) {
+                PeerRole.CENTRAL -> centralQueue.enqueue(CentralPeer(peerId, device.address, device))
+                PeerRole.PERIPHERAL -> eventLog.log("peer $peerId -> peripheral")
+                null -> Unit
+            }
+        }
+        processNextCentral()
+    }
+
+    private fun processNextCentral() {
+        val next = centralQueue.pollNext() ?: return
+        val turnId = "client:${next.address}"
+        turnCoordinator.requestTurn(
+            id = turnId,
+            onReady = { connectCentral(next, turnId) },
+        )
+    }
+
+    private fun connectCentral(next: CentralPeer<BluetoothDevice>, turnId: String) {
+        eventLog.log("peer ${next.peerId} -> central")
+        val client = GattSyncClient(
+            context = this,
+            device = next.device,
+            eventLog = eventLog,
+            localInventoryProvider = { spamReportStore.sequenceInventory() },
+            ownPubkeyProvider = { identity.publicKeyBase64() },
+            reportsProvider = spamReportStore::reportsByReporter,
+            reportCountProvider = spamReportStore::reportCount,
+            ingester = reportIngester(),
+            idleTimeoutMs = BuildConfig.SYNC_IDLE_TIMEOUT_MS,
+            outbox = outbox,
+            onFinished = {
+                centralQueue.completeCurrent()
+                activeClient = null
+                turnCoordinator.releaseTurn(turnId)
+                processNextCentral()
+            },
+        )
+        activeClient = client
+        client.connect()
+    }
+
+    private fun stopScanning() {
+        scanner?.let { runCatching { it.stopScan(scanCallback) } }
+        scanner = null
+    }
+
+    private fun openGattServer() {
+        val server = GattSyncServer(
+            context = this,
+            inventoryProvider = { spamReportStore.sequenceInventory() },
+            reportsProvider = spamReportStore::reportsByReporter,
+            reportCountProvider = spamReportStore::reportCount,
+            ownPubkeyProvider = { identity.publicKeyBase64() },
+            ingesterFactory = ::reportIngester,
+            eventLog = eventLog,
+            outbox = outbox,
+            turnCoordinator = turnCoordinator,
+        )
+        if (!server.open(bluetoothManager())) {
+            eventLog.log("gatt server unavailable")
+            return
+        }
+        gattServer = server
     }
 
     private fun startAdvertising(target: BluetoothLeAdvertiser, beaconId: String) {
         val settings = AdvertiseSettings.Builder()
             .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
             .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
-            .setConnectable(false)
+            .setConnectable(true)
             .build()
         val data = AdvertiseData.Builder()
             .setIncludeDeviceName(false)
@@ -155,13 +256,25 @@ class BleBeaconService : Service() {
 
     private fun stopWindow() {
         val activeAdvertiser = advertiser
-        val activeScanner = scanner
-        if (activeAdvertiser == null && activeScanner == null) return
+        if (activeAdvertiser == null && scanner == null) {
+            closeGatt()
+            return
+        }
+        stopScanning()
         activeAdvertiser?.let { runCatching { it.stopAdvertising(advertiseCallback) } }
-        activeScanner?.let { runCatching { it.stopScan(scanCallback) } }
         advertiser = null
-        scanner = null
+        closeGatt()
         eventLog.log("count: ${counter.count()}")
+    }
+
+    private fun closeGatt() {
+        centralQueue.clear()
+        turnCoordinator.clear()
+        outbox.clear()
+        activeClient?.close()
+        activeClient = null
+        gattServer?.close()
+        gattServer = null
     }
 
     private fun hasBluetoothPermissions(): Boolean =
@@ -169,8 +282,10 @@ class BleBeaconService : Service() {
             checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED
         }
 
-    private fun bluetoothAdapter(): BluetoothAdapter? =
-        getSystemService(BluetoothManager::class.java).adapter
+    private fun bluetoothManager(): BluetoothManager =
+        getSystemService(BluetoothManager::class.java)
+
+    private fun bluetoothAdapter(): BluetoothAdapter? = bluetoothManager().adapter
 
     private fun buildNotification(): Notification {
         ensureChannel()

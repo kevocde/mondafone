@@ -32,6 +32,7 @@ class VerdictDbHelperTest {
             VerdictContract.TABLE_SPAM_REPORT_ALIASES,
             VerdictContract.TABLE_PEERS_STATUS,
             VerdictContract.TABLE_LOCAL_SYNC_STATE,
+            VerdictContract.TABLE_BLOCKED_CALLS,
         ).forEach { assertTrue("missing table $it", db.tableExists(it)) }
     }
 
@@ -45,6 +46,60 @@ class VerdictDbHelperTest {
         assertTrue(db.tableExists(VerdictContract.TABLE_PEERS_STATUS))
         assertEquals(1, db.rowCount(VerdictContract.TABLE_VERDICTS))
     }
+
+    @Test
+    fun backfillsPeerVectorWhenUpgradingFromVersionTwo() {
+        createVersionTwoDatabase()
+
+        val db = VerdictDbHelper(app).writableDatabase
+
+        assertEquals(5L, db.maxSeqNumOf("pubkey-a"))
+        assertEquals(2L, db.maxSeqNumOf("pubkey-b"))
+    }
+
+    @Test
+    fun createsBlockedCallsWhenUpgradingFromVersionThree() {
+        createDatabase(version = 3)
+
+        val db = VerdictDbHelper(app).writableDatabase
+
+        assertTrue(db.tableExists(VerdictContract.TABLE_BLOCKED_CALLS))
+    }
+
+    private fun createVersionTwoDatabase() {
+        createDatabase(version = 2) { db ->
+            db.insertReport("hash-a", "pubkey-a", 5L)
+            db.insertReport("hash-b", "pubkey-a", 2L)
+            db.insertReport("hash-c", "pubkey-b", 2L)
+        }
+    }
+
+    private fun createDatabase(version: Int, populate: (SQLiteDatabase) -> Unit = {}) {
+        val path = app.getDatabasePath(VerdictContract.DATABASE_NAME)
+        path.parentFile?.mkdirs()
+        SQLiteDatabase.openOrCreateDatabase(path, null).use { db ->
+            VerdictContract.CREATE_TABLES_BEFORE_VERSION_FOUR.forEach(db::execSQL)
+            populate(db)
+            db.version = version
+        }
+    }
+
+    private fun SQLiteDatabase.insertReport(phoneHash: String, createdBy: String, seqNum: Long) {
+        execSQL(
+            "INSERT INTO ${VerdictContract.TABLE_SPAM_REPORTS} VALUES (?, ?, ?, 0, 'signature')",
+            arrayOf(phoneHash, createdBy, seqNum),
+        )
+    }
+
+    private fun SQLiteDatabase.maxSeqNumOf(idPubkey: String): Long =
+        rawQuery(
+            "SELECT ${VerdictContract.COLUMN_MAX_SEQ_NUM} " +
+                "FROM ${VerdictContract.TABLE_PEERS_STATUS} WHERE ${VerdictContract.COLUMN_ID_PUBKEY} = ?",
+            arrayOf(idPubkey),
+        ).use { cursor ->
+            cursor.moveToFirst()
+            cursor.getLong(0)
+        }
 
     private fun createVersionOneDatabase() {
         val path = app.getDatabasePath(VerdictContract.DATABASE_NAME)

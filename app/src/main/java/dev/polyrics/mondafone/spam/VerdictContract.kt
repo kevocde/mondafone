@@ -2,7 +2,7 @@ package dev.polyrics.mondafone.spam
 
 object VerdictContract {
     const val DATABASE_NAME = "spam_verdicts.db"
-    const val DATABASE_VERSION = 2
+    const val DATABASE_VERSION = 4
 
     const val TABLE_VERDICTS = "verdicts"
     const val COLUMN_NUMBER = "number"
@@ -28,6 +28,9 @@ object VerdictContract {
 
     const val TABLE_LOCAL_SYNC_STATE = "local_sync_state"
     const val COLUMN_NEXT_SEQ_NUM = "next_seq_num"
+
+    const val TABLE_BLOCKED_CALLS = "blocked_calls"
+    const val COLUMN_BLOCKED_AT = "blocked_at"
 
     const val CREATE_VERDICTS_TABLE =
         "CREATE TABLE $TABLE_VERDICTS (" +
@@ -59,7 +62,12 @@ object VerdictContract {
             "id INTEGER PRIMARY KEY CHECK (id = 1), " +
             "$COLUMN_NEXT_SEQ_NUM INTEGER NOT NULL)"
 
-    val CREATE_ALL_TABLES = listOf(
+    const val CREATE_BLOCKED_CALLS_TABLE =
+        "CREATE TABLE $TABLE_BLOCKED_CALLS (" +
+            "$COLUMN_NUMBER TEXT NOT NULL, " +
+            "$COLUMN_BLOCKED_AT INTEGER NOT NULL)"
+
+    val CREATE_TABLES_BEFORE_VERSION_FOUR = listOf(
         CREATE_VERDICTS_TABLE,
         CREATE_SPAM_REPORTS_TABLE,
         CREATE_SPAM_REPORT_ALIASES_TABLE,
@@ -67,10 +75,18 @@ object VerdictContract {
         CREATE_LOCAL_SYNC_STATE_TABLE,
     )
 
+    val CREATE_ALL_TABLES = CREATE_TABLES_BEFORE_VERSION_FOUR + CREATE_BLOCKED_CALLS_TABLE
+
     val CREATE_TABLES_ADDED_IN_VERSION_TWO = listOf(
         CREATE_SPAM_REPORTS_TABLE,
         CREATE_SPAM_REPORT_ALIASES_TABLE,
         CREATE_PEERS_STATUS_TABLE,
         CREATE_LOCAL_SYNC_STATE_TABLE,
     )
+
+    const val BACKFILL_PEERS_STATUS =
+        "INSERT INTO $TABLE_PEERS_STATUS " +
+            "($COLUMN_ID_PUBKEY, $COLUMN_MAX_SEQ_NUM, $COLUMN_LAST_SYNC_AT) " +
+            "SELECT $COLUMN_CREATED_BY, MAX($COLUMN_SEQ_NUM), MAX($COLUMN_CREATED_AT) " +
+            "FROM $TABLE_SPAM_REPORTS GROUP BY $COLUMN_CREATED_BY"
 }

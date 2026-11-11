@@ -148,6 +148,148 @@ abstract class SpamReportStoreContractTest {
     }
 
     @Test
+    fun sequenceInventoryIsEmptyWithoutReports() {
+        assertTrue(store.sequenceInventory().isEmpty())
+    }
+
+    @Test
+    fun sequenceInventoryReportsOwnMaxSequence() {
+        store.reportOwn(CANONICAL_A, DISPLAY_A)
+        store.reportOwn(CANONICAL_B, DISPLAY_B)
+
+        assertEquals(
+            mapOf(identity.publicKeyBase64() to 2L),
+            inventoryByReporter(),
+        )
+    }
+
+    @Test
+    fun sequenceInventoryIncludesRemoteReporters() {
+        val remote = TestIdentity()
+        store.reportOwn(CANONICAL_A, DISPLAY_A)
+        store.acceptRemoteReport(remote.signedReport(hashOf(CANONICAL_B), 7L, NOW))
+
+        assertEquals(
+            mapOf(identity.publicKeyBase64() to 1L, remote.publicKeyBase64() to 7L),
+            inventoryByReporter(),
+        )
+    }
+
+    @Test
+    fun sequenceInventoryKeepsHighestSequencePerReporter() {
+        val remote = TestIdentity()
+        store.acceptRemoteReport(remote.signedReport(hashOf(CANONICAL_A), 2L, NOW))
+        store.acceptRemoteReport(remote.signedReport(hashOf(CANONICAL_B), 5L, NOW))
+
+        assertEquals(mapOf(remote.publicKeyBase64() to 5L), inventoryByReporter())
+    }
+
+    @Test
+    fun reportCountStartsAtZero() {
+        assertEquals(0, store.reportCount())
+    }
+
+    @Test
+    fun reportCountIncludesOwnAndRemoteReports() {
+        store.reportOwn(CANONICAL_A, DISPLAY_A)
+        store.acceptRemoteReport(TestIdentity().signedReport(hashOf(CANONICAL_B), 1L, NOW))
+
+        assertEquals(2, store.reportCount())
+    }
+
+    @Test
+    fun spamNumberCountStartsAtZero() {
+        assertEquals(0, store.spamNumberCount(System.currentTimeMillis()))
+    }
+
+    @Test
+    fun spamNumberCountDeduplicatesByHash() {
+        store.reportOwn(CANONICAL_A, DISPLAY_A)
+        store.acceptRemoteReport(
+            TestIdentity().signedReport(hashOf(CANONICAL_A), 1L, System.currentTimeMillis()),
+        )
+
+        assertEquals(1, store.spamNumberCount(System.currentTimeMillis() - 1_000))
+    }
+
+    @Test
+    fun spamNumberCountIgnoresExpiredReports() {
+        store.reportOwn(CANONICAL_A, DISPLAY_A)
+
+        assertEquals(0, store.spamNumberCount(System.currentTimeMillis() + 1_000))
+    }
+
+    @Test
+    fun networkDeviceCountExcludesOwnReporter() {
+        store.reportOwn(CANONICAL_A, DISPLAY_A)
+        store.acceptRemoteReport(
+            TestIdentity().signedReport(hashOf(CANONICAL_B), 1L, System.currentTimeMillis()),
+        )
+
+        assertEquals(
+            1,
+            store.networkDeviceCount(System.currentTimeMillis() - 1_000, identity.publicKeyBase64()),
+        )
+    }
+
+    @Test
+    fun networkDeviceCountDeduplicatesReporters() {
+        val remote = TestIdentity()
+        val now = System.currentTimeMillis()
+        store.acceptRemoteReport(remote.signedReport(hashOf(CANONICAL_A), 1L, now))
+        store.acceptRemoteReport(remote.signedReport(hashOf(CANONICAL_B), 2L, now))
+
+        assertEquals(1, store.networkDeviceCount(now - 1_000, identity.publicKeyBase64()))
+    }
+
+    @Test
+    fun networkDeviceCountIgnoresExpiredReports() {
+        store.acceptRemoteReport(TestIdentity().signedReport(hashOf(CANONICAL_A), 1L, NOW))
+
+        assertEquals(
+            0,
+            store.networkDeviceCount(System.currentTimeMillis() - 1_000, identity.publicKeyBase64()),
+        )
+    }
+
+    @Test
+    fun reportsByReporterReturnsRequestedRangeInSequenceOrder() {
+        val remote = TestIdentity()
+        val first = remote.signedReport(hashOf(CANONICAL_A), 1L, NOW)
+        val second = remote.signedReport(hashOf(CANONICAL_B), 2L, NOW)
+        store.acceptRemoteReport(second)
+        store.acceptRemoteReport(first)
+
+        assertEquals(listOf(first, second), store.reportsByReporter(remote.publicKeyBase64(), 1L, 2L))
+    }
+
+    @Test
+    fun reportsByReporterFiltersSequencesOutsideRange() {
+        val remote = TestIdentity()
+        store.acceptRemoteReport(remote.signedReport(hashOf(CANONICAL_A), 1L, NOW))
+        store.acceptRemoteReport(remote.signedReport(hashOf(CANONICAL_B), 2L, NOW))
+
+        assertEquals(
+            listOf(2L),
+            store.reportsByReporter(remote.publicKeyBase64(), 2L, 5L).map { it.seqNum },
+        )
+    }
+
+    @Test
+    fun reportsByReporterIsEmptyForUnknownReporter() {
+        assertTrue(store.reportsByReporter("unknown-pubkey", 1L, 10L).isEmpty())
+    }
+
+    @Test
+    fun sequenceInventoryKeepsHighWaterMarkAfterRemoval() {
+        store.reportOwn(CANONICAL_A, DISPLAY_A)
+        store.reportOwn(CANONICAL_B, DISPLAY_B)
+        store.removeOwnReport(hashOf(CANONICAL_B))
+
+        assertEquals(mapOf(identity.publicKeyBase64() to 2L), inventoryByReporter())
+    }
+
+    @Test
     fun notifiesListenerOnMutations() {
         var changes = 0
         store.registerOnChangeListener { changes++ }
@@ -160,6 +302,9 @@ abstract class SpamReportStoreContractTest {
     }
 
     protected fun hashOf(canonicalNumber: String): String = SpamReportHasher(SECRET).hash(canonicalNumber)
+
+    private fun inventoryByReporter(): Map<String, Long> =
+        store.sequenceInventory().associate { it.createdBy to it.maxSeqNum }
 
     protected companion object {
         const val SECRET = "test-secret"

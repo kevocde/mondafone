@@ -53,4 +53,16 @@ class InMemoryBeaconEventLogTest {
 
         assertTrue(!notified)
     }
+
+    @Test
+    fun clearsLinesAndNotifiesListener() {
+        var received: List<String> = listOf("initial")
+        log.log("Beacon active")
+        log.setListener { received = it }
+
+        log.clear()
+
+        assertTrue(log.lines().isEmpty())
+        assertTrue(received.isEmpty())
+    }
 }

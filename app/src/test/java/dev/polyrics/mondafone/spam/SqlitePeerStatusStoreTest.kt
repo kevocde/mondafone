@@ -45,6 +45,29 @@ class SqlitePeerStatusStoreTest {
     }
 
     @Test
+    fun recordReportInsertsNewReporter() {
+        store.recordReport("peer-a", seqNum = 4, syncedAt = 100)
+
+        assertEquals(PeerStatus("peer-a", 4, 100), store.find("peer-a"))
+    }
+
+    @Test
+    fun recordReportRaisesSequence() {
+        store.recordReport("peer-a", seqNum = 4, syncedAt = 100)
+        store.recordReport("peer-a", seqNum = 9, syncedAt = 200)
+
+        assertEquals(PeerStatus("peer-a", 9, 200), store.find("peer-a"))
+    }
+
+    @Test
+    fun recordReportKeepsHighestSequence() {
+        store.recordReport("peer-a", seqNum = 9, syncedAt = 100)
+        store.recordReport("peer-a", seqNum = 4, syncedAt = 200)
+
+        assertEquals(PeerStatus("peer-a", 9, 200), store.find("peer-a"))
+    }
+
+    @Test
     fun findReturnsNullForUnknownPeer() {
         assertNull(store.find("peer-unknown"))
     }

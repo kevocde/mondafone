@@ -10,6 +10,7 @@ class TrustCallScreeningService : CallScreeningService() {
     private val reportStore: SpamReportStore get() = dependencies.spamReportStore
     private val normalizer: PhoneNumberNormalizer get() = dependencies.phoneNumberNormalizer
     private val blockedNotifier: BlockedCallNotifier get() = dependencies.blockedCallNotifier
+    private val blockedCalls: BlockedCallStore get() = dependencies.blockedCallStore
     private val promptNotifier: SpamVerdictPromptNotifier get() = dependencies.verdictPromptNotifier
 
     internal var globalSpamProbability: GlobalSpamProbability = GlobalSpamProbability()
@@ -34,6 +35,7 @@ class TrustCallScreeningService : CallScreeningService() {
             return
         }
         if (isBlockedNumber(canonicalNumber)) {
+            blockedCalls.record(canonicalNumber, System.currentTimeMillis())
             responder(blockResponse())
             blockedNotifier.notifyBlocked(number)
             return

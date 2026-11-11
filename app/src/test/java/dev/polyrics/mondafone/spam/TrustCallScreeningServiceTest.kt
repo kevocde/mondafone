@@ -67,6 +67,24 @@ class TrustCallScreeningServiceTest {
     }
 
     @Test
+    fun blockedIncomingCallIsCounted() {
+        app.ownReported += CANONICAL
+
+        screen(NATIONAL)
+
+        assertEquals(listOf(CANONICAL), app.blockedCalls)
+    }
+
+    @Test
+    fun allowedIncomingCallIsNotCounted() {
+        app.whitelisted += CANONICAL
+
+        screen(NATIONAL)
+
+        assertTrue(app.blockedCalls.isEmpty())
+    }
+
+    @Test
     fun globalChanceBlocksWhenDrawIsBelowProbability() {
         app.foreignReports[CANONICAL] = 1
         screeningService.globalSpamProbability = GlobalSpamProbability(FixedRandom(0.4))
@@ -136,6 +154,7 @@ class TrustCallScreeningServiceTest {
         val ownReported = mutableSetOf<String>()
         val foreignReports = mutableMapOf<String, Int>()
         val blockedNumbers = mutableListOf<String>()
+        val blockedCalls = mutableListOf<String>()
         val promptedNumbers = mutableListOf<String>()
 
         override fun onCreate() = Unit
@@ -173,6 +192,15 @@ class TrustCallScreeningServiceTest {
             override fun isReportedByMe(canonicalNumber: String) = canonicalNumber in ownReported
             override fun foreignReportCount(canonicalNumber: String) = foreignReports[canonicalNumber] ?: 0
             override fun ownReports(): List<OwnSpamReport> = emptyList()
+            override fun sequenceInventory(): List<SequenceInventoryEntry> = emptyList()
+            override fun reportsByReporter(
+                createdBy: String,
+                fromSeq: Long,
+                toSeq: Long,
+            ): List<SpamReport> = emptyList()
+            override fun reportCount(): Int = 0
+            override fun spamNumberCount(notOlderThan: Long): Int = 0
+            override fun networkDeviceCount(notOlderThan: Long, excludePubkey: String): Int = 0
             override fun removeOwnReport(phoneHash: String) = Unit
             override fun registerOnChangeListener(listener: () -> Unit) {}
             override fun unregisterOnChangeListener() {}
@@ -183,6 +211,9 @@ class TrustCallScreeningServiceTest {
             override fun upsert(peer: PeerStatus) {
                 peers[peer.idPubkey] = peer
             }
+            override fun recordReport(idPubkey: String, seqNum: Long, syncedAt: Long) {
+                upsert(PeerStatus(idPubkey, seqNum, syncedAt))
+            }
             override fun find(idPubkey: String): PeerStatus? = peers[idPubkey]
             override fun all(): List<PeerStatus> = peers.values.toList()
         }
@@ -191,6 +222,14 @@ class TrustCallScreeningServiceTest {
             PhoneNumberNormalizer(object : RegionProvider {
                 override fun regionIso(): String = "ES"
             })
+
+        override val blockedCallStore: BlockedCallStore = object : BlockedCallStore {
+            override fun record(number: String, at: Long) {
+                blockedCalls += number
+            }
+
+            override fun count(): Int = blockedCalls.size
+        }
 
         override val blockedCallNotifier: BlockedCallNotifier = object : BlockedCallNotifier {
             override fun notifyBlocked(number: String) {

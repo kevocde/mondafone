@@ -12,6 +12,7 @@ class SqliteSpamReportStore(
     private val identity: DeviceIdentity,
     private val hasher: SpamReportHasher,
     private val signer: ReportSigner,
+    private val peerStatusStore: PeerStatusStore = SqlitePeerStatusStore(helper),
     private val clock: () -> Long = System::currentTimeMillis,
 ) : SpamReportStore {
 
@@ -40,6 +41,7 @@ class SqliteSpamReportStore(
                     insertReport(database, saved)
                     saveAlias(database, phoneHash, displayNumber)
                     saveNextSeqNum(database, seqNum + 1)
+                    peerStatusStore.recordReport(createdBy, seqNum, createdAt)
                     database.setTransactionSuccessful()
                 }
             }
@@ -66,7 +68,10 @@ class SqliteSpamReportStore(
             SQLiteDatabase.CONFLICT_IGNORE,
         )
         val accepted = inserted != INSERT_FAILED
-        if (accepted) notifyChanged()
+        if (accepted) {
+            peerStatusStore.recordReport(report.createdBy, report.seqNum, clock())
+            notifyChanged()
+        }
         return accepted
     }
 
@@ -123,6 +128,65 @@ class SqliteSpamReportStore(
                 }
             }
     }
+
+    override fun sequenceInventory(): List<SequenceInventoryEntry> =
+        database()
+            .query(
+                VerdictContract.TABLE_PEERS_STATUS,
+                arrayOf(VerdictContract.COLUMN_ID_PUBKEY, VerdictContract.COLUMN_MAX_SEQ_NUM),
+                null,
+                null,
+                null,
+                null,
+                VerdictContract.COLUMN_ID_PUBKEY,
+            )
+            .use { cursor ->
+                buildList {
+                    while (cursor.moveToNext()) {
+                        add(SequenceInventoryEntry(cursor.getString(0), cursor.getLong(1)))
+                    }
+                }
+            }
+
+    override fun reportsByReporter(createdBy: String, fromSeq: Long, toSeq: Long): List<SpamReport> =
+        database()
+            .query(
+                VerdictContract.TABLE_SPAM_REPORTS,
+                null,
+                "${VerdictContract.COLUMN_CREATED_BY} = ? AND " +
+                    "${VerdictContract.COLUMN_SEQ_NUM} BETWEEN ? AND ?",
+                arrayOf(createdBy, fromSeq.toString(), toSeq.toString()),
+                null,
+                null,
+                VerdictContract.COLUMN_SEQ_NUM,
+            )
+            .use { cursor ->
+                buildList {
+                    while (cursor.moveToNext()) add(cursor.toSpamReport())
+                }
+            }
+
+    override fun reportCount(): Int =
+        database()
+            .rawQuery("SELECT COUNT(*) FROM ${VerdictContract.TABLE_SPAM_REPORTS}", null)
+            .use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
+
+    override fun spamNumberCount(notOlderThan: Long): Int =
+        count(
+            "SELECT COUNT(DISTINCT ${VerdictContract.COLUMN_PHONE_HASH}) " +
+                "FROM ${VerdictContract.TABLE_SPAM_REPORTS} " +
+                "WHERE ${VerdictContract.COLUMN_CREATED_AT} > ?",
+            arrayOf(notOlderThan.toString()),
+        )
+
+    override fun networkDeviceCount(notOlderThan: Long, excludePubkey: String): Int =
+        count(
+            "SELECT COUNT(DISTINCT ${VerdictContract.COLUMN_CREATED_BY}) " +
+                "FROM ${VerdictContract.TABLE_SPAM_REPORTS} " +
+                "WHERE ${VerdictContract.COLUMN_CREATED_AT} > ? " +
+                "AND ${VerdictContract.COLUMN_CREATED_BY} != ?",
+            arrayOf(notOlderThan.toString(), excludePubkey),
+        )
 
     override fun removeOwnReport(phoneHash: String) {
         val createdBy = myPublicKey() ?: return
@@ -221,6 +285,11 @@ class SqliteSpamReportStore(
         createdAt = getLong(getColumnIndexOrThrow(VerdictContract.COLUMN_CREATED_AT)),
         signature = getString(getColumnIndexOrThrow(VerdictContract.COLUMN_SIGNATURE)),
     )
+
+    private fun count(sql: String, arguments: Array<String>): Int =
+        database()
+            .rawQuery(sql, arguments)
+            .use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
 
     private fun myPublicKey(): String? = identity.publicKeyBase64()
 
