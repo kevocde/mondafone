@@ -40,6 +40,16 @@ class DataPipeCodecTest {
     }
 
     @Test
+    fun roundTripPreservesWait() {
+        assertEquals(DataPipeMessage.Wait, codec.decode(codec.encode(DataPipeMessage.Wait, MAX_PAYLOAD).single()))
+    }
+
+    @Test
+    fun roundTripPreservesReady() {
+        assertEquals(DataPipeMessage.Ready, codec.decode(codec.encode(DataPipeMessage.Ready, MAX_PAYLOAD).single()))
+    }
+
+    @Test
     fun emptyRequestsBecomeOneFrame() {
         val frames = codec.encode(DataPipeMessage.Requests(emptyList()), MAX_PAYLOAD)
 

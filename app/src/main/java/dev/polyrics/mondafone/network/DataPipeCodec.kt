@@ -17,6 +17,8 @@ class DataPipeCodec(
             if (message.reports.isEmpty()) emptyList() else
                 split(FRAME_REPORTS, message.reports, maxPayload, ::encodeReportsBody)
         DataPipeMessage.End -> listOf(byteArrayOf(FRAME_END))
+        DataPipeMessage.Wait -> listOf(byteArrayOf(FRAME_WAIT))
+        DataPipeMessage.Ready -> listOf(byteArrayOf(FRAME_READY))
     }
 
     fun decode(frame: ByteArray?): DataPipeMessage? {
@@ -27,6 +29,8 @@ class DataPipeCodec(
             FRAME_OFFER_STATE -> inventoryCodec.decode(body)?.let(DataPipeMessage::OfferState)
             FRAME_REPORTS -> decodeReports(body)
             FRAME_END -> if (body.isEmpty()) DataPipeMessage.End else null
+            FRAME_WAIT -> if (body.isEmpty()) DataPipeMessage.Wait else null
+            FRAME_READY -> if (body.isEmpty()) DataPipeMessage.Ready else null
             else -> null
         }
     }
@@ -76,5 +80,7 @@ class DataPipeCodec(
         const val FRAME_OFFER_STATE: Byte = 0x02
         const val FRAME_REPORTS: Byte = 0x03
         const val FRAME_END: Byte = 0x04
+        const val FRAME_WAIT: Byte = 0x05
+        const val FRAME_READY: Byte = 0x06
     }
 }

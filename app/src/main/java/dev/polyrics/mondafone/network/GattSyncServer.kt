@@ -180,7 +180,7 @@ class GattSyncServer(
             is DataPipeMessage.OfferState -> offersFor(device).addAll(message.entries)
             is DataPipeMessage.Reports -> ingesterFor(device).ingest(message.reports)
             DataPipeMessage.End -> advancePhase(device)
-            null -> Unit
+            DataPipeMessage.Wait, DataPipeMessage.Ready, null -> Unit
         }
     }
 

@@ -8,4 +8,6 @@ sealed interface DataPipeMessage {
     data class OfferState(val entries: List<SequenceInventoryEntry>) : DataPipeMessage
     data class Reports(val reports: List<SpamReport>) : DataPipeMessage
     data object End : DataPipeMessage
+    data object Wait : DataPipeMessage
+    data object Ready : DataPipeMessage
 }

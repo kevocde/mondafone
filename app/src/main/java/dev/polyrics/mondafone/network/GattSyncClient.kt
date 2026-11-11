@@ -193,7 +193,7 @@ class GattSyncClient(
             is DataPipeMessage.Reports -> ingester.ingest(message.reports)
             is DataPipeMessage.Requests -> pendingRequests.addAll(message.requests)
             DataPipeMessage.End -> advancePhase()
-            is DataPipeMessage.OfferState, null -> Unit
+            DataPipeMessage.Wait, DataPipeMessage.Ready, is DataPipeMessage.OfferState, null -> Unit
         }
     }
 
