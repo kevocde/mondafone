@@ -44,6 +44,8 @@ class BleBeaconService : Service() {
     private val roleResolver = PeerRoleResolver()
     private val discoveredPeers = mutableMapOf<String, BluetoothDevice>()
     private val centralQueue = CentralSyncQueue<BluetoothDevice>()
+    private val outbox = GattOutbox()
+    private val turnCoordinator = SyncTurnCoordinator()
     private var activeClient: GattSyncClient? = null
     private var gattServer: GattSyncServer? = null
 
@@ -141,6 +143,8 @@ class BleBeaconService : Service() {
         counter = BeaconCycleCounter()
         discoveredPeers.clear()
         centralQueue.clear()
+        outbox.clear()
+        turnCoordinator.clear()
         eventLog.log("Beacon active")
         openGattServer()
         startAdvertising(newAdvertiser, beaconId)
@@ -161,6 +165,14 @@ class BleBeaconService : Service() {
 
     private fun processNextCentral() {
         val next = centralQueue.pollNext() ?: return
+        val turnId = "client:${next.address}"
+        turnCoordinator.requestTurn(
+            id = turnId,
+            onReady = { connectCentral(next, turnId) },
+        )
+    }
+
+    private fun connectCentral(next: CentralPeer<BluetoothDevice>, turnId: String) {
         eventLog.log("peer ${next.peerId} -> central")
         val client = GattSyncClient(
             context = this,
@@ -172,9 +184,11 @@ class BleBeaconService : Service() {
             reportCountProvider = spamReportStore::reportCount,
             ingester = reportIngester(),
             idleTimeoutMs = BuildConfig.SYNC_IDLE_TIMEOUT_MS,
+            outbox = outbox,
             onFinished = {
                 centralQueue.completeCurrent()
                 activeClient = null
+                turnCoordinator.releaseTurn(turnId)
                 processNextCentral()
             },
         )
@@ -196,6 +210,8 @@ class BleBeaconService : Service() {
             ownPubkeyProvider = { identity.publicKeyBase64() },
             ingesterFactory = ::reportIngester,
             eventLog = eventLog,
+            outbox = outbox,
+            turnCoordinator = turnCoordinator,
         )
         if (!server.open(bluetoothManager())) {
             eventLog.log("gatt server unavailable")
@@ -253,6 +269,8 @@ class BleBeaconService : Service() {
 
     private fun closeGatt() {
         centralQueue.clear()
+        turnCoordinator.clear()
+        outbox.clear()
         activeClient?.close()
         activeClient = null
         gattServer?.close()

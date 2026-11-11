@@ -25,19 +25,19 @@ class GattSyncClient(
     private val reportCountProvider: () -> Int,
     private val ingester: ReportIngester,
     private val idleTimeoutMs: Long,
+    private val outbox: GattOutbox = GattOutbox(),
     private val onFinished: () -> Unit = {},
     private val inventoryCodec: SequenceInventoryCodec = SequenceInventoryCodec(),
     private val pipeCodec: DataPipeCodec = DataPipeCodec(),
     private val planner: SyncRequestPlanner = SyncRequestPlanner(),
 ) {
 
+    private val outboxTag = "client:${device.address}"
     private var gatt: BluetoothGatt? = null
     private var mtu = DEFAULT_MTU
     private var phase = Phase.AWAIT_PULL_RESPONSE
     private var sessionStarted = false
     private var disconnecting = false
-    private var writeInFlight = false
-    private val pendingFrames = ArrayDeque<ByteArray>()
     private val pendingRequests = mutableListOf<ReportRequest>()
     private val handler = Handler(Looper.getMainLooper())
     private val idleTimeout = Runnable { disconnect() }
@@ -51,6 +51,7 @@ class GattSyncClient(
 
     fun close() {
         cancelIdleTimer()
+        outbox.cancel(outboxTag)
         logSummary()
         val current = gatt
         gatt = null
@@ -83,6 +84,7 @@ class GattSyncClient(
                     }
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
+                    outbox.cancel(outboxTag)
                     logSummary()
                     runCatching { gatt.close() }
                     this@GattSyncClient.gatt = null
@@ -163,7 +165,7 @@ class GattSyncClient(
                 return
             }
             if (descriptor.characteristic.uuid == GattSyncProtocol.DATA_UUID) {
-                readState(gatt)
+                restartIdleTimer()
             }
         }
     }
@@ -193,7 +195,9 @@ class GattSyncClient(
             is DataPipeMessage.Reports -> ingester.ingest(message.reports)
             is DataPipeMessage.Requests -> pendingRequests.addAll(message.requests)
             DataPipeMessage.End -> advancePhase()
-            DataPipeMessage.Wait, DataPipeMessage.Ready, is DataPipeMessage.OfferState, null -> Unit
+            DataPipeMessage.Wait -> restartIdleTimer()
+            DataPipeMessage.Ready -> gatt?.let(::readState)
+            is DataPipeMessage.OfferState, null -> Unit
         }
     }
 
@@ -227,33 +231,33 @@ class GattSyncClient(
     private fun handleWrite(characteristic: BluetoothGattCharacteristic) {
         if (characteristic.uuid != GattSyncProtocol.DATA_UUID) return
         restartIdleTimer()
-        writeInFlight = false
-        pump()
+        outbox.onPacketSent()
     }
 
     private fun enqueue(frames: List<ByteArray>) {
-        if (frames.isEmpty()) return
-        frames.forEach(pendingFrames::addLast)
-        pump()
+        frames.forEach { frame ->
+            outbox.enqueue(
+                tag = outboxTag,
+                send = { sendFrame(frame) },
+                onFailure = {
+                    eventLog.log("write failed")
+                    disconnect()
+                },
+            )
+        }
     }
 
-    private fun pump() {
-        if (writeInFlight) return
-        val frame = pendingFrames.removeFirstOrNull() ?: return
-        val current = gatt ?: return
-        val data = characteristic(current, GattSyncProtocol.DATA_UUID) ?: return
-        if (!writeData(current, data, frame)) {
-            eventLog.log("write failed")
-            disconnect()
-            return
-        }
-        writeInFlight = true
+    private fun sendFrame(frame: ByteArray): Boolean {
+        val current = gatt ?: return false
+        val data = characteristic(current, GattSyncProtocol.DATA_UUID) ?: return false
+        return writeData(current, data, frame)
     }
 
     private fun disconnect() {
         if (disconnecting) return
         disconnecting = true
         cancelIdleTimer()
+        outbox.cancel(outboxTag)
         runCatching { gatt?.disconnect() }
     }
 
