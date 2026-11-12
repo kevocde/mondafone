@@ -27,7 +27,7 @@ import dev.polyrics.mondafone.ui.RetroTitle
 import dev.polyrics.mondafone.ui.VerdictListItemView
 import java.util.concurrent.TimeUnit
 
-class MainActivity : Activity() {
+open class MainActivity : Activity() {
 
     private val store by lazy { (application as MondafoneApp).verdictStore }
     private val reports by lazy { (application as MondafoneApp).spamReportStore }
@@ -38,6 +38,7 @@ class MainActivity : Activity() {
     private lateinit var tabBar: RetroTabBar
     private lateinit var statsBar: RetroStatsBar
     private var debugBox: RetroDebugBox? = null
+    private var mainContentMounted = false
     private var currentTab = 0
     private var batteryExemptionPrompted = false
 
@@ -50,7 +51,9 @@ class MainActivity : Activity() {
         super.onResume()
         store.registerOnChangeListener { runOnUiThread { renderList() } }
         reports.registerOnChangeListener { runOnUiThread { renderList() } }
-        beaconLog.setListener { events -> runOnUiThread { renderDebug(events) } }
+        if (isDebugEnabled()) {
+            beaconLog.setListener { events -> runOnUiThread { renderDebug(events) } }
+        }
         if (isBluetoothGranted()) (application as MondafoneApp).scheduleBeacon()
         promptBatteryExemptionIfNeeded()
         renderList()
@@ -93,6 +96,7 @@ class MainActivity : Activity() {
     }
 
     private fun buildContent(): LinearLayout {
+        mainContentMounted = true
         val density = resources.displayMetrics.density
         val pad = (24 * density).toInt()
         val gap = (16 * density).toInt()
@@ -151,15 +155,19 @@ class MainActivity : Activity() {
                     1f,
                 ),
             )
-            debugBox = RetroDebugBox(this@MainActivity) { beaconLog.clear() }
-            addView(
-                debugBox,
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply { topMargin = gap },
-            )
-            renderDebug(beaconLog.lines())
+            if (isDebugEnabled()) {
+                debugBox = RetroDebugBox(this@MainActivity) { beaconLog.clear() }
+                addView(
+                    debugBox,
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { topMargin = gap },
+                )
+                renderDebug(beaconLog.lines())
+            } else {
+                debugBox = null
+            }
         }
     }
 
@@ -187,6 +195,7 @@ class MainActivity : Activity() {
     }
 
     private fun buildOnboardingContent(): LinearLayout {
+        mainContentMounted = false
         debugBox = null
         val density = resources.displayMetrics.density
         val pad = (24 * density).toInt()
@@ -212,7 +221,7 @@ class MainActivity : Activity() {
             setContentView(buildOnboardingContent())
             return
         }
-        if (debugBox == null) {
+        if (!mainContentMounted) {
             setContentView(buildContent())
         }
         tabBar.setCounts(
@@ -349,6 +358,7 @@ class MainActivity : Activity() {
     }
 
     private fun renderDebug(events: List<String>) {
+        val box = debugBox ?: return
         val deviceId = getString(R.string.debug_device_id, identity.publicKeyFingerprint() ?: "-")
         val power = getString(
             if (isIgnoringBatteryOptimizations()) {
@@ -357,8 +367,10 @@ class MainActivity : Activity() {
                 R.string.debug_power_restricted
             },
         )
-        debugBox?.setLines(listOf(deviceId, power) + events)
+        box.setLines(listOf(deviceId, power) + events)
     }
+
+    protected open fun isDebugEnabled(): Boolean = BuildConfig.DEBUG
 
     private fun isReady(): Boolean =
         isCallScreeningRoleHeld() && isNotificationGranted()

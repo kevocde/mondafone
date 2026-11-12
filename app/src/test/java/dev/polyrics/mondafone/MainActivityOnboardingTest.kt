@@ -70,6 +70,30 @@ class MainActivityOnboardingTest {
         assertFalse(hasViewWithDescription(activity.window.decorView, activity.getString(R.string.grant_access)))
     }
 
+    @Test
+    fun hidesDebugBoxWhenDebugModeIsDisabled() {
+        val roleManager = app.getSystemService(RoleManager::class.java)
+        org.robolectric.shadow.api.Shadow.extract<ShadowRoleManager>(roleManager)
+            .addHeldRole(RoleManager.ROLE_CALL_SCREENING)
+        shadowOf(app).grantPermissions(
+            Manifest.permission.POST_NOTIFICATIONS,
+            Manifest.permission.BLUETOOTH_ADVERTISE,
+            Manifest.permission.BLUETOOTH_SCAN,
+            Manifest.permission.BLUETOOTH_CONNECT,
+        )
+
+        val controller = Robolectric.buildActivity(ReleaseLikeMainActivity::class.java).create().start().resume()
+        val activity = controller.get()
+
+        assertNotNull(findViewOfType(activity.window.decorView, RetroStatsBar::class.java))
+        assertNotNull(findViewOfType(activity.window.decorView, RetroTabBar::class.java))
+        assertNull(findViewOfType(activity.window.decorView, RetroDebugBox::class.java))
+    }
+
+    class ReleaseLikeMainActivity : MainActivity() {
+        override fun isDebugEnabled(): Boolean = false
+    }
+
     private fun <T : View> findViewOfType(root: View, target: Class<T>): T? {
         if (target.isInstance(root)) return target.cast(root)
         if (root is ViewGroup) {
