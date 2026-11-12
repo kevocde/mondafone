@@ -10,7 +10,7 @@ val localProperties = Properties().apply {
     if (localPropertiesFile.exists()) localPropertiesFile.inputStream().use { load(it) }
 }
 
-val beaconCron = localProperties.getProperty("mondafone.beacon.cron", "*/5 * * * *")
+val beaconCron = localProperties.getProperty("mondafone.beacon.cron", "*/5 5-21 * * *")
 val beaconWindowMs = localProperties.getProperty("mondafone.beacon.window.ms", "10000")
 val beaconAppSecret = localProperties.getProperty("mondafone.beacon.app.secret")
     ?: UUID.randomUUID().toString().also { generated ->

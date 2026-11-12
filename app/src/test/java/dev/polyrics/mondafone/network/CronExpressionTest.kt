@@ -101,4 +101,18 @@ class CronExpressionTest {
     fun rejectsNonNumericValues() {
         assertNull(CronExpression.parse("abc * * * *"))
     }
+
+    @Test
+    fun withActiveHoursSkipsNightWindowFrom22To5() {
+        val cron = CronExpression.parse("*/5 * * * *")!!.withActiveHours(5..21)
+
+        assertEquals(
+            LocalDateTime.of(2026, 10, 29, 5, 0),
+            cron.nextAfter(LocalDateTime.of(2026, 10, 28, 21, 56)),
+        )
+        assertEquals(
+            LocalDateTime.of(2026, 10, 29, 5, 0),
+            cron.nextAfter(LocalDateTime.of(2026, 10, 29, 2, 30)),
+        )
+    }
 }

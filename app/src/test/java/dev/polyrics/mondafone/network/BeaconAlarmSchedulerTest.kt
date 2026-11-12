@@ -97,6 +97,28 @@ class BeaconAlarmSchedulerTest {
         )
     }
 
+    @Test
+    fun skipsQuietNightHoursAfterTenPmUntilFiveAm() {
+        val scheduler = BeaconAlarmScheduler(context, cron, alarmManager)
+        val expectedMorning = triggerAt(2026, 10, 30, 5, 0)
+
+        scheduler.scheduleNext(LocalDateTime.of(2026, 10, 29, 22, 0))
+
+        val scheduled = shadowOf(alarmManager).scheduledAlarms.single()
+        assertEquals(expectedMorning, scheduled.getTriggerAtMs())
+    }
+
+    @Test
+    fun schedulesForFiveAmWhenTriggeredDuringEarlyMorningQuietHours() {
+        val scheduler = BeaconAlarmScheduler(context, cron, alarmManager)
+        val expectedMorning = triggerAt(2026, 10, 30, 5, 0)
+
+        scheduler.scheduleNext(LocalDateTime.of(2026, 10, 30, 3, 15))
+
+        val scheduled = shadowOf(alarmManager).scheduledAlarms.single()
+        assertEquals(expectedMorning, scheduled.getTriggerAtMs())
+    }
+
     private fun triggerAt(year: Int, month: Int, day: Int, hour: Int, minute: Int): Long =
         LocalDateTime.of(year, month, day, hour, minute)
             .atZone(ZoneId.systemDefault())
