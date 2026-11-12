@@ -31,7 +31,7 @@ import dev.polyrics.mondafone.spam.SqliteSpamReportStore
 open class MondafoneApp : Application(), SpamDependencies {
 
     val beaconEventLog: BeaconEventLog = InMemoryBeaconEventLog()
-    val deviceIdentity: DeviceIdentity = KeystoreDeviceIdentity()
+    open val deviceIdentity: DeviceIdentity = KeystoreDeviceIdentity()
     override val verdictStore: CallVerdictStore by lazy {
         SqliteCallVerdictStore(this).also { store ->
             PrefsVerdictImporter(this, store, spamReportStore, phoneNumberNormalizer).runOnce()

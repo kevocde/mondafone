@@ -43,7 +43,7 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(buildContent())
+        setContentView(if (isReady()) buildContent() else buildOnboardingContent())
     }
 
     override fun onResume() {
@@ -73,7 +73,10 @@ class MainActivity : Activity() {
             REQUEST_NOTIFICATIONS_CODE ->
                 if (isNotificationGranted()) requestBluetoothPermissions() else refreshView()
             REQUEST_BLUETOOTH_CODE -> {
-                if (isBluetoothGranted()) (application as MondafoneApp).scheduleBeacon()
+                if (isBluetoothGranted()) {
+                    (application as MondafoneApp).scheduleBeacon()
+                    promptBatteryExemptionIfNeeded()
+                }
                 refreshView()
             }
             else -> refreshView()
@@ -208,6 +211,9 @@ class MainActivity : Activity() {
         if (!isReady()) {
             setContentView(buildOnboardingContent())
             return
+        }
+        if (debugBox == null) {
+            setContentView(buildContent())
         }
         tabBar.setCounts(
             listOf(
@@ -413,7 +419,7 @@ class MainActivity : Activity() {
     }
 
     private fun promptBatteryExemptionIfNeeded() {
-        if (!isReady() || batteryExemptionPrompted || isIgnoringBatteryOptimizations()) return
+        if (!isReady() || !isBluetoothGranted() || batteryExemptionPrompted || isIgnoringBatteryOptimizations()) return
         batteryExemptionPrompted = true
         requestBatteryExemption()
     }
