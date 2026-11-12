@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Mondafone</string>
+    <string name="app_name" translatable="false">Mondafone</string>
     <string name="app_subtitle">The end of spam calls</string>
     <string name="spam_question">Was this call spam?</string>
     <string name="answer_yes">Yes</string>
@@ -28,7 +28,7 @@
     <string name="tab_blacklist">Blacklist</string>
     <string name="action_spam">Spam</string>
     <string name="action_not_spam">No Spam</string>
-    <string name="action_remove">x</string>
+    <string name="action_remove" translatable="false">x</string>
     <string name="empty_pending">No pending calls verdicts</string>
     <string name="empty_whitelist">No whitelisted numbers</string>
     <string name="empty_blacklist">No blacklisted numbers</string>

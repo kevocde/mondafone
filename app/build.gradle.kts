@@ -45,6 +45,10 @@ android {
         buildConfig = true
     }
 
+    androidResources {
+        generateLocaleConfig = true
+    }
+
     buildTypes {
         release {
             optimization {
