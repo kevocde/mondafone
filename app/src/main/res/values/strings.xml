@@ -29,12 +29,13 @@
     <string name="action_spam">Spam</string>
     <string name="action_not_spam">No Spam</string>
     <string name="action_remove" translatable="false">x</string>
-    <string name="empty_pending">No pending calls verdicts</string>
+    <string name="empty_pending">No pending call verdicts</string>
     <string name="empty_whitelist">No whitelisted numbers</string>
     <string name="empty_blacklist">No blacklisted numbers</string>
     <string name="status_guard_active">[ ACTIVE GUARD ]</string>
     <string name="status_setup_required">[ SETUP REQUIRED ]</string>
     <string name="status_protection_detail">Call filter &amp; P2P shield active</string>
+    <string name="status_protection_metrics">Stages: %1$d/%2$d · P2P nodes: %3$d</string>
     <string name="status_onboarding_detail">Complete the 4 protection stages below</string>
     <string name="stage_call_filter">FILTER</string>
     <string name="stage_notifications">ALERTS</string>

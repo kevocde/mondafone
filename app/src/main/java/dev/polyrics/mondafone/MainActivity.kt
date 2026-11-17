@@ -11,7 +11,8 @@ import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
-import android.view.Gravity
+import android.view.View
+import android.view.WindowInsets
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import dev.polyrics.mondafone.spam.PhoneNumberDisplay
@@ -105,7 +106,7 @@ open class MainActivity : Activity() {
         val smallGap = (8 * density).toInt()
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(pad, pad, pad, pad)
+            applySystemBarPadding(this, pad)
             setBackgroundColor(getColor(R.color.background))
             clipChildren = false
             addView(RetroTitle(this@MainActivity, getString(R.string.app_name)), marginParams(bottom = smallGap))
@@ -212,20 +213,29 @@ open class MainActivity : Activity() {
         }
     }
 
+    private fun applySystemBarPadding(target: View, basePad: Int) {
+        target.setPadding(basePad, basePad, basePad, basePad)
+        target.setOnApplyWindowInsetsListener { v, insets ->
+            val bars = insets.getInsets(WindowInsets.Type.systemBars())
+            v.setPadding(basePad + bars.left, basePad + bars.top, basePad + bars.right, basePad + bars.bottom)
+            insets
+        }
+    }
+
     private fun buildOnboardingContent(): LinearLayout {
         mainContentMounted = false
         debugBox = null
         val density = resources.displayMetrics.density
-        val pad = (24 * density).toInt()
-        val gap = (14 * density).toInt()
+        val pad = (20 * density).toInt()
+        val gap = (12 * density).toInt()
+        val smallGap = (8 * density).toInt()
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(pad, pad, pad, pad)
+            applySystemBarPadding(this, pad)
             setBackgroundColor(getColor(R.color.background))
             clipChildren = false
-            addView(RetroTitle(this@MainActivity, getString(R.string.app_name)), marginParams(bottom = gap))
-            addView(RetroProtectionBanner(this@MainActivity, active = false), matchWidthParams(bottom = gap))
+            addView(RetroTitle(this@MainActivity, getString(R.string.app_name)), marginParams(bottom = smallGap))
+            addView(RetroProtectionBanner(this@MainActivity, active = false), matchWidthParams(bottom = smallGap))
             val onboardingStrip = createReadinessStrip().apply {
                 setStages(currentStageStates())
             }
@@ -247,8 +257,8 @@ open class MainActivity : Activity() {
         if (!mainContentMounted) {
             setContentView(buildContent())
         }
-        protectionBanner.setActive(true)
-        readinessStrip.setStages(currentStageStates())
+        val stages = currentStageStates()
+        readinessStrip.setStages(stages)
         tabBar.setCounts(
             listOf(
                 store.pendingNumbers().size,
@@ -256,7 +266,13 @@ open class MainActivity : Activity() {
                 reports.ownReports().size,
             ),
         )
-        renderStats()
+        val peers = renderStats()
+        protectionBanner.setStatus(
+            active = true,
+            readyStages = stages.count { it },
+            totalStages = stages.size,
+            peerCount = peers,
+        )
         listContainer.removeAllViews()
         when (currentTab) {
             0 -> renderPendingItems()
@@ -265,15 +281,17 @@ open class MainActivity : Activity() {
         }
     }
 
-    private fun renderStats() {
+    private fun renderStats(): Int {
         val cutoff = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(BuildConfig.REPORT_MAX_AGE_DAYS)
+        val peers = reports.networkDeviceCount(cutoff, identity.publicKeyBase64() ?: "")
         statsBar.setValues(
             listOf(
                 blockedCalls.count(),
                 reports.spamNumberCount(cutoff),
-                reports.networkDeviceCount(cutoff, identity.publicKeyBase64() ?: ""),
+                peers,
             ),
         )
+        return peers
     }
 
     private fun renderPendingItems() {
@@ -304,6 +322,7 @@ open class MainActivity : Activity() {
                             store.addToWhitelist(number)
                         },
                     ),
+                    subtitle = getString(R.string.spam_question),
                 ),
                 matchWidthParams(bottom = bottomGap),
             )

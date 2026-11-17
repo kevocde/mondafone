@@ -33,6 +33,7 @@
     <string name="status_guard_active">[ GUARDIA ACTIVA ]</string>
     <string name="status_setup_required">[ CONFIGURACIÓN REQUERIDA ]</string>
     <string name="status_protection_detail">Filtro de llamadas y escudo P2P activos</string>
+    <string name="status_protection_metrics">Etapas: %1$d/%2$d · Nodos P2P: %3$d</string>
     <string name="status_onboarding_detail">Completa las 4 etapas de protección</string>
     <string name="stage_call_filter">FILTRO</string>
     <string name="stage_notifications">AVISOS</string>

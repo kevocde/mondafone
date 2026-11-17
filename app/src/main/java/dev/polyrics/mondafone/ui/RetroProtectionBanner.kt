@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Typeface
+import android.util.TypedValue
 import android.view.View
 import dev.polyrics.mondafone.R
 
@@ -31,28 +32,30 @@ class RetroProtectionBanner(
     }
     private val brandPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = context.getColor(R.color.ink)
-        textSize = 11 * density
-        typeface = Typeface.MONOSPACE
-        isFakeBoldText = true
+        textSize = sp(13f)
+        typeface = Typeface.DEFAULT_BOLD
     }
     private val stampPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = context.getColor(R.color.ink)
-        textSize = 10 * density
+        textSize = sp(10f)
         typeface = Typeface.DEFAULT_BOLD
         textAlign = Paint.Align.CENTER
     }
     private val headlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = context.getColor(R.color.ink)
-        textSize = 15 * density
+        textSize = sp(15f)
         typeface = Typeface.DEFAULT_BOLD
     }
     private val detailPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = context.getColor(R.color.ink)
-        textSize = 12 * density
+        textSize = sp(12f)
         typeface = Typeface.DEFAULT
     }
 
     private var isGuardActive = active
+    private var readyStages = if (active) 4 else 0
+    private var totalStages = 4
+    private var peerCount = 0
 
     init {
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
@@ -61,17 +64,40 @@ class RetroProtectionBanner(
     }
 
     fun setActive(active: Boolean) {
-        if (isGuardActive == active) return
-        isGuardActive = active
+        setStatus(
+            active = active,
+            readyStages = if (active) totalStages else 0,
+            totalStages = totalStages,
+            peerCount = peerCount,
+        )
+    }
+
+    fun setStatus(
+        active: Boolean,
+        readyStages: Int = this.readyStages,
+        totalStages: Int = this.totalStages,
+        peerCount: Int = this.peerCount,
+    ) {
+        this.isGuardActive = active
+        this.readyStages = readyStages
+        this.totalStages = totalStages
+        this.peerCount = peerCount
         updateAccessibility()
         invalidate()
     }
+
+    private fun sp(value: Float): Float =
+        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, value, resources.displayMetrics)
 
     private fun stampText(): String =
         context.getString(if (isGuardActive) R.string.status_guard_active else R.string.status_setup_required)
 
     private fun detailText(): String =
-        context.getString(if (isGuardActive) R.string.status_protection_detail else R.string.status_onboarding_detail)
+        if (isGuardActive) {
+            context.getString(R.string.status_protection_metrics, readyStages, totalStages, peerCount)
+        } else {
+            context.getString(R.string.status_onboarding_detail)
+        }
 
     private fun updateAccessibility() {
         val subtitle = context.getString(R.string.app_subtitle)
@@ -102,7 +128,7 @@ class RetroProtectionBanner(
 
         val pad = 10 * density
         val brandY = headerHeightPx / 2f - (brandPaint.descent() + brandPaint.ascent()) / 2f
-        canvas.drawText("// DISPATCH-01", pad, brandY, brandPaint)
+        canvas.drawText(context.getString(R.string.app_name).uppercase(), pad, brandY, brandPaint)
 
         val label = stampText()
         val pillW = stampPaint.measureText(label) + 14 * density
