@@ -162,7 +162,7 @@ A two-verdict pastel ink system printed on warm paper: green says safe, brick sa
 ### Neutral
 - **Warm Newsprint** (#F4F0E2): the page background of every screen.
 - **Bright Paper** (#FBF8EE): raised surfaces — panels, stat tiles, inactive tabs, prompt cards, the debug box.
-- **Ink Black** (#000000): every border stroke, every shadow, all text. (A softer `ink` resource at #1A1A1A exists in `colors.xml` but is unused; the drawn system inks with pure black.)
+- **Ink Black** (#000000): every border stroke, every shadow, all text. Defined as `ink` in `colors.xml`; every view resolves it from there — no hardcoded color constants remain in code.
 - **Masthead White** (#FFFFFF): the fill of the outlined app title; used nowhere else.
 
 ### Named Rules

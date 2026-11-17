@@ -44,7 +44,7 @@ Always run at least `assembleRelease` after code or manifest changes. A physical
 
 Retro pastel design system for all UI:
 
-- Palette lives in `app/src/main/res/values/colors.xml`: pastel guardian-green primary (safe/trust actions), pastel brick secondary (danger/remove actions), warm retro-print paper backgrounds, mustard coin accent. Never introduce non-pastel colors.
+- Palette lives in `app/src/main/res/values/colors.xml`: pastel guardian-green primary (safe/trust actions), pastel brick secondary (danger/remove actions), warm retro-print paper backgrounds, mustard coin accent with coin-glint highlight, pure black ink (all strokes, shadows, and text), masthead white (wordmark fill only). Every drawn color resolves through this palette; never hardcode hex values or `Color` constants in views. Never introduce non-pastel colors. `DESIGN.md` is the full design-system authority.
 - Controls are flat surfaces with straight 2dp ink borders and hard rectangular shadows (4dp offset, no blur) to represent elevation.
 - Pressed state: the shadow collapses and the surface shifts by the shadow offset.
 - Square corners only; no rounded shapes, gradients, or image assets.
