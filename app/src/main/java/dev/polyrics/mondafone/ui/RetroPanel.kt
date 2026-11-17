@@ -22,7 +22,7 @@ class RetroPanel(
 
     init {
         setWillNotDraw(false)
-        val pad = (12 * density).toInt()
+        val pad = (14 * density).toInt()
         setPadding(pad, pad, pad, pad)
     }
 

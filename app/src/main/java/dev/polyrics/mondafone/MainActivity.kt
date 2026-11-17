@@ -234,7 +234,7 @@ open class MainActivity : Activity() {
                 RetroButton(this@MainActivity, getString(R.string.grant_access), getColor(R.color.primary)) {
                     requestAccess()
                 },
-                marginParams(bottom = 0),
+                matchWidthParams(bottom = 0),
             )
         }
     }
@@ -282,8 +282,9 @@ open class MainActivity : Activity() {
             showEmptyMessage(getString(R.string.empty_pending))
             return
         }
-        numbers.forEach { number ->
+        numbers.forEachIndexed { index, number ->
             val display = PhoneNumberDisplay.format(number)
+            val bottomGap = if (index < numbers.lastIndex) (8 * resources.displayMetrics.density).toInt() else 0
             listContainer.addView(
                 VerdictListItemView(
                     this,
@@ -304,10 +305,7 @@ open class MainActivity : Activity() {
                         },
                     ),
                 ),
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply { bottomMargin = (8 * resources.displayMetrics.density).toInt() },
+                matchWidthParams(bottom = bottomGap),
             )
         }
     }
@@ -318,7 +316,8 @@ open class MainActivity : Activity() {
             showEmptyMessage(getString(R.string.empty_whitelist))
             return
         }
-        numbers.forEach { number ->
+        numbers.forEachIndexed { index, number ->
+            val bottomGap = if (index < numbers.lastIndex) (8 * resources.displayMetrics.density).toInt() else 0
             listContainer.addView(
                 VerdictListItemView(
                     this,
@@ -333,10 +332,7 @@ open class MainActivity : Activity() {
                     ),
                     bandColor = getColor(R.color.primary),
                 ),
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply { bottomMargin = (8 * resources.displayMetrics.density).toInt() },
+                matchWidthParams(bottom = bottomGap),
             )
         }
     }
@@ -347,7 +343,8 @@ open class MainActivity : Activity() {
             showEmptyMessage(getString(R.string.empty_blacklist))
             return
         }
-        ownReports.forEach { report ->
+        ownReports.forEachIndexed { index, report ->
+            val bottomGap = if (index < ownReports.lastIndex) (8 * resources.displayMetrics.density).toInt() else 0
             listContainer.addView(
                 VerdictListItemView(
                     this,
@@ -362,10 +359,7 @@ open class MainActivity : Activity() {
                     ),
                     bandColor = getColor(R.color.secondary),
                 ),
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply { bottomMargin = (8 * resources.displayMetrics.density).toInt() },
+                matchWidthParams(bottom = bottomGap),
             )
         }
     }

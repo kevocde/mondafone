@@ -54,7 +54,8 @@ class VerdictListItemView(
     private fun numberLabel(number: String): TextView =
         TextView(context).apply {
             text = "> $number"
-            textSize = 15f
+            textSize = 14f
+            maxLines = 1
             setTextColor(context.getColor(R.color.ink))
             typeface = Typeface.MONOSPACE
             setTypeface(typeface, Typeface.BOLD)

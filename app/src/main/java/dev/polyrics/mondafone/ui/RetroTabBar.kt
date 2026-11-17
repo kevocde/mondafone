@@ -166,7 +166,7 @@ class RetroTabBar(
         }
 
         override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-            val width = (textPaint.measureText(label) + 32 * density).toInt()
+            val width = (textPaint.measureText(label) + 40 * density).toInt()
             val height = (40 * density).toInt()
             setMeasuredDimension(
                 resolveSize(width, widthMeasureSpec),
@@ -199,9 +199,9 @@ class RetroTabBar(
 
         private fun drawBadge(canvas: Canvas) {
             val pixelSize = 2 * density
-            val offset = 2 * density
-            val baseX = width - 6 * pixelSize - offset
-            val baseY = -offset
+            val rightInset = if (isTabSelected) 3 * density else shadow + 3 * density
+            val baseX = width - 6 * pixelSize - rightInset
+            val baseY = 3 * density
 
             val coinPattern = arrayOf(
                 intArrayOf(0, 1, 1, 1, 1, 0),
