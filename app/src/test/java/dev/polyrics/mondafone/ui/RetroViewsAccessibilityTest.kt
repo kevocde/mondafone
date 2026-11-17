@@ -103,4 +103,34 @@ class RetroViewsAccessibilityTest {
         assertTrue(info.isHeading)
         assertEquals("Mondafone", title.contentDescription.toString())
     }
+
+    @Test
+    fun retroProtectionBannerExposesActiveAndSetupStatesToAccessibility() {
+        val banner = RetroProtectionBanner(context, active = false)
+        assertTrue(banner.contentDescription.toString().contains("[ SETUP REQUIRED ]"))
+
+        banner.setActive(true)
+        assertTrue(banner.contentDescription.toString().contains("[ ACTIVE GUARD ]"))
+    }
+
+    @Test
+    fun retroReadinessStripExposesEachStageStateToAccessibility() {
+        val strip = RetroReadinessStrip(
+            context,
+            listOf("FILTER", "ALERTS", "BLE NET", "POWER"),
+        )
+        strip.setStages(listOf(true, true, false, false))
+
+        assertEquals(4, strip.childCount)
+        assertEquals("FILTER: OK", strip.getChildAt(0).contentDescription.toString())
+        assertEquals("ALERTS: OK", strip.getChildAt(1).contentDescription.toString())
+        assertEquals("BLE NET: [ ]", strip.getChildAt(2).contentDescription.toString())
+        assertEquals("POWER: [ ]", strip.getChildAt(3).contentDescription.toString())
+    }
+
+    @Test
+    fun retroEmptyStateViewExposesMessageToAccessibility() {
+        val emptyView = RetroEmptyStateView(context, "No pending calls verdicts")
+        assertEquals("No pending calls verdicts", emptyView.contentDescription.toString())
+    }
 }
