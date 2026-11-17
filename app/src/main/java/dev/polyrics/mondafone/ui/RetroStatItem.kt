@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Typeface
+import android.util.TypedValue
 import android.view.View
 import dev.polyrics.mondafone.R
 
@@ -31,17 +32,20 @@ class RetroStatItem(
     }
     private val valuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = context.getColor(R.color.ink)
-        textSize = 22 * density
+        textSize = sp(22f)
         textAlign = Paint.Align.CENTER
         typeface = Typeface.MONOSPACE
         isFakeBoldText = true
     }
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = context.getColor(R.color.ink)
-        textSize = 10 * density
+        textSize = sp(10f)
         textAlign = Paint.Align.CENTER
         typeface = Typeface.DEFAULT_BOLD
     }
+
+    private fun sp(value: Float): Float =
+        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, value, resources.displayMetrics)
 
     private var value = 0
     private var label = ""

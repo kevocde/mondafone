@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Typeface
+import android.util.TypedValue
 import android.view.View
 import dev.polyrics.mondafone.R
 
@@ -30,15 +31,15 @@ class RetroEmptyStateView(
     }
     private val emblemPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = context.getColor(R.color.ink)
-        textSize = 13 * density
+        textSize = sp(13f)
         typeface = Typeface.MONOSPACE
         isFakeBoldText = true
         textAlign = Paint.Align.CENTER
     }
     private val messagePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = context.getColor(R.color.ink)
-        textSize = 13 * density
-        typeface = Typeface.MONOSPACE
+        textSize = sp(14f)
+        typeface = Typeface.DEFAULT_BOLD
         textAlign = Paint.Align.CENTER
     }
 
@@ -47,6 +48,9 @@ class RetroEmptyStateView(
         isScreenReaderFocusable = true
         contentDescription = message
     }
+
+    private fun sp(value: Float): Float =
+        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, value, resources.displayMetrics)
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         setMeasuredDimension(

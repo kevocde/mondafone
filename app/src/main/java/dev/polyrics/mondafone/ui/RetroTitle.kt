@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Typeface
+import android.util.TypedValue
 import android.view.View
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.TextView
@@ -33,7 +34,7 @@ class RetroTitle(
 
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = context.getColor(R.color.masthead)
-        textSize = 36 * density
+        textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 32f, resources.displayMetrics)
         typeface = Typeface.DEFAULT_BOLD
     }
 
