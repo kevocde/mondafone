@@ -1,0 +1,271 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-17T08:21:12-05:00",
+  "title": "Design System: Mondafone",
+  "extensions": {
+    "colorMeta": {
+      "guardian-green": {
+        "role": "primary",
+        "displayName": "Guardian Green",
+        "canonical": "#7CBE96",
+        "tonalRamp": [
+          "oklch(0.25 0.045 155)",
+          "oklch(0.35 0.07 155)",
+          "oklch(0.45 0.09 155)",
+          "oklch(0.55 0.105 155)",
+          "oklch(0.64 0.11 155)",
+          "oklch(0.72 0.105 155)",
+          "oklch(0.82 0.075 155)",
+          "oklch(0.92 0.035 155)"
+        ]
+      },
+      "pastel-brick": {
+        "role": "secondary",
+        "displayName": "Pastel Brick",
+        "canonical": "#DA8A78",
+        "tonalRamp": [
+          "oklch(0.28 0.05 38)",
+          "oklch(0.38 0.075 38)",
+          "oklch(0.48 0.095 38)",
+          "oklch(0.58 0.105 38)",
+          "oklch(0.69 0.105 38)",
+          "oklch(0.78 0.085 38)",
+          "oklch(0.87 0.055 38)",
+          "oklch(0.94 0.025 38)"
+        ]
+      },
+      "mustard-coin": {
+        "role": "tertiary",
+        "displayName": "Mustard Coin",
+        "canonical": "#E3B84F",
+        "tonalRamp": [
+          "oklch(0.30 0.05 90)",
+          "oklch(0.40 0.075 90)",
+          "oklch(0.50 0.10 90)",
+          "oklch(0.60 0.12 90)",
+          "oklch(0.70 0.13 90)",
+          "oklch(0.79 0.13 90)",
+          "oklch(0.87 0.09 90)",
+          "oklch(0.94 0.045 90)"
+        ]
+      },
+      "coin-glint": {
+        "role": "tertiary",
+        "displayName": "Coin Glint",
+        "canonical": "#F3D78C",
+        "tonalRamp": [
+          "oklch(0.40 0.05 92)",
+          "oklch(0.50 0.07 92)",
+          "oklch(0.60 0.09 92)",
+          "oklch(0.70 0.10 92)",
+          "oklch(0.79 0.10 92)",
+          "oklch(0.87 0.095 92)",
+          "oklch(0.93 0.06 92)",
+          "oklch(0.97 0.025 92)"
+        ]
+      },
+      "warm-newsprint": {
+        "role": "neutral",
+        "displayName": "Warm Newsprint",
+        "canonical": "#F4F0E2",
+        "tonalRamp": [
+          "oklch(0.30 0.02 100)",
+          "oklch(0.42 0.03 100)",
+          "oklch(0.54 0.04 100)",
+          "oklch(0.66 0.045 100)",
+          "oklch(0.78 0.045 100)",
+          "oklch(0.87 0.04 100)",
+          "oklch(0.95 0.028 100)",
+          "oklch(0.99 0.01 100)"
+        ]
+      },
+      "bright-paper": {
+        "role": "neutral",
+        "displayName": "Bright Paper",
+        "canonical": "#FBF8EE",
+        "tonalRamp": [
+          "oklch(0.35 0.015 100)",
+          "oklch(0.47 0.02 100)",
+          "oklch(0.59 0.03 100)",
+          "oklch(0.70 0.035 100)",
+          "oklch(0.81 0.035 100)",
+          "oklch(0.90 0.03 100)",
+          "oklch(0.97 0.02 100)",
+          "oklch(1.0 0.005 100)"
+        ]
+      },
+      "ink-black": {
+        "role": "neutral",
+        "displayName": "Ink Black",
+        "canonical": "#000000",
+        "tonalRamp": [
+          "oklch(0.05 0 0)",
+          "oklch(0.15 0 0)",
+          "oklch(0.30 0 0)",
+          "oklch(0.45 0 0)",
+          "oklch(0.60 0 0)",
+          "oklch(0.75 0 0)",
+          "oklch(0.88 0 0)",
+          "oklch(0.97 0 0)"
+        ]
+      },
+      "masthead-white": {
+        "role": "neutral",
+        "displayName": "Masthead White",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "oklch(0.35 0 0)",
+          "oklch(0.48 0 0)",
+          "oklch(0.60 0 0)",
+          "oklch(0.72 0 0)",
+          "oklch(0.83 0 0)",
+          "oklch(0.91 0 0)",
+          "oklch(0.96 0 0)",
+          "oklch(1.0 0 0)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The app wordmark only, white fill with a 4dp ink outline." },
+      "headline": { "displayName": "Headline", "purpose": "The screen subtitle under the wordmark." },
+      "title": { "displayName": "Title", "purpose": "Tab labels and the debug box header." },
+      "body": { "displayName": "Body", "purpose": "Button labels, questions, and primary copy." },
+      "small": { "displayName": "Small", "purpose": "Compact button labels." },
+      "label": { "displayName": "Label", "purpose": "Stat-tile captions." },
+      "badge": { "displayName": "Badge", "purpose": "The count inside the coin badge, capped at 99+." },
+      "value": { "displayName": "Value", "purpose": "Phone numbers in lists and verdict prompts; monospace marks machine truth." },
+      "value-large": { "displayName": "Value Large", "purpose": "The number on a stat tile." },
+      "value-small": { "displayName": "Value Small", "purpose": "Debug log lines and empty-state messages." }
+    },
+    "shadows": [
+      {
+        "name": "raised",
+        "value": "4px 4px 0 #000000",
+        "purpose": "Solid ink offset, no blur; marks elements that are pressable or report live state (buttons, inactive tabs, stat tiles, prompt card, debug box)."
+      },
+      {
+        "name": "raised-compact",
+        "value": "3px 3px 0 #000000",
+        "purpose": "The same solid ink offset at 3dp for compact buttons inside list rows and headers."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Guardian Green machine key for affirmative/safe actions; 48dp high, depresses into its shadow on press.",
+      "html": "<button class=\"ds-btn-primary\">Grant access</button>",
+      "css": ".ds-btn-primary { background: #7CBE96; color: #000000; border: 2px solid #000000; box-shadow: 4px 4px 0 #000000; height: 48px; padding: 0 12px; font-family: sans-serif; font-size: 16px; cursor: pointer; } .ds-btn-primary:hover { filter: brightness(1.04); } .ds-btn-primary:focus-visible { outline: 2px solid #000000; outline-offset: 2px; } .ds-btn-primary:active { transform: translate(4px, 4px); box-shadow: none; }"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Pastel Brick machine key for destructive and spam-condemning actions; identical geometry to primary.",
+      "html": "<button class=\"ds-btn-danger\">Spam</button>",
+      "css": ".ds-btn-danger { background: #DA8A78; color: #000000; border: 2px solid #000000; box-shadow: 4px 4px 0 #000000; height: 48px; padding: 0 12px; font-family: sans-serif; font-size: 16px; cursor: pointer; } .ds-btn-danger:hover { filter: brightness(1.04); } .ds-btn-danger:focus-visible { outline: 2px solid #000000; outline-offset: 2px; } .ds-btn-danger:active { transform: translate(4px, 4px); box-shadow: none; }"
+    },
+    {
+      "name": "Compact Button",
+      "kind": "button",
+      "refersTo": "button-primary-compact",
+      "description": "32dp row-action button with a 3dp shadow; ships in both Guardian Green and Pastel Brick (shown: green).",
+      "html": "<button class=\"ds-btn-compact\">No Spam</button>",
+      "css": ".ds-btn-compact { background: #7CBE96; color: #000000; border: 2px solid #000000; box-shadow: 3px 3px 0 #000000; height: 32px; padding: 0 12px; font-family: sans-serif; font-size: 12px; cursor: pointer; } .ds-btn-compact:hover { filter: brightness(1.04); } .ds-btn-compact:focus-visible { outline: 2px solid #000000; outline-offset: 2px; } .ds-btn-compact:active { transform: translate(3px, 3px); box-shadow: none; }"
+    },
+    {
+      "name": "Tab Bar",
+      "kind": "nav",
+      "refersTo": "tab-active",
+      "description": "File-folder tabs fused to the panel below; the active tab drops its bottom border and shadow, inactive tabs stay raised, pending counts ride as a pixel-coin badge.",
+      "html": "<div class=\"ds-tabs\" role=\"tablist\"><span class=\"ds-tab ds-tab-active\" role=\"tab\" aria-selected=\"true\">Pending<span class=\"ds-tab-badge\">3</span></span><span class=\"ds-tab ds-tab-inactive\" role=\"tab\" aria-selected=\"false\">Whitelist</span><span class=\"ds-tab ds-tab-inactive\" role=\"tab\" aria-selected=\"false\">Blacklist</span></div>",
+      "css": ".ds-tabs { display: flex; gap: 4px; align-items: flex-start; font-family: sans-serif; } .ds-tab { height: 40px; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #000000; position: relative; cursor: pointer; } .ds-tab-active { background: #7CBE96; border: 2px solid #000000; border-bottom: none; height: 42px; cursor: default; } .ds-tab-inactive { background: #FBF8EE; border: 2px solid #000000; box-shadow: 4px 4px 0 #000000; margin-right: 4px; } .ds-tab-inactive:hover { filter: brightness(1.02); } .ds-tab-inactive:focus-visible { outline: 2px solid #000000; outline-offset: 2px; } .ds-tab-badge { position: absolute; top: -9px; right: -4px; min-width: 12px; height: 12px; background: #E3B84F; border: 2px solid #000000; font-size: 8px; font-weight: 700; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }"
+    },
+    {
+      "name": "Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Flat Bright Paper container with a 2dp ink border and 12dp padding; pure containers never carry the shadow.",
+      "html": "<div class=\"ds-panel\"><p class=\"ds-panel-text\">No pending calls verdicts</p></div>",
+      "css": ".ds-panel { background: #FBF8EE; border: 2px solid #000000; padding: 12px; font-family: sans-serif; color: #000000; } .ds-panel-text { font-family: monospace; font-size: 14px; text-align: center; margin: 20px 0; }"
+    },
+    {
+      "name": "Stat Item",
+      "kind": "custom",
+      "refersTo": "stat-item",
+      "description": "96x64dp live counter tile: monospace value over a bold micro label, raised because it reports live state.",
+      "html": "<div class=\"ds-stat\"><span class=\"ds-stat-value\">12</span><span class=\"ds-stat-label\">Blocked calls</span></div>",
+      "css": ".ds-stat { width: 96px; height: 64px; background: #FBF8EE; border: 2px solid #000000; box-shadow: 4px 4px 0 #000000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #000000; } .ds-stat-value { font-family: monospace; font-size: 22px; line-height: 1; } .ds-stat-label { font-family: sans-serif; font-size: 10px; font-weight: 700; line-height: 1; }"
+    },
+    {
+      "name": "Verdict List Row",
+      "kind": "custom",
+      "refersTo": "list-item",
+      "description": "Pending-verdict row: monospace phone number left, compact verdict buttons right, 1dp ink hairline underneath.",
+      "html": "<div class=\"ds-verdict\"><span class=\"ds-verdict-number\">+1 555 010 2244</span><button class=\"ds-vbtn ds-vbtn-danger\">Spam</button><button class=\"ds-vbtn ds-vbtn-primary\">No Spam</button></div>",
+      "css": ".ds-verdict { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #FBF8EE; border-bottom: 1px solid #000000; color: #000000; } .ds-verdict-number { font-family: monospace; font-size: 16px; flex: 1; } .ds-vbtn { border: 2px solid #000000; box-shadow: 3px 3px 0 #000000; height: 32px; padding: 0 12px; font-family: sans-serif; font-size: 12px; color: #000000; cursor: pointer; } .ds-vbtn-danger { background: #DA8A78; } .ds-vbtn-primary { background: #7CBE96; } .ds-vbtn:hover { filter: brightness(1.04); } .ds-vbtn:focus-visible { outline: 2px solid #000000; outline-offset: 2px; } .ds-vbtn:active { transform: translate(3px, 3px); box-shadow: none; }"
+    },
+    {
+      "name": "Verdict Prompt Card",
+      "kind": "custom",
+      "refersTo": "prompt-card",
+      "description": "Raised Bright Paper card that asks 'Was this call spam?'; the number sits in monospace between ASCII markers, danger and primary buttons answer.",
+      "html": "<div class=\"ds-prompt\"><p class=\"ds-prompt-question\">Was this call spam?</p><p class=\"ds-prompt-number\">&gt; +1 555 010 2244 &lt;</p><div class=\"ds-prompt-row\"><button class=\"ds-pbtn ds-pbtn-danger\">Yes</button><button class=\"ds-pbtn ds-pbtn-primary\">No</button></div></div>",
+      "css": ".ds-prompt { background: #FBF8EE; border: 2px solid #000000; box-shadow: 4px 4px 0 #000000; padding: 24px; text-align: center; color: #000000; font-family: sans-serif; } .ds-prompt-question { font-size: 16px; font-weight: 700; margin: 0 0 8px; } .ds-prompt-number { font-family: monospace; font-size: 16px; margin: 0 0 16px; } .ds-prompt-row { display: flex; justify-content: center; gap: 16px; } .ds-pbtn { border: 2px solid #000000; box-shadow: 4px 4px 0 #000000; height: 48px; padding: 0 12px; font-family: sans-serif; font-size: 16px; color: #000000; cursor: pointer; } .ds-pbtn-danger { background: #DA8A78; } .ds-pbtn-primary { background: #7CBE96; } .ds-pbtn:hover { filter: brightness(1.04); } .ds-pbtn:focus-visible { outline: 2px solid #000000; outline-offset: 2px; } .ds-pbtn:active { transform: translate(4px, 4px); box-shadow: none; }"
+    },
+    {
+      "name": "Debug Box",
+      "kind": "custom",
+      "refersTo": "debug-box",
+      "description": "Raised live-evidence panel from debug builds: bold header with a compact danger Clear button, monospace 12dp log lines.",
+      "html": "<div class=\"ds-debug\"><div class=\"ds-debug-header\"><span>Debug:</span><button class=\"ds-dbtn\">Clear</button></div><p class=\"ds-debug-line\">Device ID: 9f3a1c</p><p class=\"ds-debug-line\">Power: unrestricted</p><p class=\"ds-debug-line\">Beacon active</p></div>",
+      "css": ".ds-debug { background: #FBF8EE; border: 2px solid #000000; box-shadow: 4px 4px 0 #000000; padding: 12px; color: #000000; font-family: sans-serif; } .ds-debug-header { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 700; margin-bottom: 8px; } .ds-debug-line { font-family: monospace; font-size: 12px; margin: 2px 0; } .ds-dbtn { background: #DA8A78; color: #000000; border: 2px solid #000000; box-shadow: 3px 3px 0 #000000; height: 32px; padding: 0 12px; font-family: sans-serif; font-size: 12px; cursor: pointer; } .ds-dbtn:hover { filter: brightness(1.04); } .ds-dbtn:focus-visible { outline: 2px solid #000000; outline-offset: 2px; } .ds-dbtn:active { transform: translate(3px, 3px); box-shadow: none; }"
+    },
+    {
+      "name": "Masthead Title",
+      "kind": "custom",
+      "description": "The app wordmark: bold 36dp sans in Masthead White with a 4dp ink outline; the only outlined text in the system.",
+      "html": "<span class=\"ds-title\">Mondafone</span>",
+      "css": ".ds-title { font-family: sans-serif; font-size: 36px; font-weight: 700; color: #FFFFFF; -webkit-text-stroke: 4px #000000; paint-order: stroke fill; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Risograph Guardian",
+    "overview": "Mondafone looks like a protection notice run off a small risograph press: warm paper stock, two pastel ink plates with strictly assigned meanings, and hard offset shadows that read as deliberate print misregistration. The mood is sober, warm, mechanical — a guard on duty, not a toy. The retro layer exists to make a silent background service feel tangible and trustworthy when the user does open it, never to entertain.\n\nEvery control is tactile and mechanical. Buttons look pressable because they are: the solid offset shadow collapses under the finger and the surface shifts into the space the shadow occupied, like a machine key. Depth is information — if it carries the hard shadow, you can press it or it is reporting live state; if it is flat, it is only paper.\n\nThe system is drawn entirely with Android Canvas and native Views — no widget library, no image assets, no Compose/Material/AndroidX — and every drawn control carries native AccessibilityDelegate semantics (button roles, headings, tab collections, live content descriptions) so the print-shop surface never costs screen-reader users anything.",
+    "keyCharacteristics": [
+      "Warm paper backgrounds with flat pastel fills and straight 2dp ink borders.",
+      "One depth cue: a solid ink offset shadow (4dp, no blur), reserved for pressable or live elements.",
+      "Press physics: shadow collapses, surface translates by the shadow offset.",
+      "Square corners everywhere; the pixel-art coin badge is the only non-rectangular silhouette.",
+      "Sans-serif for voices, monospace reserved for machine-truth values; ASCII markers (>, x) mark relevance, never decoration."
+    ],
+    "rules": [
+      { "name": "The Two-Verdict Rule", "body": "Guardian Green and Pastel Brick are verdicts, not decoration. Green marks affirmative/safe/selected, brick marks danger/remove. They never appear as ornaments, dividers, or empty-state flair.", "section": "colors" },
+      { "name": "The One Coin Rule", "body": "Mustard Coin is the only accent allowed outside the two-verdict system, and it may only say one thing: \"something is waiting here.\" If there is no count, there is no coin.", "section": "colors" },
+      { "name": "The Monospace-Is-Meaning Rule", "body": "Monospace marks machine truth — numbers, counts, logs. It never sets prose, questions, or labels, and prose never sets phone numbers.", "section": "typography" },
+      { "name": "The One-Outline Rule", "body": "The wordmark is the only outlined text in the app (white fill, 4dp stroke). All other text is solid ink on paper; if a piece of text needs emphasis, it gets bold, not an outline.", "section": "typography" },
+      { "name": "The Press-Collapse Rule", "body": "A shadowed element must collapse its shadow and translate by the offset while pressed. An element that cannot collapse its shadow must not have one.", "section": "elevation" },
+      { "name": "The Flat-Container Rule", "body": "Surfaces that only group content — the page background, the list panel, the active tab — never carry the shadow. Raising a container implies an action that does not exist.", "section": "elevation" },
+      { "name": "The Square-Corner Rule", "body": "Corner radius is 0dp everywhere, always. No rounded rectangles, pills, circles, or blobs; softness comes from the pastel palette, never from geometry.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do draw every UI element with Canvas and native Views; keep the APK free of widget libraries.",
+      "Do reserve Guardian Green for affirmative/safe/selected states and Pastel Brick for danger/remove actions (The Two-Verdict Rule).",
+      "Do set phone numbers, counts, and log output in monospace; set questions, labels, and prose in sans-serif (The Monospace-Is-Meaning Rule).",
+      "Do give every pressable element the 2dp ink border and the 4dp (3dp compact) hard shadow, and collapse the shadow on press (The Press-Collapse Rule).",
+      "Do keep containers flat: no shadow on the page background, the list panel, or the active tab (The Flat-Container Rule).",
+      "Do use ASCII markers (>, x) to give relevance to text content, never as visual decoration.",
+      "Do wire native accessibility semantics (button role, headings, tab collection, content descriptions) into every drawn control."
+    ],
+    "donts": [
+      "Don't round any corner — radius is 0dp on every surface, border, and shadow.",
+      "Don't use gradients, blur, transparency, or soft drop shadows; depth is the one solid ink offset and nothing else.",
+      "Don't introduce Compose, Material, AppCompat, or AndroidX components; the system is framework Canvas/View only.",
+      "Don't add colors outside the pastel palette, and never a saturated accent.",
+      "Don't set prose in monospace or phone numbers in sans-serif.",
+      "Don't outline any text other than the wordmark."
+    ]
+  }
+}
