@@ -47,40 +47,24 @@ class RetroReadinessStrip(
     ) : View(context) {
 
         private val density = resources.displayMetrics.density
-        private val borderPx = 2 * density
-        private val shadowPx = 3 * density
-        private val bandPx = 6 * density
+        private val borderPx = 1.5f * density
 
-        private val surfacePaint = Paint().apply { color = context.getColor(R.color.surface) }
-        private val primaryPaint = Paint().apply { color = context.getColor(R.color.primary) }
-        private val coinPaint = Paint().apply { color = context.getColor(R.color.coin) }
-        private val shadowPaint = Paint().apply { color = context.getColor(R.color.ink) }
+        private val grantedFillPaint = Paint().apply { color = context.getColor(R.color.surface) }
+        private val pendingFillPaint = Paint().apply { color = context.getColor(R.color.coin_glint) }
         private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = context.getColor(R.color.ink)
             style = Paint.Style.STROKE
             strokeWidth = borderPx
         }
-        private val hatchPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = context.getColor(R.color.ink)
-            style = Paint.Style.STROKE
-            strokeWidth = density
-        }
-        private val statePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = context.getColor(R.color.ink)
-            textSize = sp(10f)
+            textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 9.5f, resources.displayMetrics)
             typeface = Typeface.MONOSPACE
             isFakeBoldText = true
             textAlign = Paint.Align.CENTER
         }
-        private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = context.getColor(R.color.ink)
-            textSize = sp(9f)
-            typeface = Typeface.DEFAULT_BOLD
-            textAlign = Paint.Align.CENTER
-        }
 
         private var granted = false
-        private var pressed = false
 
         init {
             importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
@@ -100,9 +84,6 @@ class RetroReadinessStrip(
             }
         }
 
-        private fun sp(value: Float): Float =
-            TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, value, resources.displayMetrics)
-
         fun setGranted(value: Boolean) {
             granted = value
             updateDescription()
@@ -120,20 +101,8 @@ class RetroReadinessStrip(
         }
 
         override fun onTouchEvent(event: MotionEvent): Boolean {
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    pressed = true
-                    invalidate()
-                }
-                MotionEvent.ACTION_UP -> {
-                    pressed = false
-                    invalidate()
-                    performClick()
-                }
-                MotionEvent.ACTION_CANCEL -> {
-                    pressed = false
-                    invalidate()
-                }
+            if (event.action == MotionEvent.ACTION_UP) {
+                performClick()
             }
             return true
         }
@@ -141,41 +110,20 @@ class RetroReadinessStrip(
         override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
             setMeasuredDimension(
                 resolveSize((72 * density).toInt(), widthMeasureSpec),
-                resolveSize((48 * density).toInt(), heightMeasureSpec),
+                resolveSize((32 * density).toInt(), heightMeasureSpec),
             )
         }
 
         override fun onDraw(canvas: Canvas) {
-            val offset = if (pressed) shadowPx else 0f
-            val bodyW = width - shadowPx
-            val bodyH = height - shadowPx
-            if (!pressed) {
-                canvas.drawRect(shadowPx, shadowPx, width.toFloat(), height.toFloat(), shadowPaint)
-            }
-            canvas.save()
-            canvas.translate(offset, offset)
-            canvas.drawRect(0f, 0f, bodyW, bodyH, surfacePaint)
-            val bandFill = if (granted) primaryPaint else coinPaint
-            canvas.drawRect(0f, 0f, bodyW, bandPx, bandFill)
-            if (!granted) {
-                drawDiagonalHatch(canvas, bodyW, bandPx)
-            }
-            canvas.drawLine(0f, bandPx, bodyW, bandPx, borderPaint)
-            canvas.drawRect(0f, 0f, bodyW, bodyH, borderPaint)
+            val w = width.toFloat()
+            val h = height.toFloat()
+            val fill = if (granted) grantedFillPaint else pendingFillPaint
+            canvas.drawRect(0f, 0f, w, h, fill)
+            canvas.drawRect(0f, 0f, w, h, borderPaint)
 
-            val code = if (granted) "[OK]" else "[  ]"
-            canvas.drawText(code, bodyW / 2f, bandPx + 15 * density, statePaint)
-            canvas.drawText(label, bodyW / 2f, bodyH - 7 * density, labelPaint)
-            canvas.restore()
-        }
-
-        private fun drawDiagonalHatch(canvas: Canvas, w: Float, h: Float) {
-            val step = 6 * density
-            var x = -h
-            while (x < w) {
-                canvas.drawLine(x.coerceAtLeast(0f), h, (x + h).coerceAtMost(w), 0f, hatchPaint)
-                x += step
-            }
+            val text = "${if (granted) "[OK]" else "[ ]"} $label"
+            val textY = h / 2f - (textPaint.descent() + textPaint.ascent()) / 2f
+            canvas.drawText(text, w / 2f, textY, textPaint)
         }
     }
 }

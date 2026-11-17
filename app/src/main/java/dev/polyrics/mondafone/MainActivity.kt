@@ -24,7 +24,6 @@ import dev.polyrics.mondafone.ui.RetroProtectionBanner
 import dev.polyrics.mondafone.ui.RetroReadinessStrip
 import dev.polyrics.mondafone.ui.RetroStatsBar
 import dev.polyrics.mondafone.ui.RetroTabBar
-import dev.polyrics.mondafone.ui.RetroTitle
 import dev.polyrics.mondafone.ui.VerdictListItemView
 import java.util.concurrent.TimeUnit
 
@@ -109,7 +108,6 @@ open class MainActivity : Activity() {
             applySystemBarPadding(this, pad)
             setBackgroundColor(getColor(R.color.background))
             clipChildren = false
-            addView(RetroTitle(this@MainActivity, getString(R.string.app_name)), marginParams(bottom = smallGap))
             protectionBanner = RetroProtectionBanner(this@MainActivity, active = true)
             addView(protectionBanner, matchWidthParams(bottom = smallGap))
             readinessStrip = createReadinessStrip()
@@ -234,7 +232,6 @@ open class MainActivity : Activity() {
             applySystemBarPadding(this, pad)
             setBackgroundColor(getColor(R.color.background))
             clipChildren = false
-            addView(RetroTitle(this@MainActivity, getString(R.string.app_name)), marginParams(bottom = smallGap))
             addView(RetroProtectionBanner(this@MainActivity, active = false), matchWidthParams(bottom = smallGap))
             val onboardingStrip = createReadinessStrip().apply {
                 setStages(currentStageStates())
