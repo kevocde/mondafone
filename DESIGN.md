@@ -1,23 +1,23 @@
 ---
 name: Mondafone
-description: Retro-print pastel design system for a zero-configuration spam-call guardian
+description: Civil-defense and neighborhood-watch dispatch design system for a zero-configuration spam-call guardian
 colors:
-  guardian-green: "#7CBE96"
-  pastel-brick: "#DA8A78"
-  warm-newsprint: "#F4F0E2"
-  bright-paper: "#FBF8EE"
-  ink-black: "#000000"
-  mustard-coin: "#E3B84F"
-  coin-glint: "#F3D78C"
-  masthead-white: "#FFFFFF"
+  signal-sage: "#5A9E7C"
+  terracotta-brick: "#D46F5A"
+  warm-bone: "#F2ECE1"
+  dispatch-stock: "#FAF6EE"
+  navy-charcoal: "#141A1F"
+  beacon-ochre: "#E0AC40"
+  coin-glint: "#F4D58D"
+  masthead-paper: "#FAF6EE"
 typography:
   display:
     fontFamily: "sans-serif"
-    fontSize: "36sp"
+    fontSize: "32sp"
     fontWeight: 700
   headline:
     fontFamily: "sans-serif"
-    fontSize: "18sp"
+    fontSize: "15sp"
     fontWeight: 700
   title:
     fontFamily: "sans-serif"
@@ -26,11 +26,11 @@ typography:
   body:
     fontFamily: "sans-serif"
     fontSize: "16sp"
-    fontWeight: 400
+    fontWeight: 700
   small:
     fontFamily: "sans-serif"
     fontSize: "12sp"
-    fontWeight: 400
+    fontWeight: 700
   label:
     fontFamily: "sans-serif"
     fontSize: "10sp"
@@ -41,12 +41,12 @@ typography:
     fontWeight: 700
   value:
     fontFamily: "monospace"
-    fontSize: "16sp"
-    fontWeight: 400
+    fontSize: "14sp"
+    fontWeight: 700
   value-large:
     fontFamily: "monospace"
     fontSize: "22sp"
-    fontWeight: 400
+    fontWeight: 700
   value-small:
     fontFamily: "monospace"
     fontSize: "12sp"
@@ -56,72 +56,89 @@ spacing:
   sm: "8dp"
   md: "12dp"
   lg: "16dp"
-  xl: "24dp"
-  xxl: "32dp"
+  xl: "20dp"
+  xxl: "24dp"
 components:
+  protection-banner:
+    backgroundColor: "{colors.dispatch-stock}"
+    textColor: "{colors.navy-charcoal}"
+    typography: "{typography.headline}"
+    height: "94dp"
+    padding: "10dp"
+  readiness-cell:
+    backgroundColor: "{colors.dispatch-stock}"
+    textColor: "{colors.navy-charcoal}"
+    typography: "{typography.label}"
+    height: "48dp"
+    width: "72dp"
   button-primary:
-    backgroundColor: "{colors.guardian-green}"
-    textColor: "{colors.ink-black}"
+    backgroundColor: "{colors.signal-sage}"
+    textColor: "{colors.navy-charcoal}"
     typography: "{typography.body}"
     height: "48dp"
     padding: "0 12dp"
   button-primary-compact:
-    backgroundColor: "{colors.guardian-green}"
-    textColor: "{colors.ink-black}"
+    backgroundColor: "{colors.signal-sage}"
+    textColor: "{colors.navy-charcoal}"
     typography: "{typography.small}"
-    height: "32dp"
+    height: "48dp"
     padding: "0 12dp"
   button-danger:
-    backgroundColor: "{colors.pastel-brick}"
-    textColor: "{colors.ink-black}"
+    backgroundColor: "{colors.terracotta-brick}"
+    textColor: "{colors.navy-charcoal}"
     typography: "{typography.body}"
     height: "48dp"
     padding: "0 12dp"
   button-danger-compact:
-    backgroundColor: "{colors.pastel-brick}"
-    textColor: "{colors.ink-black}"
+    backgroundColor: "{colors.terracotta-brick}"
+    textColor: "{colors.navy-charcoal}"
     typography: "{typography.small}"
-    height: "32dp"
+    height: "48dp"
     padding: "0 12dp"
   tab-active:
-    backgroundColor: "{colors.guardian-green}"
-    textColor: "{colors.ink-black}"
+    backgroundColor: "{colors.signal-sage}"
+    textColor: "{colors.navy-charcoal}"
     typography: "{typography.title}"
-    height: "40dp"
-    padding: "0 16dp"
+    height: "48dp"
+    padding: "0 20dp"
   tab-inactive:
-    backgroundColor: "{colors.bright-paper}"
-    textColor: "{colors.ink-black}"
+    backgroundColor: "{colors.dispatch-stock}"
+    textColor: "{colors.navy-charcoal}"
     typography: "{typography.title}"
-    height: "40dp"
-    padding: "0 16dp"
+    height: "48dp"
+    padding: "0 20dp"
   badge-coin:
-    backgroundColor: "{colors.mustard-coin}"
-    textColor: "{colors.ink-black}"
+    backgroundColor: "{colors.beacon-ochre}"
+    textColor: "{colors.navy-charcoal}"
     typography: "{typography.badge}"
   panel:
-    backgroundColor: "{colors.bright-paper}"
-    textColor: "{colors.ink-black}"
-    padding: "12dp"
+    backgroundColor: "{colors.dispatch-stock}"
+    textColor: "{colors.navy-charcoal}"
+    padding: "14dp"
   stat-item:
-    backgroundColor: "{colors.bright-paper}"
-    textColor: "{colors.ink-black}"
+    backgroundColor: "{colors.dispatch-stock}"
+    textColor: "{colors.navy-charcoal}"
     typography: "{typography.value-large}"
     width: "96dp"
-    height: "64dp"
+    height: "68dp"
   list-item:
-    backgroundColor: "{colors.bright-paper}"
-    textColor: "{colors.ink-black}"
+    backgroundColor: "{colors.warm-bone}"
+    textColor: "{colors.navy-charcoal}"
     typography: "{typography.value}"
-    padding: "8dp 16dp"
+    padding: "12dp"
+  empty-state:
+    backgroundColor: "{colors.warm-bone}"
+    textColor: "{colors.navy-charcoal}"
+    typography: "{typography.title}"
+    height: "108dp"
   prompt-card:
-    backgroundColor: "{colors.bright-paper}"
-    textColor: "{colors.ink-black}"
+    backgroundColor: "{colors.dispatch-stock}"
+    textColor: "{colors.navy-charcoal}"
     typography: "{typography.body}"
     padding: "24dp"
   debug-box:
-    backgroundColor: "{colors.bright-paper}"
-    textColor: "{colors.ink-black}"
+    backgroundColor: "{colors.dispatch-stock}"
+    textColor: "{colors.navy-charcoal}"
     typography: "{typography.value-small}"
     padding: "12dp"
 ---
@@ -130,45 +147,45 @@ components:
 
 ## Overview
 
-**Creative North Star: "The Risograph Guardian"**
+**Creative North Star: "The Neighborhood Watch Dispatch (Boletín de Guardia Vecinal)"**
 
-Mondafone looks like a protection notice run off a small risograph press: warm paper stock, two pastel ink plates with strictly assigned meanings, and hard offset shadows that read as deliberate print misregistration. The mood is sober, warm, mechanical — a guard on duty, not a toy. The retro layer exists to make a silent background service feel tangible and trustworthy when the user does open it, never to entertain.
+Mondafone looks like an official civil-defense and neighborhood-watch protection bulletin printed on warm bone stock: stamped status headers, a geometric Canvas shield-and-node emblem, semantic color bands across every module, and hard architectural offset shadows in deep navy-charcoal ink. The visual language turns an invisible background service (`CallScreeningService` + serverless BLE P2P sync) into a tangible, inspectable guard station on duty.
 
-Every control is tactile and mechanical. Buttons look pressable because they are: the solid offset shadow collapses under the finger and the surface shifts into the space the shadow occupied, like a machine key. Depth is information — if it carries the hard shadow, you can press it or it is reporting live state; if it is flat, it is only paper.
+Every interactive control and live module is physical and mechanical. Buttons, inactive tabs, and readiness stage cells depress into their solid offset shadow on touch. Every module carries a top color band or diagonal Canvas hatch strip so state reads before a single word is read.
 
-The system is drawn entirely with Android `Canvas` and native `View`s — no widget library, no image assets, no Compose/Material/AndroidX — and every drawn control carries native `AccessibilityDelegate` semantics (button roles, headings, tab collections, live content descriptions) so the print-shop surface never costs screen-reader users anything.
+The entire interface is built exclusively with Android framework `Canvas` and native `View`s — zero third-party UI libraries, zero raster assets, zero rounded corners — while exposing full native `AccessibilityDelegate` semantics (`Button` roles, headings, tab collections, and live stage descriptions) and `sp`-scaled typography.
 
 **Key Characteristics:**
-- Warm paper backgrounds with flat pastel fills and straight 2dp ink borders.
-- One depth cue: a solid ink offset shadow (4dp, no blur), reserved for pressable or live elements.
-- Press physics: shadow collapses, surface translates by the shadow offset.
-- Square corners everywhere; the pixel-art coin badge is the only non-rectangular silhouette.
-- Sans-serif for voices, monospace reserved for machine-truth values; ASCII markers (`>`, `x`) mark relevance, never decoration.
+- Warm Bone Paper ground (`#F2ECE1`) with Bright Dispatch Card Stock (`#FAF6EE`) and 2dp Navy-Charcoal Ink (`#141A1F`) borders.
+- Top semantic color bands (6dp–10dp high, framed by a 2dp horizontal ink rule) on stat tiles, readiness cells, ticket rows, and prompt cards, with diagonal Canvas ink hatching on ungranted or empty states.
+- Stamped Protection Banner (`RetroProtectionBanner`) pairing the `MONDAFONE` header with a live `[ ACTIVE GUARD ]` / `[ SETUP REQUIRED ]` stamp, a 45°/90° geometric Canvas shield/P2P emblem, and live stage/peer metrics.
+- 4-stage horizontal Readiness Strip (`RetroReadinessStrip`) tracking `FILTER`, `ALERTS`, `BLE NET`, and `POWER` with 48dp touch targets and press-collapse physics.
+- Slotted dispatch ticket rows (`VerdictListItemView`) with top semantic bands, `> number` monospace headers, inline classification prompt subtitles, and 48dp-touch-target compact keys.
 
 ## Colors
 
-A two-verdict pastel ink system printed on warm paper: green says safe, brick says danger, paper holds still, and a mustard coin appears only when something is waiting.
+A three-signal pastel dispatch palette inked in deep navy-charcoal on warm bone paper: sage green certifies safety and active guard status, terracotta brick condemns spam, and beacon ochre flags pending items and setup stages.
 
 ### Primary
-- **Guardian Green** (#7CBE96): the affirmative, safe, or selected state. Grant-access button, "No Spam" / "No" verdicts, the active tab fill, and the launcher background.
+- **Signal Sage** (`#5A9E7C`, `primary`): active protection stamp (`[ ACTIVE GUARD ]`), verified readiness stage bands (`[OK]`), safe/whitelist verdicts (`No Spam`), active folder tab fill, and the network-devices stat band.
 
 ### Secondary
-- **Pastel Brick** (#DA8A78): every destructive or spam-condemning action. "Spam", "Yes" (confirming spam), the "x" remove buttons, and the debug box's Clear button.
+- **Terracotta Brick** (`#D46F5A`, `secondary`): spam condemnation (`Spam`), remove actions (`x`), blacklisted ticket bands, and the blocked-calls stat band.
 
 ### Tertiary
-- **Mustard Coin** (#E3B84F): count badges only — the pixel coin on tabs that reports how many items wait behind it.
-- **Coin Glint** (#F3D78C): highlight pixels inside the coin badge; never used anywhere else.
+- **Beacon Ochre** (`#E0AC40`, `coin`): pending tab coin badges, `[ SETUP REQUIRED ]` stamp, ungranted readiness stage bands (paired with diagonal ink hatching), pending verdict ticket bands, and the spam-numbers stat band.
+- **Coin Glint** (`#F4D58D`, `coin_glint`): highlight pixels inside the 6×6 pixel-art coin badge.
 
 ### Neutral
-- **Warm Newsprint** (#F4F0E2): the page background of every screen.
-- **Bright Paper** (#FBF8EE): raised surfaces — panels, stat tiles, inactive tabs, prompt cards, the debug box.
-- **Ink Black** (#000000): every border stroke, every shadow, all text. Defined as `ink` in `colors.xml`; every view resolves it from there — no hardcoded color constants remain in code.
-- **Masthead White** (#FFFFFF): the fill of the outlined app title; used nowhere else.
+- **Warm Bone Paper** (`#F2ECE1`, `background`): screen ground, banner header bar fill, and slotted ticket row fill.
+- **Dispatch Card Stock** (`#FAF6EE`, `surface`): raised cards, stat tiles, readiness cells, inactive tabs, and the main list panel.
+- **Navy-Charcoal Ink** (`#141A1F`, `ink`): every 2dp border stroke, every 4dp/3dp hard offset shadow, diagonal hatch lines, corner registration ticks, and all text.
+- **Masthead Paper** (`#FAF6EE`, `masthead`): fill of the outlined app wordmark.
 
 ### Named Rules
-**The Two-Verdict Rule.** Guardian Green and Pastel Brick are verdicts, not decoration. Green marks affirmative/safe/selected, brick marks danger/remove. They never appear as ornaments, dividers, or empty-state flair.
+**The Semantic Top-Band Rule.** Every stat tile, readiness stage cell, verdict ticket row, and prompt card carries a horizontal top band (6dp–8dp high, closed by a 2dp ink line) colored by its semantic role (`primary` sage for safe/verified/network, `secondary` brick for blocked/spam, `coin` ochre for pending/setup). Side-border callout stripes are never used.
 
-**The One Coin Rule.** Mustard Coin is the only accent allowed outside the two-verdict system, and it may only say one thing: "something is waiting here." If there is no count, there is no coin.
+**The Hatch-Plus-Hue Rule.** Pending permission stages and empty states never rely on color alone: their top band draws 45° diagonal ink hatch lines across the band so state is unmistakable in monochrome or high-glare light.
 
 ## Typography
 
@@ -176,126 +193,90 @@ A two-verdict pastel ink system printed on warm paper: green says safe, brick sa
 **Body Font:** sans-serif (system default)
 **Value Font:** monospace (system default)
 
-**Character:** one plain sans-serif carries every voice in the app — sober and direct — while monospace is held back for values that come from the machine: phone numbers, counts, log lines. The pairing is deliberately unstyled; authority comes from the outlined masthead, not from font choice.
+**Character:** Sober sans-serif carries all human voices, labels, questions, and empty-state prose, while bold tabular monospace is strictly reserved for machine-truth values (phone numbers, zero-padded counters, `[OK]` / `[  ]` / `[ -- ]` status codes, and debug logs). Every text size is specified in `sp` (`ComplexUnit.COMPLEX_UNIT_SP`) to honor system font scaling.
 
 ### Hierarchy
-- **Display** (bold, 36sp): the app wordmark only — white fill with a 4dp ink outline, the system's single piece of display typography.
-- **Headline** (bold, 18sp): the screen subtitle directly under the wordmark ("The end of spam calls").
-- **Title** (bold, 14sp): tab labels and the debug box header.
-- **Body** (regular, 16sp): button labels, questions, and primary copy.
-- **Small** (regular, 12sp): compact button labels.
-- **Label** (bold, 10sp): stat-tile captions ("Blocked calls", "Spam numbers", "Devices").
-- **Badge** (bold, 8sp): the count inside the coin badge, capped at "99+".
-- **Value** (monospace, 16sp): phone numbers in lists and verdict prompts.
-- **Value Large** (monospace, 22sp): the number on a stat tile.
-- **Value Small** (monospace, 12sp): debug log lines and empty-state messages.
+- **Display** (bold, 32sp): the `Mondafone` masthead wordmark — `masthead` fill with a 4dp `ink` outline and a 2dp bottom registration rule.
+- **Headline** (bold, 15sp): the banner headline (`"The end of spam calls"`).
+- **Title** (bold, 14sp): folder tab labels, empty-state messages, and debug header.
+- **Body** (bold, 16sp): primary button labels and prompt questions.
+- **Small** (bold, 12sp): compact row-action button labels and banner detail metrics.
+- **Label** (bold, 10sp): uppercase stat-tile captions (`BLOCKED CALLS`, `SPAM NUMBERS`, `DEVICES`) and stamp pills.
+- **Badge** (bold, 8sp): count inside the pixel coin badge, capped at `99+`.
+- **Value** (monospace bold, 14sp): phone numbers in ticket rows (`> +57 300 123 4567`).
+- **Value Large** (monospace bold, 22sp): zero-padded stat-tile counters (`00`, `14`).
+- **Value Small** (monospace, 12sp): debug log lines.
 
 ### Named Rules
-**The Monospace-Is-Meaning Rule.** Monospace marks machine truth — numbers, counts, logs. It never sets prose, questions, or labels, and prose never sets phone numbers.
+**The Monospace-Is-Meaning Rule.** Monospace sets phone numbers, numeric counters, bracketed status codes (`[OK]`, `[ -- ]`), and log lines. Prose, empty-state sentences, and questions always use sans-serif.
 
-**The One-Outline Rule.** The wordmark is the only outlined text in the app (white fill, 4dp stroke). All other text is solid ink on paper; if a piece of text needs emphasis, it gets bold, not an outline.
+**The One-Outline Rule.** Only the top masthead wordmark uses an ink outline (4dp stroke under `masthead` fill) and bottom rule. All other typography is solid `ink` on paper.
 
 ## Layout
 
-Every screen is a single vertical column on Warm Newsprint with 24dp page padding. The vertical rhythm runs on a 16dp module: sections separate by 16dp, major blocks (the stats row) by 32dp, list rows and inline button pairs by 8dp, and the smallest gutters (between tabs) by 4dp.
+Both the onboarding screen and the main screen share the same top-anchored vertical column on Warm Bone Paper (`#F2ECE1`) with `20dp` base padding plus `WindowInsets.Type.systemBars()` edge-to-edge insets. Transitioning from onboarding to active guard never shifts the header vertically.
 
-The main screen stacks wordmark → subtitle → stats row → tab bar → list panel. The stats row is equal-weight tiles with 8dp gutters. The tab bar sits flush on top of the list panel with no gap — the active tab drops its bottom border and shadow so it reads as the panel's open lid, while inactive tabs stay raised. List rows inside the panel separate with a 1dp ink hairline at their bottom edge. Verdict prompt cards center their content with 24dp internal padding.
-
-Panels that group content (the list panel) use 12dp internal padding; list rows use 16dp horizontal / 8dp vertical padding.
+The vertical stack flows:
+1. **Masthead Wordmark (`RetroTitle`)** (`8dp` bottom margin)
+2. **Protection Dispatch Banner (`RetroProtectionBanner`)** (`8dp` bottom margin)
+3. **4-Stage Readiness Strip (`RetroReadinessStrip`)** (`12dp` bottom margin on main screen, `24dp` before CTA on onboarding)
+4. **3-Tile Stats Bar (`RetroStatsBar`)** (`18dp` bottom margin; equal-width tiles with `8dp` gutters)
+5. **Folder Tab Bar (`RetroTabBar`) + Framed Panel (`RetroPanel`)** (`0dp` gap between tabs and panel; `14dp` internal panel padding with corner registration ticks and `8dp` gaps between ticket rows)
 
 ## Elevation & Depth
 
-The system has exactly one depth cue: a solid Ink Black rectangle offset 4dp down and 4dp right behind the surface (3dp for compact buttons). No blur, no transparency, no tonal layering — the shadow is printed, not cast. Its meaning is semantic: **shadow = pressable or live**. Buttons, inactive tabs, the verdict prompt card, stat tiles, and the debug box carry it; the page background and the list panel — pure containers — stay flat.
-
-The press state is the system's only motion: the shadow disappears and the surface translates by the shadow offset, so the element physically moves into the space its shadow occupied. On release it returns and the action fires.
+Depth is expressed through a single structural device: a solid Navy-Charcoal Ink (`#141A1F`) rectangle offset down and right with zero blur (`4dp` on cards, stat tiles, primary buttons, and inactive tabs; `3dp` on readiness cells and compact buttons).
 
 ### Shadow Vocabulary
-- **Raised** (4dp solid ink offset, no blur): default buttons, inactive tabs, stat tiles, prompt cards, debug box.
-- **Raised Compact** (3dp solid ink offset, no blur): compact buttons inside list rows and headers.
+- **Raised (`4dp` solid ink offset):** `RetroProtectionBanner`, `RetroStatItem`, default `RetroButton`, inactive `RetroTabBar` tabs, `SpamReportView`, `RetroDebugBox`.
+- **Raised Compact (`3dp` solid ink offset):** `RetroReadinessStrip` stage cells and compact `RetroButton`s.
 
 ### Named Rules
-**The Press-Collapse Rule.** A shadowed element must collapse its shadow and translate by the offset while pressed. An element that cannot collapse its shadow must not have one.
+**The Press-Collapse Rule.** Every interactive shadowed control (`RetroButton`, inactive `RetroTabBar` tab, `RetroReadinessStrip` stage cell) collapses its shadow on `ACTION_DOWN` and translates its surface by the shadow offset.
 
-**The Flat-Container Rule.** Surfaces that only group content — the page background, the list panel, the active tab — never carry the shadow. Raising a container implies an action that does not exist.
+**The Flat-Container Rule.** Grouping containers (`RetroPanel`, the active tab, and ticket rows inside the panel) never cast a drop shadow.
 
 ## Shapes
 
-The form language is the rectangle. Every surface, border, and shadow is an axis-aligned rectangle with square corners; nothing is rounded, clipped, or rotated. Bordered surfaces stroke with a straight 2dp ink line; row dividers are a 1dp ink hairline.
+Every surface, border, and shadow is an axis-aligned rectangle with `0dp` corner radius and a `2dp` ink stroke. Inside `RetroProtectionBanner`, the 40dp emblem box houses a geometric shield and 45°/90° P2P node-link diagram drawn with `Canvas.drawPath` and `drawLine`. Inside `RetroPanel`, 6dp L-shaped registration ticks sit inset `5dp` from each corner.
 
-The single exception is the coin badge: a 6×6 pixel-art disc built from 2dp squares in Mustard Coin with Coin Glint highlight pixels, framed by a square ink outline. Its silhouette is round only in the pixel-art sense — it is still drawn from rectangles.
-
-**The Square-Corner Rule.** Corner radius is 0dp everywhere, always. No rounded rectangles, pills, circles, or blobs; softness comes from the pastel palette, never from geometry.
+**The Square-Corner Rule.** Corner radius is `0dp` everywhere.
 
 ## Components
 
-### Buttons
-Tactile machine keys — filled pastel rectangles that physically depress into their shadow.
+### Protection Dispatch Banner (`RetroProtectionBanner`)
+- **Structure:** `94dp` high raised card (`surface` fill, `2dp` border, `4dp` shadow) with a `30dp` top header bar (`background` fill) displaying `MONDAFONE` on the left and a bordered status stamp (`[ ACTIVE GUARD ]` in `primary` sage or `[ SETUP REQUIRED ]` in `coin` ochre) on the right.
+- **Body:** Left `40dp×40dp` framed emblem box with the geometric Canvas shield + P2P node icon; right headline (`app_subtitle`, bold 15sp) and live stage/peer status line (`status_protection_metrics` or `status_onboarding_detail`, 12sp).
 
-- **Shape:** square-cornered rectangle, 2dp ink border, hard offset shadow (4dp; 3dp compact).
-- **Primary (Guardian Green):** affirmative actions — 48dp high, 12dp horizontal padding, body text (16sp), centered, ink on green.
-- **Danger (Pastel Brick):** destructive/spam verdicts — identical geometry, brick fill.
-- **Compact variants:** 32dp high, small text (12sp), 3dp shadow; used inside list rows and the debug header.
-- **Pressed:** shadow collapses, surface translates by the offset (see The Press-Collapse Rule).
+### 4-Stage Readiness Strip (`RetroReadinessStrip`)
+- **Structure:** 4 equal-weight interactive stage cells (`48dp` high, `6dp` gutters) for `FILTER`, `ALERTS`, `BLE NET`, and `POWER`.
+- **Visuals:** `6dp` top band (`primary` sage when granted; `coin` ochre with 45° ink hatch lines when pending), `[OK]` or `[  ]` in bold 10sp monospace, and uppercase stage label in bold 9sp sans-serif. Collapses its `3dp` shadow on press and triggers `requestAccess()`.
 
-### Tabs
-File-folder tabs fused to the panel they open.
+### Stat Tiles (`RetroStatItem` / `RetroStatsBar`)
+- **Structure:** `96dp×68dp` raised tiles (`4dp` shadow) with a `6dp` semantic top band (`secondary` brick for Blocked calls, `coin` ochre for Spam numbers, `primary` sage for Network devices), zero-padded 22sp bold monospace value (`00`), and uppercase 10sp bold label.
 
-- **Active:** Guardian Green fill, 2dp ink border on three sides with the bottom edge open, no shadow — it reads as the panel's lid. 40dp high, 16dp horizontal padding, title text (bold 14sp).
-- **Inactive:** Bright Paper fill, full 2dp border, 4dp hard shadow.
-- **Badge:** pending counts ride the tab as the pixel-art coin (top-right, overlapping the frame) with the count in badge text (bold 8sp), capped at "99+".
+### Folder Tabs (`RetroTabBar`) & Registration Panel (`RetroPanel`)
+- **Tabs:** `48dp` high, `40dp` horizontal padding around label. Active tab uses `primary` fill, open bottom edge, and a `2dp` inner top rule (`4dp` below top edge). Inactive tabs use `surface` fill, `4dp` press-collapse shadow, and `2dp` border. Pending counts render in the top-right `6×6` pixel-art coin badge (`3dp` inset so it never clips).
+- **Panel:** Flat `surface` container with `2dp` border, `14dp` padding, and `6dp` L-shaped corner registration ticks inset `5dp`.
 
-### Panels
-Flat paper containers.
+### Verdict Ticket Rows (`VerdictListItemView`)
+- **Structure:** Framed ticket box on `background` fill with a `6dp` top semantic band (`coin` for Pending, `primary` for Whitelist, `secondary` for Blacklist) and `2dp` ink border.
+- **Content:** Left column shows `> number` in bold 14sp monospace plus an optional sans-serif subtitle line below it (`Was this call spam?` on Pending rows); right side holds compact `RetroButton` keys (`48dp` touch height, `36dp` drawn body, `3dp` shadow).
 
-- **Corner style:** square; 2dp ink border; Bright Paper fill; 12dp internal padding; **no shadow** (The Flat-Container Rule).
-- **Shadowed card variant:** the verdict prompt card uses the same paper and border plus the 4dp hard shadow, because it asks a question the user must answer — it is pressable, so it is raised.
-
-### Stat Tiles
-Live counters in the stats row.
-
-- **Size:** 96dp × 64dp; Bright Paper, 2dp ink border, 4dp hard shadow (they report live state).
-- **Content:** Value Large (monospace 22sp) centered at ~38% height, Label (bold 10sp) at ~78%.
-- **Row:** equal-weight tiles with 8dp gutters.
-
-### List Rows
-Verdict and list entries inside the panel.
-
-- **Structure:** phone number in Value (monospace 16sp) on the left, compact action buttons on the right with 8dp between them.
-- **Padding:** 16dp horizontal, 8dp vertical; rows separate with a 1dp ink hairline at the bottom edge.
-- **Actions:** danger-compact for remove/spam, primary-compact for keep/whitelist.
-
-### Verdict Prompt Card
-The in-app "Was this call spam?" question.
-
-- **Style:** Bright Paper panel with 2dp ink border and 4dp hard shadow, 24dp internal padding, centered content.
-- **Content:** the question in Body (16sp, bold), the number in Value (monospace 16sp) wrapped in ASCII markers as `> number <`, then a button row ("Yes" danger, "No" primary) with 8dp margins.
-
-### Debug Box
-The live evidence surface in debug builds.
-
-- **Style:** Bright Paper, 2dp ink border, 4dp hard shadow, 12dp padding; header in Title (bold 14sp) with a compact danger "Clear" button; log lines in Value Small (monospace 12sp).
-- **Accessibility:** the whole box is screen-reader focusable with a concatenated content description; log lines are hidden from the tree individually.
-
-### Masthead Title
-The app wordmark — the system's signature.
-
-- **Style:** Display (bold 36sp) in Masthead White with a 4dp ink outline (stroke drawn under the fill). It is an accessibility heading and the only outlined text in the app (The One-Outline Rule).
+### Hatched Empty State (`RetroEmptyStateView`)
+- **Structure:** `108dp` framed card on `background` fill with a `10dp` diagonal-hatched top band, a centered `64dp×24dp` `surface` box reading `[ -- ]` in bold 13sp monospace, and the empty-state message in bold 14sp sans-serif below.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** draw every UI element with `Canvas` and native `View`s; keep the APK free of widget libraries.
-- **Do** reserve Guardian Green for affirmative/safe/selected states and Pastel Brick for danger/remove actions (The Two-Verdict Rule).
-- **Do** set phone numbers, counts, and log output in monospace; set questions, labels, and prose in sans-serif (The Monospace-Is-Meaning Rule).
-- **Do** give every pressable element the 2dp ink border and the 4dp (3dp compact) hard shadow, and collapse the shadow on press (The Press-Collapse Rule).
-- **Do** keep containers flat: no shadow on the page background, the list panel, or the active tab (The Flat-Container Rule).
-- **Do** use ASCII markers (`>`, `x`) to give relevance to text content, never as visual decoration.
-- **Do** wire native accessibility semantics (button role, headings, tab collection, content descriptions) into every drawn control.
+- **Do** draw every UI element with `Canvas` and native `View`s using colors resolved exclusively from `res/values/colors.xml`.
+- **Do** size all text in `sp` (`TypedValue.COMPLEX_UNIT_SP`) and keep every interactive touch target at least `48dp` high.
+- **Do** use top horizontal semantic bands (and diagonal Canvas hatching on ungranted/empty states) across cards, tiles, and ticket rows.
+- **Do** keep the onboarding and main screen headers top-anchored at the same `20dp` base padding + system-bar insets so transitions never jump.
+- **Do** wire native `AccessibilityDelegate` semantics (`Button` roles, headings, tab collections, and live state descriptions) on every custom view.
 
 ### Don't:
-- **Don't** round any corner — radius is 0dp on every surface, border, and shadow.
-- **Don't** use gradients, blur, transparency, or soft drop shadows; depth is the one solid ink offset and nothing else.
-- **Don't** introduce Compose, Material, AppCompat, or AndroidX components; the system is framework `Canvas`/`View` only.
-- **Don't** add colors outside the pastel palette, and never a saturated accent.
-- **Don't** set prose in monospace or phone numbers in sans-serif.
-- **Don't** outline any text other than the wordmark.
+- **Don't** use kickers or `// CODE` eyebrows above headings.
+- **Don't** use colored left-border stripes on cards or list rows; use the horizontal top band instead.
+- **Don't** set prose or empty-state sentences in monospace, or phone numbers in sans-serif.
+- **Don't** round corners, add gradients/blur, or introduce third-party UI libraries.
