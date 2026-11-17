@@ -12,6 +12,9 @@ import dev.polyrics.mondafone.spam.SqliteSpamReportStore
 import dev.polyrics.mondafone.spam.TestIdentity
 import dev.polyrics.mondafone.spam.VerdictContract
 import dev.polyrics.mondafone.ui.RetroDebugBox
+import dev.polyrics.mondafone.ui.RetroEmptyStateView
+import dev.polyrics.mondafone.ui.RetroProtectionBanner
+import dev.polyrics.mondafone.ui.RetroReadinessStrip
 import dev.polyrics.mondafone.ui.RetroStatsBar
 import dev.polyrics.mondafone.ui.RetroTabBar
 import org.junit.After
@@ -46,6 +49,8 @@ class MainActivityOnboardingTest {
         val activity = controller.get()
 
         assertNull(findViewOfType(activity.window.decorView, RetroTabBar::class.java))
+        assertNotNull(findViewOfType(activity.window.decorView, RetroProtectionBanner::class.java))
+        assertNotNull(findViewOfType(activity.window.decorView, RetroReadinessStrip::class.java))
         assertTrue(hasViewWithDescription(activity.window.decorView, activity.getString(R.string.grant_access)))
 
         val roleManager = app.getSystemService(RoleManager::class.java)
@@ -64,8 +69,11 @@ class MainActivityOnboardingTest {
             intArrayOf(PackageManager.PERMISSION_GRANTED),
         )
 
+        assertNotNull(findViewOfType(activity.window.decorView, RetroProtectionBanner::class.java))
+        assertNotNull(findViewOfType(activity.window.decorView, RetroReadinessStrip::class.java))
         assertNotNull(findViewOfType(activity.window.decorView, RetroStatsBar::class.java))
         assertNotNull(findViewOfType(activity.window.decorView, RetroTabBar::class.java))
+        assertNotNull(findViewOfType(activity.window.decorView, RetroEmptyStateView::class.java))
         assertNotNull(findViewOfType(activity.window.decorView, RetroDebugBox::class.java))
         assertFalse(hasViewWithDescription(activity.window.decorView, activity.getString(R.string.grant_access)))
     }
