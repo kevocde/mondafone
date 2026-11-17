@@ -2,7 +2,6 @@ package dev.polyrics.mondafone.ui
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.view.Gravity
@@ -17,10 +16,10 @@ class SpamReportView(
 ) : LinearLayout(context) {
 
     private val density = resources.displayMetrics.density
-    private val shadowPaint = Paint().apply { color = Color.BLACK }
+    private val shadowPaint = Paint().apply { color = context.getColor(R.color.ink) }
     private val panelPaint = Paint().apply { color = context.getColor(R.color.surface) }
     private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.BLACK
+        color = context.getColor(R.color.ink)
         style = Paint.Style.STROKE
         strokeWidth = 2 * density
     }
@@ -41,7 +40,7 @@ class SpamReportView(
         TextView(context).apply {
             this.text = text
             textSize = 16f
-            setTextColor(Color.BLACK)
+            setTextColor(context.getColor(R.color.ink))
             gravity = Gravity.CENTER
             if (mono) typeface = Typeface.MONOSPACE
             if (bold) setTypeface(typeface, Typeface.BOLD)

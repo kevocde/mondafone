@@ -2,12 +2,12 @@ package dev.polyrics.mondafone.ui
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
+import dev.polyrics.mondafone.R
 
 class VerdictListItemView(
     context: Context,
@@ -19,7 +19,7 @@ class VerdictListItemView(
 
     private val density = resources.displayMetrics.density
     private val dividerPaint = Paint().apply {
-        color = Color.BLACK
+        color = context.getColor(R.color.ink)
         strokeWidth = density
     }
 
@@ -48,7 +48,7 @@ class VerdictListItemView(
         TextView(context).apply {
             text = number
             textSize = 16f
-            setTextColor(Color.BLACK)
+            setTextColor(context.getColor(R.color.ink))
             typeface = Typeface.MONOSPACE
         }
 

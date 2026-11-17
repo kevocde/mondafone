@@ -2,7 +2,6 @@ package dev.polyrics.mondafone.ui
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.view.View
@@ -17,20 +16,20 @@ class RetroStatItem(context: Context) : View(context) {
     private val surfacePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = context.getColor(R.color.surface)
     }
-    private val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK }
+    private val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.ink) }
     private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.BLACK
+        color = context.getColor(R.color.ink)
         style = Paint.Style.STROKE
         strokeWidth = borderPx
     }
     private val valuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.BLACK
+        color = context.getColor(R.color.ink)
         textSize = 22 * density
         textAlign = Paint.Align.CENTER
         typeface = Typeface.MONOSPACE
     }
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.BLACK
+        color = context.getColor(R.color.ink)
         textSize = 10 * density
         textAlign = Paint.Align.CENTER
         typeface = Typeface.DEFAULT_BOLD

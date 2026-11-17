@@ -6,7 +6,6 @@ import android.app.AlarmManager
 import android.app.role.RoleManager
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Color
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
@@ -175,7 +174,7 @@ open class MainActivity : Activity() {
         TextView(this).apply {
             this.text = text
             textSize = sizeSp
-            setTextColor(Color.BLACK)
+            setTextColor(getColor(R.color.ink))
             if (mono) typeface = Typeface.MONOSPACE
             if (bold) setTypeface(typeface, Typeface.BOLD)
         }

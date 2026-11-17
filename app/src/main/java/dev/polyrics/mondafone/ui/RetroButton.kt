@@ -2,7 +2,6 @@ package dev.polyrics.mondafone.ui
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.view.MotionEvent
@@ -10,6 +9,7 @@ import android.view.View
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction
 import android.widget.Button
+import dev.polyrics.mondafone.R
 
 class RetroButton(
     context: Context,
@@ -26,9 +26,9 @@ class RetroButton(
     private val heightDp = if (compact) 32f else 48f
 
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = fillColor }
-    private val inkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK }
+    private val inkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.ink) }
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.BLACK
+        color = context.getColor(R.color.ink)
         textSize = textSizeDp * density
         textAlign = Paint.Align.CENTER
     }

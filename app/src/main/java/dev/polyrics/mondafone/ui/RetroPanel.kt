@@ -2,7 +2,6 @@ package dev.polyrics.mondafone.ui
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.widget.FrameLayout
 import dev.polyrics.mondafone.R
@@ -16,7 +15,7 @@ class RetroPanel(
 
     private val surfacePaint = Paint().apply { color = context.getColor(R.color.surface) }
     private val borderPaint = Paint().apply {
-        color = Color.BLACK
+        color = context.getColor(R.color.ink)
         style = Paint.Style.STROKE
         strokeWidth = borderPx
     }

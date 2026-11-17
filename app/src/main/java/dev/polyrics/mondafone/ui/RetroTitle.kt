@@ -2,12 +2,12 @@ package dev.polyrics.mondafone.ui
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.view.View
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.TextView
+import dev.polyrics.mondafone.R
 
 class RetroTitle(
     context: Context,
@@ -32,13 +32,13 @@ class RetroTitle(
     private val strokeWidthPx = 4 * density
 
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.WHITE
+        color = context.getColor(R.color.masthead)
         textSize = 36 * density
         typeface = Typeface.DEFAULT_BOLD
     }
 
     private val strokePaint = Paint(fillPaint).apply {
-        color = Color.BLACK
+        color = context.getColor(R.color.ink)
         style = Paint.Style.STROKE
         strokeWidth = strokeWidthPx
         strokeJoin = Paint.Join.ROUND

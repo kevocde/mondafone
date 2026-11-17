@@ -2,7 +2,6 @@ package dev.polyrics.mondafone.ui
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.view.Gravity
@@ -24,9 +23,9 @@ class RetroDebugBox(
     private var currentLines: List<String> = emptyList()
 
     private val surfacePaint = Paint().apply { color = context.getColor(R.color.surface) }
-    private val shadowPaint = Paint().apply { color = Color.BLACK }
+    private val shadowPaint = Paint().apply { color = context.getColor(R.color.ink) }
     private val borderPaint = Paint().apply {
-        color = Color.BLACK
+        color = context.getColor(R.color.ink)
         style = Paint.Style.STROKE
         strokeWidth = borderPx
     }
@@ -64,7 +63,7 @@ class RetroDebugBox(
                 TextView(context).apply {
                     text = line
                     textSize = 12f
-                    setTextColor(Color.BLACK)
+                    setTextColor(context.getColor(R.color.ink))
                     typeface = Typeface.MONOSPACE
                 },
             )
@@ -103,7 +102,7 @@ class RetroDebugBox(
         TextView(context).apply {
             text = titleText
             textSize = 14f
-            setTextColor(Color.BLACK)
+            setTextColor(context.getColor(R.color.ink))
             setTypeface(typeface, Typeface.BOLD)
             importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
         }

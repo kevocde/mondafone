@@ -2,7 +2,6 @@ package dev.polyrics.mondafone.ui
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.view.Gravity
@@ -99,18 +98,18 @@ class RetroTabBar(
         private val inactiveFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.surface) }
         private val badgeFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.coin) }
         private val inkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLACK
+            color = context.getColor(R.color.ink)
             style = Paint.Style.STROKE
             strokeWidth = border
         }
         private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLACK
+            color = context.getColor(R.color.ink)
             textSize = 14 * density
             textAlign = Paint.Align.CENTER
             typeface = Typeface.DEFAULT_BOLD
         }
         private val badgeTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLACK
+            color = context.getColor(R.color.ink)
             textSize = 8 * density
             textAlign = Paint.Align.CENTER
             typeface = Typeface.DEFAULT_BOLD
@@ -184,7 +183,7 @@ class RetroTabBar(
                 val textY = height / 2f - (textPaint.descent() + textPaint.ascent()) / 2
                 canvas.drawText(label, width / 2f, textY, textPaint)
             } else {
-                val shadowPaint = Paint().apply { color = Color.BLACK; style = Paint.Style.FILL }
+                val shadowPaint = Paint().apply { color = context.getColor(R.color.ink); style = Paint.Style.FILL }
                 canvas.drawRect(shadow, shadow, width.toFloat(), height.toFloat(), shadowPaint)
                 canvas.drawRect(0f, 0f, width - shadow, height - shadow, inactiveFill)
                 canvas.drawRect(0f, 0f, width - shadow, height - shadow, inkPaint)
@@ -212,8 +211,8 @@ class RetroTabBar(
                 intArrayOf(0, 1, 1, 1, 1, 0)
             )
 
-            val highlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { 
-                color = Color.parseColor("#F3D78C")
+            val highlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = context.getColor(R.color.coin_glint)
             }
 
             for (row in coinPattern.indices) {

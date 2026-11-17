@@ -6,6 +6,8 @@
     <color name="secondary">#DA8A78</color>
     <color name="background">#F4F0E2</color>
     <color name="surface">#FBF8EE</color>
-    <color name="ink">#1A1A1A</color>
+    <color name="ink">#000000</color>
     <color name="coin">#E3B84F</color>
+    <color name="coin_glint">#F3D78C</color>
+    <color name="masthead">#FFFFFF</color>
 </resources>
