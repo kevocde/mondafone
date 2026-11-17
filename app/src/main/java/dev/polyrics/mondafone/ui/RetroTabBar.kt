@@ -213,7 +213,7 @@ class RetroTabBar(
             )
 
             val highlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { 
-                color = Color.parseColor("#FFE699")
+                color = Color.parseColor("#F3D78C")
             }
 
             for (row in coinPattern.indices) {
