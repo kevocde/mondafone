@@ -46,7 +46,7 @@ class RetroTitle(
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val width = (fillPaint.measureText(text) + strokeWidthPx * 2).toInt()
-        val height = (fillPaint.descent() - fillPaint.ascent() + strokeWidthPx * 2).toInt()
+        val height = (fillPaint.descent() - fillPaint.ascent() + strokeWidthPx * 2 + 6 * density).toInt()
         setMeasuredDimension(
             resolveSize(width, widthMeasureSpec),
             resolveSize(height, heightMeasureSpec),
@@ -58,5 +58,7 @@ class RetroTitle(
         val y = strokeWidthPx - fillPaint.ascent()
         canvas.drawText(text, x, y, strokePaint)
         canvas.drawText(text, x, y, fillPaint)
+        val ruleY = height - 2 * density
+        canvas.drawLine(0f, ruleY, width.toFloat(), ruleY, strokePaint)
     }
 }

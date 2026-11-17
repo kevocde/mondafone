@@ -13,14 +13,20 @@ class VerdictListItemView(
     context: Context,
     number: String,
     actions: List<Action>,
+    bandColor: Int = context.getColor(R.color.coin),
 ) : LinearLayout(context) {
 
     data class Action(val label: String, val color: Int, val onClick: () -> Unit)
 
     private val density = resources.displayMetrics.density
-    private val dividerPaint = Paint().apply {
+    private val borderPx = 2 * density
+    private val stripePx = 6 * density
+    private val backgroundPaint = Paint().apply { color = context.getColor(R.color.background) }
+    private val stripePaint = Paint().apply { color = bandColor }
+    private val borderPaint = Paint().apply {
         color = context.getColor(R.color.ink)
-        strokeWidth = density
+        style = Paint.Style.STROKE
+        strokeWidth = borderPx
     }
 
     init {
@@ -29,9 +35,10 @@ class VerdictListItemView(
         setWillNotDraw(false)
         isClickable = false
         isFocusable = false
-        val pad = (16 * density).toInt()
-        val vPad = (8 * density).toInt()
-        setPadding(pad, vPad, pad, vPad)
+        val leftPad = (16 * density).toInt()
+        val rightPad = (12 * density).toInt()
+        val vPad = (10 * density).toInt()
+        setPadding(leftPad, vPad, rightPad, vPad)
 
         addView(numberLabel(number), LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
         actions.forEach { action ->
@@ -46,15 +53,20 @@ class VerdictListItemView(
 
     private fun numberLabel(number: String): TextView =
         TextView(context).apply {
-            text = number
-            textSize = 16f
+            text = "> $number"
+            textSize = 15f
             setTextColor(context.getColor(R.color.ink))
             typeface = Typeface.MONOSPACE
+            setTypeface(typeface, Typeface.BOLD)
         }
 
     override fun onDraw(canvas: Canvas) {
-        val y = height - dividerPaint.strokeWidth / 2
-        canvas.drawLine(0f, y, width.toFloat(), y, dividerPaint)
+        val w = width.toFloat()
+        val h = height.toFloat()
+        canvas.drawRect(0f, 0f, w, h, backgroundPaint)
+        canvas.drawRect(0f, 0f, stripePx, h, stripePaint)
+        canvas.drawLine(stripePx, 0f, stripePx, h, borderPaint)
+        canvas.drawRect(0f, 0f, w, h, borderPaint)
         super.onDraw(canvas)
     }
 }

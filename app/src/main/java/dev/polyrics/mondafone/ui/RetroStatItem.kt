@@ -7,14 +7,21 @@ import android.graphics.Typeface
 import android.view.View
 import dev.polyrics.mondafone.R
 
-class RetroStatItem(context: Context) : View(context) {
+class RetroStatItem(
+    context: Context,
+    bandColor: Int = context.getColor(R.color.primary),
+) : View(context) {
 
     private val density = resources.displayMetrics.density
     private val borderPx = 2 * density
     private val shadowPx = 4 * density
+    private val bandPx = 6 * density
 
     private val surfacePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = context.getColor(R.color.surface)
+    }
+    private val bandPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = bandColor
     }
     private val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.ink) }
     private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -27,6 +34,7 @@ class RetroStatItem(context: Context) : View(context) {
         textSize = 22 * density
         textAlign = Paint.Align.CENTER
         typeface = Typeface.MONOSPACE
+        isFakeBoldText = true
     }
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = context.getColor(R.color.ink)
@@ -53,7 +61,7 @@ class RetroStatItem(context: Context) : View(context) {
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         setMeasuredDimension(
             resolveSize((96 * density).toInt(), widthMeasureSpec),
-            resolveSize((64 * density).toInt(), heightMeasureSpec),
+            resolveSize((68 * density).toInt(), heightMeasureSpec),
         )
     }
 
@@ -62,9 +70,12 @@ class RetroStatItem(context: Context) : View(context) {
         val panelHeight = height - shadowPx
         canvas.drawRect(shadowPx, shadowPx, width.toFloat(), height.toFloat(), shadowPaint)
         canvas.drawRect(0f, 0f, panelWidth, panelHeight, surfacePaint)
+        canvas.drawRect(0f, 0f, panelWidth, bandPx, bandPaint)
+        canvas.drawLine(0f, bandPx, panelWidth, bandPx, borderPaint)
         canvas.drawRect(0f, 0f, panelWidth, panelHeight, borderPaint)
-        drawCentered(canvas, value.toString(), valuePaint, panelWidth, panelHeight * VALUE_Y)
-        drawCentered(canvas, label, labelPaint, panelWidth, panelHeight * LABEL_Y)
+        val formattedValue = if (value in 0..9) "0$value" else value.toString()
+        drawCentered(canvas, formattedValue, valuePaint, panelWidth, panelHeight * VALUE_Y)
+        drawCentered(canvas, label.uppercase(), labelPaint, panelWidth, panelHeight * LABEL_Y)
     }
 
     private fun drawCentered(canvas: Canvas, text: String, paint: Paint, panelWidth: Float, baselineY: Float) {
@@ -73,7 +84,7 @@ class RetroStatItem(context: Context) : View(context) {
     }
 
     private companion object {
-        const val VALUE_Y = 0.38f
-        const val LABEL_Y = 0.78f
+        const val VALUE_Y = 0.46f
+        const val LABEL_Y = 0.80f
     }
 }

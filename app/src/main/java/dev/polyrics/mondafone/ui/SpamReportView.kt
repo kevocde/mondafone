@@ -18,6 +18,7 @@ class SpamReportView(
     private val density = resources.displayMetrics.density
     private val shadowPaint = Paint().apply { color = context.getColor(R.color.ink) }
     private val panelPaint = Paint().apply { color = context.getColor(R.color.surface) }
+    private val bandPaint = Paint().apply { color = context.getColor(R.color.coin) }
     private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = context.getColor(R.color.ink)
         style = Paint.Style.STROKE
@@ -67,8 +68,13 @@ class SpamReportView(
 
     override fun onDraw(canvas: Canvas) {
         val shadow = 4 * density
+        val bandH = 8 * density
+        val cardW = width - shadow
+        val cardH = height - shadow
         canvas.drawRect(shadow, shadow, width.toFloat(), height.toFloat(), shadowPaint)
-        canvas.drawRect(0f, 0f, width - shadow, height - shadow, panelPaint)
-        canvas.drawRect(0f, 0f, width - shadow, height - shadow, borderPaint)
+        canvas.drawRect(0f, 0f, cardW, cardH, panelPaint)
+        canvas.drawRect(0f, 0f, cardW, bandH, bandPaint)
+        canvas.drawLine(0f, bandH, cardW, bandH, borderPaint)
+        canvas.drawRect(0f, 0f, cardW, cardH, borderPaint)
     }
 }

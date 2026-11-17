@@ -133,4 +133,20 @@ class RetroViewsAccessibilityTest {
         val emptyView = RetroEmptyStateView(context, "No pending calls verdicts")
         assertEquals("No pending calls verdicts", emptyView.contentDescription.toString())
     }
+
+    @Test
+    fun verdictListItemViewFormatsNumberWithAsciiMarkerAndTriggersAction() {
+        var clicked = false
+        val item = VerdictListItemView(
+            context,
+            "+57 300 123 4567",
+            listOf(VerdictListItemView.Action("Spam", Color.RED) { clicked = true }),
+        )
+        val numberView = item.getChildAt(0) as android.widget.TextView
+        val actionBtn = item.getChildAt(1)
+
+        assertEquals("> +57 300 123 4567", numberView.text.toString())
+        assertTrue(actionBtn.performAccessibilityAction(AccessibilityNodeInfo.ACTION_CLICK, null))
+        assertTrue(clicked)
+    }
 }

@@ -31,6 +31,7 @@ class RetroButton(
         color = context.getColor(R.color.ink)
         textSize = textSizeDp * density
         textAlign = Paint.Align.CENTER
+        typeface = android.graphics.Typeface.DEFAULT_BOLD
     }
 
     private val body = RectF()
