@@ -40,6 +40,12 @@ class StringLocalizationTest {
         assertEquals("De +573001234567", context.getString(R.string.spam_prompt_text, "+573001234567"))
         assertEquals("Sí", context.getString(R.string.answer_yes))
         assertEquals("No", context.getString(R.string.answer_no))
+        assertEquals("[ GUARDIA ACTIVA ]", context.getString(R.string.status_guard_active))
+        assertEquals("[ CONFIGURACIÓN REQUERIDA ]", context.getString(R.string.status_setup_required))
+        assertEquals("FILTRO", context.getString(R.string.stage_call_filter))
+        assertEquals("AVISOS", context.getString(R.string.stage_notifications))
+        assertEquals("RED BLE", context.getString(R.string.stage_ble_mesh))
+        assertEquals("ENERGÍA", context.getString(R.string.stage_battery))
     }
 
     @Test
@@ -53,5 +59,11 @@ class StringLocalizationTest {
         assertEquals("Whitelist", context.getString(R.string.tab_whitelist))
         assertEquals("Blacklist", context.getString(R.string.tab_blacklist))
         assertEquals("x", context.getString(R.string.action_remove))
+        assertEquals("[ ACTIVE GUARD ]", context.getString(R.string.status_guard_active))
+        assertEquals("[ SETUP REQUIRED ]", context.getString(R.string.status_setup_required))
+        assertEquals("FILTER", context.getString(R.string.stage_call_filter))
+        assertEquals("ALERTS", context.getString(R.string.stage_notifications))
+        assertEquals("BLE NET", context.getString(R.string.stage_ble_mesh))
+        assertEquals("POWER", context.getString(R.string.stage_battery))
     }
 }

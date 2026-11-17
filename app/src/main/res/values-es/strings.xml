@@ -30,4 +30,12 @@
     <string name="empty_pending">No hay llamadas pendientes</string>
     <string name="empty_whitelist">No hay números permitidos</string>
     <string name="empty_blacklist">No hay números bloqueados</string>
+    <string name="status_guard_active">[ GUARDIA ACTIVA ]</string>
+    <string name="status_setup_required">[ CONFIGURACIÓN REQUERIDA ]</string>
+    <string name="status_protection_detail">Filtro de llamadas y escudo P2P activos</string>
+    <string name="status_onboarding_detail">Completa las 4 etapas de protección</string>
+    <string name="stage_call_filter">FILTRO</string>
+    <string name="stage_notifications">AVISOS</string>
+    <string name="stage_ble_mesh">RED BLE</string>
+    <string name="stage_battery">ENERGÍA</string>
 </resources>
