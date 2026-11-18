@@ -44,6 +44,10 @@ class GattSyncClient(
         BeaconLog.log("$label idle timeout")
         disconnect()
     }
+    private val connectTimeout = Runnable {
+        BeaconLog.log("$label connect timeout")
+        disconnect()
+    }
 
     private var completed = false
     private var cacheRefreshed = false
@@ -51,10 +55,12 @@ class GattSyncClient(
     fun connect() {
         BeaconLog.log("$label connecting")
         gatt = device.connectGatt(context, false, callback, BluetoothDevice.TRANSPORT_LE)
+        handler.postDelayed(connectTimeout, CONNECT_TIMEOUT_MS)
     }
 
     fun close() {
         cancelIdleTimer()
+        handler.removeCallbacks(connectTimeout)
         outbox.cancel(outboxTag)
         logSummary()
         val current = gatt
@@ -90,6 +96,8 @@ class GattSyncClient(
                     }
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
+                    cancelIdleTimer()
+                    handler.removeCallbacks(connectTimeout)
                     outbox.cancel(outboxTag)
                     logSummary()
                     runCatching { gatt.close() }
@@ -113,6 +121,7 @@ class GattSyncClient(
                 disconnect()
                 return
             }
+            handler.removeCallbacks(connectTimeout)
             BeaconLog.log("$label services discovered")
             if (gatt.getService(GattSyncProtocol.SERVICE_UUID) == null && !cacheRefreshed) {
                 cacheRefreshed = true
@@ -264,11 +273,13 @@ class GattSyncClient(
         disconnecting = true
         BeaconLog.log("$label disconnect")
         cancelIdleTimer()
+        handler.removeCallbacks(connectTimeout)
         outbox.cancel(outboxTag)
         runCatching { gatt?.disconnect() }
     }
 
     private fun restartIdleTimer() {
+        if (disconnecting) return
         handler.removeCallbacks(idleTimeout)
         handler.postDelayed(idleTimeout, idleTimeoutMs)
     }
@@ -354,5 +365,6 @@ class GattSyncClient(
         const val DATA_LABEL = "data"
         const val DEFAULT_MTU = 23
         const val ATT_OVERHEAD = 3
+        const val CONNECT_TIMEOUT_MS = 5_000L
     }
 }

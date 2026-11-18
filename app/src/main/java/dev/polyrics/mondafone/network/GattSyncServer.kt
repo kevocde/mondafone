@@ -12,6 +12,8 @@ import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothStatusCodes
 import android.content.Context
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import dev.polyrics.mondafone.spam.SequenceInventoryEntry
 import dev.polyrics.mondafone.spam.SpamReport
 import java.util.UUID
@@ -38,6 +40,9 @@ class GattSyncServer(
     private val phases = mutableMapOf<String, Phase>()
     private val pendingRequests = mutableMapOf<String, MutableList<ReportRequest>>()
     private val pendingOffers = mutableMapOf<String, MutableList<SequenceInventoryEntry>>()
+    private val handler = Handler(Looper.getMainLooper())
+    private val waitTickers = mutableMapOf<String, Runnable>()
+    private val releasedSessions = mutableSetOf<String>()
 
     fun open(manager: BluetoothManager): Boolean {
         val newServer = manager.openGattServer(context, callback) ?: return false
@@ -59,6 +64,7 @@ class GattSyncServer(
             outbox.cancel(id)
             turnCoordinator.releaseTurn(id)
         }
+        waitTickers.keys.toList().forEach(::stopWaitTicker)
         runCatching { current.clearServices() }
         runCatching { current.close() }
         server = null
@@ -69,6 +75,7 @@ class GattSyncServer(
         phases.clear()
         pendingRequests.clear()
         pendingOffers.clear()
+        releasedSessions.clear()
     }
 
     private fun buildService(): BluetoothGattService {
@@ -172,9 +179,11 @@ class GattSyncServer(
                     onWait = {
                         BeaconLog.log("server ${device.address} wait")
                         sendControl(device, DataPipeMessage.Wait)
+                        startWaitTicker(device)
                     },
                     onReady = {
                         BeaconLog.log("server ${device.address} ready")
+                        stopWaitTicker(device.address)
                         sendControl(device, DataPipeMessage.Ready)
                         sendState(device)
                     },
@@ -189,6 +198,7 @@ class GattSyncServer(
         BeaconLog.log("server $address connected")
         ingesters[address] = ingesterFactory()
         phases[address] = Phase.AWAIT_PULL_REQUESTS
+        releasedSessions.add(turnId(address))
     }
 
     private fun handlePipeFrame(device: BluetoothDevice, message: DataPipeMessage?) {
@@ -229,6 +239,24 @@ class GattSyncServer(
                 sendControl(device, DataPipeMessage.End)
             }
         }
+    }
+
+    private fun startWaitTicker(device: BluetoothDevice) {
+        val address = device.address
+        if (waitTickers.containsKey(address)) return
+        val tick = object : Runnable {
+            override fun run() {
+                if (phases[address] == null) return
+                sendControl(device, DataPipeMessage.Wait)
+                handler.postDelayed(this, WAIT_REFRESH_MS)
+            }
+        }
+        waitTickers[address] = tick
+        handler.postDelayed(tick, WAIT_REFRESH_MS)
+    }
+
+    private fun stopWaitTicker(address: String) {
+        waitTickers.remove(address)?.let(handler::removeCallbacks)
     }
 
     private fun sendState(device: BluetoothDevice) {
@@ -289,6 +317,7 @@ class GattSyncServer(
     private fun onDeviceDisconnected(device: BluetoothDevice) {
         val address = device.address
         val id = turnId(address)
+        stopWaitTicker(address)
         outbox.cancel(id)
         turnCoordinator.releaseTurn(id)
         mtuByDevice.remove(address)
@@ -296,7 +325,10 @@ class GattSyncServer(
         pendingRequests.remove(address)
         pendingOffers.remove(address)
         ingesters.remove(address)?.consumeSummaryLine(reportCountProvider())?.let(BeaconLog::log)
-        BeaconLog.log("server $address session end")
+        if (id in releasedSessions) {
+            releasedSessions.remove(id)
+            BeaconLog.log("server $address session end")
+        }
     }
 
     private fun turnId(address: String): String = "server:$address"
@@ -336,5 +368,6 @@ class GattSyncServer(
     private companion object {
         const val DEFAULT_MTU = 23
         const val ATT_OVERHEAD = 3
+        const val WAIT_REFRESH_MS = 700L
     }
 }
