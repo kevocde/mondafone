@@ -2,14 +2,22 @@ package dev.polyrics.mondafone.ui
 
 import android.content.Context
 import android.widget.LinearLayout
+import dev.polyrics.mondafone.R
 
 class RetroStatsBar(
     context: Context,
     private val statLabels: List<String>,
 ) : LinearLayout(context) {
 
-    private val items = statLabels.map { label ->
-        RetroStatItem(context).apply { setStat(0, label) }
+    private val bandColors = listOf(
+        context.getColor(R.color.secondary),
+        context.getColor(R.color.coin),
+        context.getColor(R.color.primary),
+    )
+
+    private val items = statLabels.mapIndexed { index, label ->
+        val bandColor = bandColors.getOrElse(index) { context.getColor(R.color.primary) }
+        RetroStatItem(context, bandColor).apply { setStat(0, label) }
     }
 
     init {

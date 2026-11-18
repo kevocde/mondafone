@@ -18,7 +18,6 @@ import java.util.UUID
 class GattSyncClient(
     private val context: Context,
     private val device: BluetoothDevice,
-    private val eventLog: BeaconEventLog,
     private val localInventoryProvider: () -> List<SequenceInventoryEntry>,
     private val ownPubkeyProvider: () -> String?,
     private val reportsProvider: (createdBy: String, fromSeq: Long, toSeq: Long) -> List<SpamReport>,
@@ -27,7 +26,6 @@ class GattSyncClient(
     private val idleTimeoutMs: Long,
     private val outbox: GattOutbox = GattOutbox(),
     private val onFinished: () -> Unit = {},
-    private val inventoryCodec: SequenceInventoryCodec = SequenceInventoryCodec(),
     private val pipeCodec: DataPipeCodec = DataPipeCodec(),
     private val planner: SyncRequestPlanner = SyncRequestPlanner(),
 ) {
@@ -35,22 +33,34 @@ class GattSyncClient(
     private val outboxTag = "client:${device.address}"
     private var gatt: BluetoothGatt? = null
     private var mtu = DEFAULT_MTU
-    private var phase = Phase.AWAIT_PULL_RESPONSE
+    private var phase = Phase.AWAIT_STATE
     private var sessionStarted = false
+    private var serverInventory: List<SequenceInventoryEntry> = emptyList()
     private var disconnecting = false
     private val pendingRequests = mutableListOf<ReportRequest>()
     private val handler = Handler(Looper.getMainLooper())
-    private val idleTimeout = Runnable { disconnect() }
+    private val label: String get() = "client ${device.address}"
+    private val idleTimeout = Runnable {
+        BeaconLog.log("$label idle timeout")
+        disconnect()
+    }
+    private val connectTimeout = Runnable {
+        BeaconLog.log("$label connect timeout")
+        disconnect()
+    }
 
     private var completed = false
     private var cacheRefreshed = false
 
     fun connect() {
+        BeaconLog.log("$label connecting")
         gatt = device.connectGatt(context, false, callback, BluetoothDevice.TRANSPORT_LE)
+        handler.postDelayed(connectTimeout, CONNECT_TIMEOUT_MS)
     }
 
     fun close() {
         cancelIdleTimer()
+        handler.removeCallbacks(connectTimeout)
         outbox.cancel(outboxTag)
         logSummary()
         val current = gatt
@@ -71,19 +81,23 @@ class GattSyncClient(
 
     private val callback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+            if (status != BluetoothGatt.GATT_SUCCESS) {
+                BeaconLog.log("$label state change status $status new $newState")
+            }
             when (newState) {
                 BluetoothProfile.STATE_CONNECTED -> {
                     if (status != BluetoothGatt.GATT_SUCCESS) {
-                        eventLog.log("connect failed: $status")
                         disconnect()
                         return
                     }
-                    eventLog.log("connected ${gatt.device.address}")
+                    BeaconLog.log("$label connected")
                     if (!gatt.requestMtu(GattSyncProtocol.TARGET_MTU)) {
                         gatt.discoverServices()
                     }
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
+                    cancelIdleTimer()
+                    handler.removeCallbacks(connectTimeout)
                     outbox.cancel(outboxTag)
                     logSummary()
                     runCatching { gatt.close() }
@@ -94,6 +108,7 @@ class GattSyncClient(
         }
 
         override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
+            BeaconLog.log("$label mtu $mtu status $status")
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 this@GattSyncClient.mtu = mtu
             }
@@ -102,33 +117,18 @@ class GattSyncClient(
 
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             if (status != BluetoothGatt.GATT_SUCCESS) {
-                eventLog.log("services discovery failed: $status")
+                BeaconLog.log("$label services discovery failed: $status")
                 disconnect()
                 return
             }
+            handler.removeCallbacks(connectTimeout)
+            BeaconLog.log("$label services discovered")
             if (gatt.getService(GattSyncProtocol.SERVICE_UUID) == null && !cacheRefreshed) {
                 cacheRefreshed = true
                 if (refreshDeviceCache(gatt) && gatt.discoverServices()) return
             }
             restartIdleTimer()
             subscribe(gatt, GattSyncProtocol.DATA_UUID, DATA_LABEL)
-        }
-
-        override fun onCharacteristicRead(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic,
-            status: Int,
-        ) {
-            handleRead(characteristic, characteristic.value)
-        }
-
-        override fun onCharacteristicRead(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic,
-            value: ByteArray,
-            status: Int,
-        ) {
-            handleRead(characteristic, value)
         }
 
         override fun onCharacteristicChanged(
@@ -151,7 +151,7 @@ class GattSyncClient(
             characteristic: BluetoothGattCharacteristic,
             status: Int,
         ) {
-            handleWrite(characteristic)
+            handleWrite(characteristic, status)
         }
 
         override fun onDescriptorWrite(
@@ -160,7 +160,7 @@ class GattSyncClient(
             status: Int,
         ) {
             if (status != BluetoothGatt.GATT_SUCCESS) {
-                eventLog.log("descriptor write failed: $status")
+                BeaconLog.log("$label descriptor write failed: $status")
                 disconnect()
                 return
             }
@@ -170,16 +170,12 @@ class GattSyncClient(
         }
     }
 
-    private fun handleRead(characteristic: BluetoothGattCharacteristic, value: ByteArray?) {
-        if (characteristic.uuid != GattSyncProtocol.STATE_UUID) return
-        val inventory = inventoryCodec.decode(value) ?: emptyList()
-        startSession(inventory)
-    }
-
     private fun startSession(serverInventory: List<SequenceInventoryEntry>) {
         if (sessionStarted) return
         sessionStarted = true
+        phase = Phase.AWAIT_PULL_RESPONSE
         val requests = planner.plan(serverInventory, localInventoryProvider(), ownPubkeyProvider())
+        BeaconLog.log("$label pull: ${requests.size} requests")
         enqueue(pipeCodec.encode(DataPipeMessage.Requests(requests), maxPayload()))
         enqueue(pipeCodec.encode(DataPipeMessage.End, maxPayload()))
     }
@@ -192,17 +188,31 @@ class GattSyncClient(
 
     private fun handleMessage(message: DataPipeMessage?) {
         when (message) {
-            is DataPipeMessage.Reports -> ingester.ingest(message.reports)
-            is DataPipeMessage.Requests -> pendingRequests.addAll(message.requests)
+            is DataPipeMessage.Reports -> {
+                BeaconLog.log("$label got ${message.reports.size} reports")
+                ingester.ingest(message.reports)
+            }
+            is DataPipeMessage.Requests -> {
+                BeaconLog.log("$label got ${message.requests.size} requests")
+                pendingRequests.addAll(message.requests)
+            }
             DataPipeMessage.End -> advancePhase()
-            DataPipeMessage.Wait -> restartIdleTimer()
-            DataPipeMessage.Ready -> gatt?.let(::readState)
-            is DataPipeMessage.OfferState, null -> Unit
+            DataPipeMessage.Wait -> {
+                BeaconLog.log("$label wait")
+                restartIdleTimer()
+            }
+            DataPipeMessage.Ready -> BeaconLog.log("$label ready")
+            is DataPipeMessage.OfferState -> {
+                BeaconLog.log("$label got ${message.entries.size} offers")
+                serverInventory = serverInventory + message.entries
+            }
+            null -> Unit
         }
     }
 
     private fun advancePhase() {
         when (phase) {
+            Phase.AWAIT_STATE -> startSession(serverInventory)
             Phase.AWAIT_PULL_RESPONSE -> sendOffer()
             Phase.AWAIT_REQUESTS -> pushReports()
             Phase.DONE -> disconnect()
@@ -211,7 +221,9 @@ class GattSyncClient(
 
     private fun sendOffer() {
         phase = Phase.AWAIT_REQUESTS
-        enqueue(pipeCodec.encode(DataPipeMessage.OfferState(localInventoryProvider()), maxPayload()))
+        val inventory = localInventoryProvider()
+        BeaconLog.log("$label offer: ${inventory.size} entries")
+        enqueue(pipeCodec.encode(DataPipeMessage.OfferState(inventory), maxPayload()))
         enqueue(pipeCodec.encode(DataPipeMessage.End, maxPayload()))
     }
 
@@ -223,13 +235,16 @@ class GattSyncClient(
         pendingRequests.clear()
         enqueue(pipeCodec.encode(DataPipeMessage.Reports(reports), maxPayload()))
         enqueue(pipeCodec.encode(DataPipeMessage.End, maxPayload()))
-        if (reports.isNotEmpty()) {
-            eventLog.log("sync: sent ${reports.size}, total ${reportCountProvider()}")
-        }
+        BeaconLog.log("$label push: ${reports.size} reports, total ${reportCountProvider()}")
     }
 
-    private fun handleWrite(characteristic: BluetoothGattCharacteristic) {
+    private fun handleWrite(characteristic: BluetoothGattCharacteristic, status: Int) {
         if (characteristic.uuid != GattSyncProtocol.DATA_UUID) return
+        if (status != BluetoothGatt.GATT_SUCCESS) {
+            BeaconLog.log("$label write status: $status")
+            disconnect()
+            return
+        }
         restartIdleTimer()
         outbox.onPacketSent()
     }
@@ -240,7 +255,7 @@ class GattSyncClient(
                 tag = outboxTag,
                 send = { sendFrame(frame) },
                 onFailure = {
-                    eventLog.log("write failed")
+                    BeaconLog.log("$label write failed")
                     disconnect()
                 },
             )
@@ -256,12 +271,15 @@ class GattSyncClient(
     private fun disconnect() {
         if (disconnecting) return
         disconnecting = true
+        BeaconLog.log("$label disconnect")
         cancelIdleTimer()
+        handler.removeCallbacks(connectTimeout)
         outbox.cancel(outboxTag)
         runCatching { gatt?.disconnect() }
     }
 
     private fun restartIdleTimer() {
+        if (disconnecting) return
         handler.removeCallbacks(idleTimeout)
         handler.postDelayed(idleTimeout, idleTimeoutMs)
     }
@@ -271,7 +289,7 @@ class GattSyncClient(
     }
 
     private fun logSummary() {
-        ingester.consumeSummaryLine(reportCountProvider())?.let(eventLog::log)
+        ingester.consumeSummaryLine(reportCountProvider())?.let(BeaconLog::log)
     }
 
     private fun maxPayload(): Int = (mtu - ATT_OVERHEAD).coerceAtLeast(1)
@@ -288,17 +306,6 @@ class GattSyncClient(
         data.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         data.value = payload
         gatt.writeCharacteristic(data)
-    }
-
-    private fun readState(gatt: BluetoothGatt) {
-        val state = characteristic(gatt, GattSyncProtocol.STATE_UUID) ?: run {
-            disconnect()
-            return
-        }
-        if (!gatt.readCharacteristic(state)) {
-            eventLog.log("state read failed")
-            disconnect()
-        }
     }
 
     private fun subscribe(gatt: BluetoothGatt, uuid: UUID, label: String) {
@@ -318,7 +325,7 @@ class GattSyncClient(
     ) {
         val descriptor = characteristic.getDescriptor(GattSyncProtocol.CCC_DESCRIPTOR_UUID)
         if (descriptor == null) {
-            eventLog.log("$label descriptor missing")
+            BeaconLog.log("$label descriptor missing")
             disconnect()
             return
         }
@@ -330,7 +337,7 @@ class GattSyncClient(
             gatt.writeDescriptor(descriptor)
         }
         if (!sent) {
-            eventLog.log("$label subscribe failed")
+            BeaconLog.log("$label subscribe failed")
             disconnect()
         }
     }
@@ -339,7 +346,7 @@ class GattSyncClient(
         val characteristic = gatt
             .getService(GattSyncProtocol.SERVICE_UUID)
             ?.getCharacteristic(uuid)
-        if (characteristic == null) eventLog.log("$uuid characteristic missing")
+        if (characteristic == null) BeaconLog.log("$uuid characteristic missing")
         return characteristic
     }
 
@@ -348,15 +355,16 @@ class GattSyncClient(
             .getOrDefault(false)
 
     private enum class Phase {
+        AWAIT_STATE,
         AWAIT_PULL_RESPONSE,
         AWAIT_REQUESTS,
         DONE,
     }
 
     private companion object {
-        const val STATE_LABEL = "state"
         const val DATA_LABEL = "data"
         const val DEFAULT_MTU = 23
         const val ATT_OVERHEAD = 3
+        const val CONNECT_TIMEOUT_MS = 5_000L
     }
 }

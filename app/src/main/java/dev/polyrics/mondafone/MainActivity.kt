@@ -6,51 +6,50 @@ import android.app.AlarmManager
 import android.app.role.RoleManager
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Color
-import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
-import android.view.Gravity
+import android.view.View
+import android.view.WindowInsets
 import android.widget.LinearLayout
 import android.widget.ScrollView
-import android.widget.TextView
 import dev.polyrics.mondafone.spam.PhoneNumberDisplay
 import dev.polyrics.mondafone.ui.RetroButton
-import dev.polyrics.mondafone.ui.RetroDebugBox
+import dev.polyrics.mondafone.ui.RetroEmptyStateView
 import dev.polyrics.mondafone.ui.RetroPanel
+import dev.polyrics.mondafone.ui.RetroProtectionBanner
+import dev.polyrics.mondafone.ui.RetroReadinessStrip
 import dev.polyrics.mondafone.ui.RetroStatsBar
 import dev.polyrics.mondafone.ui.RetroTabBar
-import dev.polyrics.mondafone.ui.RetroTitle
 import dev.polyrics.mondafone.ui.VerdictListItemView
 import java.util.concurrent.TimeUnit
 
-class MainActivity : Activity() {
+open class MainActivity : Activity() {
 
     private val store by lazy { (application as MondafoneApp).verdictStore }
     private val reports by lazy { (application as MondafoneApp).spamReportStore }
     private val identity by lazy { (application as MondafoneApp).deviceIdentity }
     private val blockedCalls by lazy { (application as MondafoneApp).blockedCallStore }
-    private val beaconLog by lazy { (application as MondafoneApp).beaconEventLog }
     private lateinit var listContainer: LinearLayout
     private lateinit var tabBar: RetroTabBar
     private lateinit var statsBar: RetroStatsBar
-    private var debugBox: RetroDebugBox? = null
+    private lateinit var protectionBanner: RetroProtectionBanner
+    private lateinit var readinessStrip: RetroReadinessStrip
+    private var mainContentMounted = false
     private var currentTab = 0
     private var batteryExemptionPrompted = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(buildContent())
+        setContentView(if (isReady()) buildContent() else buildOnboardingContent())
     }
 
     override fun onResume() {
         super.onResume()
         store.registerOnChangeListener { runOnUiThread { renderList() } }
         reports.registerOnChangeListener { runOnUiThread { renderList() } }
-        beaconLog.setListener { events -> runOnUiThread { renderDebug(events) } }
         if (isBluetoothGranted()) (application as MondafoneApp).scheduleBeacon()
         promptBatteryExemptionIfNeeded()
         renderList()
@@ -59,7 +58,6 @@ class MainActivity : Activity() {
     override fun onPause() {
         store.unregisterOnChangeListener()
         reports.unregisterOnChangeListener()
-        beaconLog.setListener(null)
         super.onPause()
     }
 
@@ -73,7 +71,10 @@ class MainActivity : Activity() {
             REQUEST_NOTIFICATIONS_CODE ->
                 if (isNotificationGranted()) requestBluetoothPermissions() else refreshView()
             REQUEST_BLUETOOTH_CODE -> {
-                if (isBluetoothGranted()) (application as MondafoneApp).scheduleBeacon()
+                if (isBluetoothGranted()) {
+                    (application as MondafoneApp).scheduleBeacon()
+                    promptBatteryExemptionIfNeeded()
+                }
                 refreshView()
             }
             else -> refreshView()
@@ -90,16 +91,20 @@ class MainActivity : Activity() {
     }
 
     private fun buildContent(): LinearLayout {
+        mainContentMounted = true
         val density = resources.displayMetrics.density
-        val pad = (24 * density).toInt()
-        val gap = (16 * density).toInt()
+        val pad = (20 * density).toInt()
+        val gap = (12 * density).toInt()
+        val smallGap = (8 * density).toInt()
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(pad, pad, pad, pad)
+            applySystemBarPadding(this, pad)
             setBackgroundColor(getColor(R.color.background))
             clipChildren = false
-            addView(RetroTitle(this@MainActivity, getString(R.string.app_name)))
-            addView(textLabel(getString(R.string.app_subtitle), 18f, bold = true), marginParams(bottom = gap))
+            protectionBanner = RetroProtectionBanner(this@MainActivity, active = true)
+            addView(protectionBanner, matchWidthParams(bottom = smallGap))
+            readinessStrip = createReadinessStrip()
+            addView(readinessStrip, matchWidthParams(bottom = gap))
             statsBar = RetroStatsBar(
                 this@MainActivity,
                 listOf(
@@ -108,13 +113,7 @@ class MainActivity : Activity() {
                     getString(R.string.stat_network_devices),
                 ),
             )
-            addView(
-                statsBar,
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply { bottomMargin = gap * 2 },
-            )
+            addView(statsBar, matchWidthParams(bottom = (18 * density).toInt()))
             tabBar = RetroTabBar(
                 this@MainActivity,
                 listOf(
@@ -148,26 +147,35 @@ class MainActivity : Activity() {
                     1f,
                 ),
             )
-            debugBox = RetroDebugBox(this@MainActivity) { beaconLog.clear() }
-            addView(
-                debugBox,
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply { topMargin = gap },
-            )
-            renderDebug(beaconLog.lines())
         }
     }
 
-    private fun textLabel(text: String, sizeSp: Float, bold: Boolean = false, mono: Boolean = false): TextView =
-        TextView(this).apply {
-            this.text = text
-            textSize = sizeSp
-            setTextColor(Color.BLACK)
-            if (mono) typeface = Typeface.MONOSPACE
-            if (bold) setTypeface(typeface, Typeface.BOLD)
+    private fun createReadinessStrip(): RetroReadinessStrip =
+        RetroReadinessStrip(
+            this,
+            listOf(
+                getString(R.string.stage_call_filter),
+                getString(R.string.stage_notifications),
+                getString(R.string.stage_ble_mesh),
+                getString(R.string.stage_battery),
+            ),
+        ) {
+            requestAccess()
         }
+
+    private fun currentStageStates(): List<Boolean> =
+        listOf(
+            isCallScreeningRoleHeld(),
+            isNotificationGranted(),
+            isBluetoothGranted(),
+            isIgnoringBatteryOptimizations(),
+        )
+
+    private fun matchWidthParams(bottom: Int): LinearLayout.LayoutParams =
+        LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+        ).apply { bottomMargin = bottom }
 
     private fun marginParams(bottom: Int): LinearLayout.LayoutParams =
         LinearLayout.LayoutParams(
@@ -183,23 +191,36 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun applySystemBarPadding(target: View, basePad: Int) {
+        target.setPadding(basePad, basePad, basePad, basePad)
+        target.setOnApplyWindowInsetsListener { v, insets ->
+            val bars = insets.getInsets(WindowInsets.Type.systemBars())
+            v.setPadding(basePad + bars.left, basePad + bars.top, basePad + bars.right, basePad + bars.bottom)
+            insets
+        }
+    }
+
     private fun buildOnboardingContent(): LinearLayout {
-        debugBox = null
+        mainContentMounted = false
         val density = resources.displayMetrics.density
-        val pad = (24 * density).toInt()
-        val gap = (16 * density).toInt()
+        val pad = (20 * density).toInt()
+        val gap = (12 * density).toInt()
+        val smallGap = (8 * density).toInt()
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(pad, pad, pad, pad)
+            applySystemBarPadding(this, pad)
             setBackgroundColor(getColor(R.color.background))
-            addView(RetroTitle(this@MainActivity, getString(R.string.app_name)))
-            addView(textLabel(getString(R.string.app_subtitle), 18f, bold = true), marginParams(bottom = gap * 2))
+            clipChildren = false
+            addView(RetroProtectionBanner(this@MainActivity, active = false), matchWidthParams(bottom = smallGap))
+            val onboardingStrip = createReadinessStrip().apply {
+                setStages(currentStageStates())
+            }
+            addView(onboardingStrip, matchWidthParams(bottom = gap * 2))
             addView(
                 RetroButton(this@MainActivity, getString(R.string.grant_access), getColor(R.color.primary)) {
                     requestAccess()
                 },
-                marginParams(bottom = 0),
+                matchWidthParams(bottom = 0),
             )
         }
     }
@@ -209,6 +230,11 @@ class MainActivity : Activity() {
             setContentView(buildOnboardingContent())
             return
         }
+        if (!mainContentMounted) {
+            setContentView(buildContent())
+        }
+        val stages = currentStageStates()
+        readinessStrip.setStages(stages)
         tabBar.setCounts(
             listOf(
                 store.pendingNumbers().size,
@@ -216,7 +242,13 @@ class MainActivity : Activity() {
                 reports.ownReports().size,
             ),
         )
-        renderStats()
+        val peers = renderStats()
+        protectionBanner.setStatus(
+            active = true,
+            readyStages = stages.count { it },
+            totalStages = stages.size,
+            peerCount = peers,
+        )
         listContainer.removeAllViews()
         when (currentTab) {
             0 -> renderPendingItems()
@@ -225,15 +257,17 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun renderStats() {
+    private fun renderStats(): Int {
         val cutoff = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(BuildConfig.REPORT_MAX_AGE_DAYS)
+        val peers = reports.networkDeviceCount(cutoff, identity.publicKeyBase64() ?: "")
         statsBar.setValues(
             listOf(
                 blockedCalls.count(),
                 reports.spamNumberCount(cutoff),
-                reports.networkDeviceCount(cutoff, identity.publicKeyBase64() ?: ""),
+                peers,
             ),
         )
+        return peers
     }
 
     private fun renderPendingItems() {
@@ -242,8 +276,9 @@ class MainActivity : Activity() {
             showEmptyMessage(getString(R.string.empty_pending))
             return
         }
-        numbers.forEach { number ->
+        numbers.forEachIndexed { index, number ->
             val display = PhoneNumberDisplay.format(number)
+            val bottomGap = if (index < numbers.lastIndex) (8 * resources.displayMetrics.density).toInt() else 0
             listContainer.addView(
                 VerdictListItemView(
                     this,
@@ -263,11 +298,9 @@ class MainActivity : Activity() {
                             store.addToWhitelist(number)
                         },
                     ),
+                    subtitle = getString(R.string.spam_question),
                 ),
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply { bottomMargin = (8 * resources.displayMetrics.density).toInt() },
+                matchWidthParams(bottom = bottomGap),
             )
         }
     }
@@ -278,7 +311,8 @@ class MainActivity : Activity() {
             showEmptyMessage(getString(R.string.empty_whitelist))
             return
         }
-        numbers.forEach { number ->
+        numbers.forEachIndexed { index, number ->
+            val bottomGap = if (index < numbers.lastIndex) (8 * resources.displayMetrics.density).toInt() else 0
             listContainer.addView(
                 VerdictListItemView(
                     this,
@@ -291,11 +325,9 @@ class MainActivity : Activity() {
                             store.remove(number)
                         },
                     ),
+                    bandColor = getColor(R.color.primary),
                 ),
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply { bottomMargin = (8 * resources.displayMetrics.density).toInt() },
+                matchWidthParams(bottom = bottomGap),
             )
         }
     }
@@ -306,7 +338,8 @@ class MainActivity : Activity() {
             showEmptyMessage(getString(R.string.empty_blacklist))
             return
         }
-        ownReports.forEach { report ->
+        ownReports.forEachIndexed { index, report ->
+            val bottomGap = if (index < ownReports.lastIndex) (8 * resources.displayMetrics.density).toInt() else 0
             listContainer.addView(
                 VerdictListItemView(
                     this,
@@ -319,39 +352,21 @@ class MainActivity : Activity() {
                             reports.removeOwnReport(report.phoneHash)
                         },
                     ),
+                    bandColor = getColor(R.color.secondary),
                 ),
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply { bottomMargin = (8 * resources.displayMetrics.density).toInt() },
+                matchWidthParams(bottom = bottomGap),
             )
         }
     }
 
     private fun showEmptyMessage(message: String) {
-        val pad = (32 * resources.displayMetrics.density).toInt()
         listContainer.addView(
-            textLabel(message, 14f, mono = true).apply {
-                setPadding(pad, pad, pad, pad)
-                gravity = android.view.Gravity.CENTER
-            },
+            RetroEmptyStateView(this, message),
             LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
             ),
         )
-    }
-
-    private fun renderDebug(events: List<String>) {
-        val deviceId = getString(R.string.debug_device_id, identity.publicKeyFingerprint() ?: "-")
-        val power = getString(
-            if (isIgnoringBatteryOptimizations()) {
-                R.string.debug_power_unrestricted
-            } else {
-                R.string.debug_power_restricted
-            },
-        )
-        debugBox?.setLines(listOf(deviceId, power) + events)
     }
 
     private fun isReady(): Boolean =
@@ -413,7 +428,7 @@ class MainActivity : Activity() {
     }
 
     private fun promptBatteryExemptionIfNeeded() {
-        if (!isReady() || batteryExemptionPrompted || isIgnoringBatteryOptimizations()) return
+        if (!isReady() || !isBluetoothGranted() || batteryExemptionPrompted || isIgnoringBatteryOptimizations()) return
         batteryExemptionPrompted = true
         requestBatteryExemption()
     }

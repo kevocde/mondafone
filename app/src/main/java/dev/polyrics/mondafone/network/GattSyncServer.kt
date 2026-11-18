@@ -12,6 +12,8 @@ import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothStatusCodes
 import android.content.Context
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import dev.polyrics.mondafone.spam.SequenceInventoryEntry
 import dev.polyrics.mondafone.spam.SpamReport
 import java.util.UUID
@@ -23,7 +25,6 @@ class GattSyncServer(
     private val reportCountProvider: () -> Int,
     private val ownPubkeyProvider: () -> String?,
     private val ingesterFactory: () -> ReportIngester,
-    private val eventLog: BeaconEventLog,
     private val outbox: GattOutbox = GattOutbox(),
     private val turnCoordinator: SyncTurnCoordinator = SyncTurnCoordinator(),
     private val inventoryCodec: SequenceInventoryCodec = SequenceInventoryCodec(),
@@ -39,6 +40,9 @@ class GattSyncServer(
     private val phases = mutableMapOf<String, Phase>()
     private val pendingRequests = mutableMapOf<String, MutableList<ReportRequest>>()
     private val pendingOffers = mutableMapOf<String, MutableList<SequenceInventoryEntry>>()
+    private val handler = Handler(Looper.getMainLooper())
+    private val waitTickers = mutableMapOf<String, Runnable>()
+    private val releasedSessions = mutableSetOf<String>()
 
     fun open(manager: BluetoothManager): Boolean {
         val newServer = manager.openGattServer(context, callback) ?: return false
@@ -60,6 +64,7 @@ class GattSyncServer(
             outbox.cancel(id)
             turnCoordinator.releaseTurn(id)
         }
+        waitTickers.keys.toList().forEach(::stopWaitTicker)
         runCatching { current.clearServices() }
         runCatching { current.close() }
         server = null
@@ -70,6 +75,7 @@ class GattSyncServer(
         phases.clear()
         pendingRequests.clear()
         pendingOffers.clear()
+        releasedSessions.clear()
     }
 
     private fun buildService(): BluetoothGattService {
@@ -113,6 +119,7 @@ class GattSyncServer(
         }
 
         override fun onMtuChanged(device: BluetoothDevice, mtu: Int) {
+            BeaconLog.log("server ${device.address} mtu $mtu")
             mtuByDevice[device.address] = mtu
         }
 
@@ -132,7 +139,10 @@ class GattSyncServer(
             }
             ensureSession(device)
             val payload = inventoryCodec.encode(inventoryProvider())
-            val chunk = payload.copyOfRange(offset.coerceAtMost(payload.size), payload.size)
+            val start = offset.coerceAtMost(payload.size)
+            val end = (start + maxPayloadFor(device)).coerceAtMost(payload.size)
+            val chunk = payload.copyOfRange(start, end)
+            BeaconLog.log("server ${device.address} state read $start-${end}/${payload.size}")
             respond(device, requestId, offset, chunk)
         }
 
@@ -166,8 +176,17 @@ class GattSyncServer(
                 ensureSession(device)
                 turnCoordinator.requestTurn(
                     id = turnId(device.address),
-                    onWait = { sendControl(device, DataPipeMessage.Wait) },
-                    onReady = { sendControl(device, DataPipeMessage.Ready) },
+                    onWait = {
+                        BeaconLog.log("server ${device.address} wait")
+                        sendControl(device, DataPipeMessage.Wait)
+                        startWaitTicker(device)
+                    },
+                    onReady = {
+                        BeaconLog.log("server ${device.address} ready")
+                        stopWaitTicker(device.address)
+                        sendControl(device, DataPipeMessage.Ready)
+                        sendState(device)
+                    },
                 )
             }
         }
@@ -176,16 +195,27 @@ class GattSyncServer(
     private fun ensureSession(device: BluetoothDevice) {
         val address = device.address
         if (address in phases) return
-        eventLog.log("connected $address")
+        BeaconLog.log("server $address connected")
         ingesters[address] = ingesterFactory()
         phases[address] = Phase.AWAIT_PULL_REQUESTS
+        releasedSessions.add(turnId(address))
     }
 
     private fun handlePipeFrame(device: BluetoothDevice, message: DataPipeMessage?) {
+        val address = device.address
         when (message) {
-            is DataPipeMessage.Requests -> requestsFor(device).addAll(message.requests)
-            is DataPipeMessage.OfferState -> offersFor(device).addAll(message.entries)
-            is DataPipeMessage.Reports -> ingesterFor(device).ingest(message.reports)
+            is DataPipeMessage.Requests -> {
+                BeaconLog.log("server $address got ${message.requests.size} requests")
+                requestsFor(device).addAll(message.requests)
+            }
+            is DataPipeMessage.OfferState -> {
+                BeaconLog.log("server $address got ${message.entries.size} offers")
+                offersFor(device).addAll(message.entries)
+            }
+            is DataPipeMessage.Reports -> {
+                BeaconLog.log("server $address got ${message.reports.size} reports")
+                ingesterFor(device).ingest(message.reports)
+            }
             DataPipeMessage.End -> advancePhase(device)
             DataPipeMessage.Wait, DataPipeMessage.Ready, null -> Unit
         }
@@ -195,15 +225,46 @@ class GattSyncServer(
         val address = device.address
         when (phases[address] ?: Phase.AWAIT_PULL_REQUESTS) {
             Phase.AWAIT_PULL_REQUESTS -> {
+                BeaconLog.log("server $address pull done")
                 serveRequests(device, pendingRequests.remove(address).orEmpty())
                 phases[address] = Phase.AWAIT_OFFER
             }
             Phase.AWAIT_OFFER -> {
+                BeaconLog.log("server $address offer done")
                 replyWithRequests(device, pendingOffers.remove(address).orEmpty())
                 phases[address] = Phase.AWAIT_PUSH_REPORTS
             }
-            Phase.AWAIT_PUSH_REPORTS -> sendControl(device, DataPipeMessage.End)
+            Phase.AWAIT_PUSH_REPORTS -> {
+                BeaconLog.log("server $address push done")
+                sendControl(device, DataPipeMessage.End)
+            }
         }
+    }
+
+    private fun startWaitTicker(device: BluetoothDevice) {
+        val address = device.address
+        if (waitTickers.containsKey(address)) return
+        val tick = object : Runnable {
+            override fun run() {
+                if (phases[address] == null) return
+                sendControl(device, DataPipeMessage.Wait)
+                handler.postDelayed(this, WAIT_REFRESH_MS)
+            }
+        }
+        waitTickers[address] = tick
+        handler.postDelayed(tick, WAIT_REFRESH_MS)
+    }
+
+    private fun stopWaitTicker(address: String) {
+        waitTickers.remove(address)?.let(handler::removeCallbacks)
+    }
+
+    private fun sendState(device: BluetoothDevice) {
+        val data = dataCharacteristic ?: return
+        val inventory = inventoryProvider()
+        BeaconLog.log("server ${device.address} push state: ${inventory.size} entries")
+        enqueue(device, data, pipeCodec.encode(DataPipeMessage.OfferState(inventory), maxPayloadFor(device)))
+        enqueue(device, data, pipeCodec.encode(DataPipeMessage.End, maxPayloadFor(device)))
     }
 
     private fun sendControl(device: BluetoothDevice, message: DataPipeMessage) {
@@ -224,14 +285,16 @@ class GattSyncServer(
         val data = dataCharacteristic ?: return
         enqueue(device, data, pipeCodec.encode(DataPipeMessage.Reports(reports), maxPayloadFor(device)))
         enqueue(device, data, pipeCodec.encode(DataPipeMessage.End, maxPayloadFor(device)))
-        if (reports.isNotEmpty()) {
-            eventLog.log("sync: sent ${reports.size}, total ${reportCountProvider()}")
-        }
+        BeaconLog.log(
+            "server ${device.address} serve: ${reports.size} reports for ${requests.size} requests, " +
+                "total ${reportCountProvider()}",
+        )
     }
 
     private fun replyWithRequests(device: BluetoothDevice, offered: List<SequenceInventoryEntry>) {
         val data = dataCharacteristic ?: return
         val requests = planner.plan(offered, inventoryProvider(), ownPubkeyProvider())
+        BeaconLog.log("server ${device.address} request: ${requests.size}")
         enqueue(device, data, pipeCodec.encode(DataPipeMessage.Requests(requests), maxPayloadFor(device)))
         enqueue(device, data, pipeCodec.encode(DataPipeMessage.End, maxPayloadFor(device)))
     }
@@ -246,7 +309,7 @@ class GattSyncServer(
             outbox.enqueue(
                 tag = tag,
                 send = { notify(device, characteristic, payload) },
-                onFailure = { eventLog.log("notify failed") },
+                onFailure = { BeaconLog.log("notify failed") },
             )
         }
     }
@@ -254,13 +317,18 @@ class GattSyncServer(
     private fun onDeviceDisconnected(device: BluetoothDevice) {
         val address = device.address
         val id = turnId(address)
+        stopWaitTicker(address)
         outbox.cancel(id)
         turnCoordinator.releaseTurn(id)
         mtuByDevice.remove(address)
         phases.remove(address)
         pendingRequests.remove(address)
         pendingOffers.remove(address)
-        ingesters.remove(address)?.consumeSummaryLine(reportCountProvider())?.let(eventLog::log)
+        ingesters.remove(address)?.consumeSummaryLine(reportCountProvider())?.let(BeaconLog::log)
+        if (id in releasedSessions) {
+            releasedSessions.remove(id)
+            BeaconLog.log("server $address session end")
+        }
     }
 
     private fun turnId(address: String): String = "server:$address"
@@ -300,5 +368,6 @@ class GattSyncServer(
     private companion object {
         const val DEFAULT_MTU = 23
         const val ATT_OVERHEAD = 3
+        const val WAIT_REFRESH_MS = 700L
     }
 }

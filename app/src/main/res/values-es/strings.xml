@@ -1,0 +1,37 @@
+<resources>
+    <string name="app_subtitle">El fin de las llamadas spam</string>
+    <string name="spam_question">¿Esta llamada fue spam?</string>
+    <string name="answer_yes">Sí</string>
+    <string name="answer_no">No</string>
+    <string name="grant_access">Conceder acceso</string>
+    <string name="beacon_channel_name">Baliza de dispositivo</string>
+    <string name="beacon_notification_text">Buscando dispositivos cercanos</string>
+    <string name="blocked_call_channel_name">Llamada bloqueada</string>
+    <string name="blocked_call_title">Llamada bloqueada</string>
+    <string name="blocked_call_text">¿Seguir bloqueando esta llamada?</string>
+    <string name="blocked_call_action_yes">Sí</string>
+    <string name="blocked_call_action_no">No</string>
+    <string name="spam_prompt_channel_name">Consulta de spam</string>
+    <string name="spam_prompt_title">¿Esta llamada fue spam?</string>
+    <string name="spam_prompt_text">De %1$s</string>
+    <string name="stat_blocked_calls">Bloqueadas</string>
+    <string name="stat_spam_numbers">Números spam</string>
+    <string name="stat_network_devices">Dispositivos</string>
+    <string name="tab_pending">Pendientes</string>
+    <string name="tab_whitelist">Permitidos</string>
+    <string name="tab_blacklist">Bloqueados</string>
+    <string name="action_spam">Spam</string>
+    <string name="action_not_spam">No Spam</string>
+    <string name="empty_pending">No hay llamadas pendientes</string>
+    <string name="empty_whitelist">No hay números permitidos</string>
+    <string name="empty_blacklist">No hay números bloqueados</string>
+    <string name="status_guard_active">[ GUARDIA ACTIVA ]</string>
+    <string name="status_setup_required">[ CONFIGURACIÓN REQUERIDA ]</string>
+    <string name="status_protection_detail">Filtro de llamadas y escudo P2P activos</string>
+    <string name="status_protection_metrics">Etapas: %1$d/%2$d · Nodos P2P: %3$d</string>
+    <string name="status_onboarding_detail">Completa las 4 etapas de protección</string>
+    <string name="stage_call_filter">FILTRO</string>
+    <string name="stage_notifications">AVISOS</string>
+    <string name="stage_ble_mesh">RED BLE</string>
+    <string name="stage_battery">ENERGÍA</string>
+</resources>

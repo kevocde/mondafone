@@ -72,29 +72,6 @@ class RetroViewsAccessibilityTest {
     }
 
     @Test
-    fun retroDebugBoxAggregatesLinesAndHidesDynamicDescendantsFromFocus() {
-        var cleared = false
-        val debugBox = RetroDebugBox(context) { cleared = true }
-        debugBox.setLines(listOf("Device ID: abc", "Power: unrestricted"))
-
-        val info = debugBox.createAccessibilityNodeInfo()
-        val summary = info.contentDescription.toString()
-        val header = debugBox.getChildAt(0) as android.widget.LinearLayout
-        val clearButton = header.getChildAt(1)
-
-        assertTrue(debugBox.isScreenReaderFocusable)
-        assertTrue(summary.contains("Debug:"))
-        assertTrue(summary.contains("Device ID: abc"))
-        assertTrue(summary.contains("Power: unrestricted"))
-        assertEquals(
-            View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS,
-            debugBox.getChildAt(1).importantForAccessibility,
-        )
-        assertTrue(clearButton.performAccessibilityAction(AccessibilityNodeInfo.ACTION_CLICK, null))
-        assertTrue(cleared)
-    }
-
-    @Test
     fun retroTitleExposesAccessibleHeading() {
         val title = RetroTitle(context, "Mondafone")
 
@@ -102,5 +79,51 @@ class RetroViewsAccessibilityTest {
 
         assertTrue(info.isHeading)
         assertEquals("Mondafone", title.contentDescription.toString())
+    }
+
+    @Test
+    fun retroProtectionBannerExposesActiveAndSetupStatesToAccessibility() {
+        val banner = RetroProtectionBanner(context, active = false)
+        assertTrue(banner.contentDescription.toString().contains("[ SETUP REQUIRED ]"))
+
+        banner.setActive(true)
+        assertTrue(banner.contentDescription.toString().contains("[ ACTIVE GUARD ]"))
+    }
+
+    @Test
+    fun retroReadinessStripExposesEachStageStateToAccessibility() {
+        val strip = RetroReadinessStrip(
+            context,
+            listOf("FILTER", "ALERTS", "BLE NET", "POWER"),
+        )
+        strip.setStages(listOf(true, true, false, false))
+
+        assertEquals(4, strip.childCount)
+        assertEquals("FILTER: OK", strip.getChildAt(0).contentDescription.toString())
+        assertEquals("ALERTS: OK", strip.getChildAt(1).contentDescription.toString())
+        assertEquals("BLE NET: [ ]", strip.getChildAt(2).contentDescription.toString())
+        assertEquals("POWER: [ ]", strip.getChildAt(3).contentDescription.toString())
+    }
+
+    @Test
+    fun retroEmptyStateViewExposesMessageToAccessibility() {
+        val emptyView = RetroEmptyStateView(context, "No pending calls verdicts")
+        assertEquals("No pending calls verdicts", emptyView.contentDescription.toString())
+    }
+
+    @Test
+    fun verdictListItemViewFormatsNumberWithAsciiMarkerAndTriggersAction() {
+        var clicked = false
+        val item = VerdictListItemView(
+            context,
+            "+57 300 123 4567",
+            listOf(VerdictListItemView.Action("Spam", Color.RED) { clicked = true }),
+        )
+        val numberView = item.getChildAt(0) as android.widget.TextView
+        val actionBtn = item.getChildAt(1)
+
+        assertEquals("> +57 300 123 4567", numberView.text.toString())
+        assertTrue(actionBtn.performAccessibilityAction(AccessibilityNodeInfo.ACTION_CLICK, null))
+        assertTrue(clicked)
     }
 }

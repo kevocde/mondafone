@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#3DDC84</color>
+    <color name="ic_launcher_background">#5A9E7C</color>
 
-    <color name="primary">#A8E6CF</color>
-    <color name="secondary">#FFB6C1</color>
-    <color name="background">#FFF8E7</color>
-    <color name="surface">#FFFDF8</color>
-    <color name="ink">#1A1A1A</color>
-    <color name="coin">#FFD966</color>
+    <color name="primary">#5A9E7C</color>
+    <color name="secondary">#D46F5A</color>
+    <color name="background">#F2ECE1</color>
+    <color name="surface">#FAF6EE</color>
+    <color name="ink">#141A1F</color>
+    <color name="coin">#E0AC40</color>
+    <color name="coin_glint">#F4D58D</color>
+    <color name="masthead">#FAF6EE</color>
 </resources>

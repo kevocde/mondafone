@@ -20,7 +20,7 @@ class BeaconAlarmScheduler(
     )
 
     fun scheduleNext(now: LocalDateTime = LocalDateTime.now()) {
-        val next = schedule?.nextAfter(now) ?: return
+        val next = schedule?.withActiveHours(ACTIVE_HOURS)?.nextAfter(now) ?: return
         val triggerAt = next.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         val operation = pendingIntent(triggerAt)
         if (alarmManager.canScheduleExactAlarms()) {
@@ -51,6 +51,7 @@ class BeaconAlarmScheduler(
 
     companion object {
         const val EXTRA_EXPECTED_AT = "extra_expected_at"
+        val ACTIVE_HOURS = 5..21
         private const val REQUEST_CODE = 0
         private const val SHOW_REQUEST_CODE = 1
     }

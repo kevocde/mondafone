@@ -2,10 +2,11 @@ package dev.polyrics.mondafone.ui
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
+import android.util.TypedValue
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.View
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction
@@ -99,25 +100,29 @@ class RetroTabBar(
         private val inactiveFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.surface) }
         private val badgeFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.coin) }
         private val inkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLACK
+            color = context.getColor(R.color.ink)
             style = Paint.Style.STROKE
             strokeWidth = border
         }
         private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLACK
-            textSize = 14 * density
+            color = context.getColor(R.color.ink)
+            textSize = sp(14f)
             textAlign = Paint.Align.CENTER
             typeface = Typeface.DEFAULT_BOLD
         }
         private val badgeTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLACK
-            textSize = 8 * density
+            color = context.getColor(R.color.ink)
+            textSize = sp(8f)
             textAlign = Paint.Align.CENTER
             typeface = Typeface.DEFAULT_BOLD
         }
 
         private var isTabSelected = selected
         private var badgeCount = 0
+        private var pressed = false
+
+        private fun sp(value: Float): Float =
+            TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, value, resources.displayMetrics)
 
         init {
             isClickable = true
@@ -167,8 +172,8 @@ class RetroTabBar(
         }
 
         override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-            val width = (textPaint.measureText(label) + 32 * density).toInt()
-            val height = (40 * density).toInt()
+            val width = (textPaint.measureText(label) + 40 * density).toInt()
+            val height = (48 * density).toInt()
             setMeasuredDimension(
                 resolveSize(width, widthMeasureSpec),
                 resolveSize(height, heightMeasureSpec),
@@ -184,12 +189,15 @@ class RetroTabBar(
                 val textY = height / 2f - (textPaint.descent() + textPaint.ascent()) / 2
                 canvas.drawText(label, width / 2f, textY, textPaint)
             } else {
-                val shadowPaint = Paint().apply { color = Color.BLACK; style = Paint.Style.FILL }
-                canvas.drawRect(shadow, shadow, width.toFloat(), height.toFloat(), shadowPaint)
-                canvas.drawRect(0f, 0f, width - shadow, height - shadow, inactiveFill)
-                canvas.drawRect(0f, 0f, width - shadow, height - shadow, inkPaint)
-                val textY = (height - shadow) / 2f - (textPaint.descent() + textPaint.ascent()) / 2
-                canvas.drawText(label, (width - shadow) / 2f, textY, textPaint)
+                val offset = if (pressed) shadow else 0f
+                if (!pressed) {
+                    val shadowPaint = Paint().apply { color = context.getColor(R.color.ink); style = Paint.Style.FILL }
+                    canvas.drawRect(shadow, shadow, width.toFloat(), height.toFloat(), shadowPaint)
+                }
+                canvas.drawRect(offset, offset, width - shadow + offset, height - shadow + offset, inactiveFill)
+                canvas.drawRect(offset, offset, width - shadow + offset, height - shadow + offset, inkPaint)
+                val textY = (height - shadow) / 2f + offset - (textPaint.descent() + textPaint.ascent()) / 2
+                canvas.drawText(label, (width - shadow) / 2f + offset, textY, textPaint)
             }
 
             if (badgeCount > 0) {
@@ -199,9 +207,9 @@ class RetroTabBar(
 
         private fun drawBadge(canvas: Canvas) {
             val pixelSize = 2 * density
-            val offset = 2 * density
-            val baseX = width - 6 * pixelSize - offset
-            val baseY = -offset
+            val rightInset = if (isTabSelected) 3 * density else shadow + 3 * density
+            val baseX = width - 6 * pixelSize - rightInset
+            val baseY = 3 * density
 
             val coinPattern = arrayOf(
                 intArrayOf(0, 1, 1, 1, 1, 0),
@@ -212,8 +220,8 @@ class RetroTabBar(
                 intArrayOf(0, 1, 1, 1, 1, 0)
             )
 
-            val highlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { 
-                color = Color.parseColor("#FFE699")
+            val highlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = context.getColor(R.color.coin_glint)
             }
 
             for (row in coinPattern.indices) {
@@ -242,9 +250,21 @@ class RetroTabBar(
             return true
         }
 
-        override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
+        override fun onTouchEvent(event: MotionEvent): Boolean {
             when (event.action) {
-                android.view.MotionEvent.ACTION_UP -> performClick()
+                MotionEvent.ACTION_DOWN -> {
+                    pressed = true
+                    invalidate()
+                }
+                MotionEvent.ACTION_UP -> {
+                    pressed = false
+                    invalidate()
+                    performClick()
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    pressed = false
+                    invalidate()
+                }
             }
             return true
         }

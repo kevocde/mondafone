@@ -21,6 +21,17 @@ class CronExpression private constructor(
         return null
     }
 
+    fun withActiveHours(allowedHours: IntRange): CronExpression =
+        CronExpression(
+            minutes = minutes,
+            hours = hours.intersect(allowedHours.toSet()),
+            daysOfMonth = daysOfMonth,
+            months = months,
+            daysOfWeek = daysOfWeek,
+            dayOfMonthRestricted = dayOfMonthRestricted,
+            dayOfWeekRestricted = dayOfWeekRestricted,
+        )
+
     private fun matches(time: LocalDateTime): Boolean {
         if (time.minute !in minutes) return false
         if (time.hour !in hours) return false

@@ -2,14 +2,16 @@ package dev.polyrics.mondafone.ui
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.Typeface
+import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction
 import android.widget.Button
+import dev.polyrics.mondafone.R
 
 class RetroButton(
     context: Context,
@@ -22,15 +24,17 @@ class RetroButton(
     private val density = resources.displayMetrics.density
     private val border = 2 * density
     private val shadow = if (compact) 3 * density else 4 * density
-    private val textSizeDp = if (compact) 12f else 16f
-    private val heightDp = if (compact) 32f else 48f
+    private val textSizeSp = if (compact) 12f else 16f
+    private val touchHeightDp = 48f
+    private val visualHeightDp = if (compact) 36f else 48f
 
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = fillColor }
-    private val inkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK }
+    private val inkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.ink) }
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.BLACK
-        textSize = textSizeDp * density
+        color = context.getColor(R.color.ink)
+        textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, textSizeSp, resources.displayMetrics)
         textAlign = Paint.Align.CENTER
+        typeface = Typeface.DEFAULT_BOLD
     }
 
     private val body = RectF()
@@ -60,8 +64,9 @@ class RetroButton(
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        val width = (textPaint.measureText(label) + 24 * density).toInt()
-        val height = (heightDp * density).toInt()
+        val minW = (48 * density).toInt()
+        val width = maxOf(minW, (textPaint.measureText(label) + 24 * density).toInt())
+        val height = (touchHeightDp * density).toInt()
         setMeasuredDimension(
             resolveSize(width, widthMeasureSpec),
             resolveSize(height, heightMeasureSpec),
@@ -70,7 +75,9 @@ class RetroButton(
 
     override fun onDraw(canvas: Canvas) {
         val offset = if (pressed) shadow else 0f
-        body.set(0f, 0f, width - shadow, height - shadow)
+        val drawnHeight = minOf(height.toFloat(), visualHeightDp * density)
+        val vInset = (height - drawnHeight) / 2f
+        body.set(0f, vInset, width - shadow, vInset + drawnHeight - shadow)
         body.offset(offset, offset)
         if (!pressed) {
             canvas.drawRect(body.left + shadow, body.top + shadow, body.right + shadow, body.bottom + shadow, inkPaint)
@@ -87,7 +94,7 @@ class RetroButton(
             MotionEvent.ACTION_DOWN -> setPressedState(true)
             MotionEvent.ACTION_UP -> {
                 setPressedState(false)
-                if (body.contains(event.x, event.y)) performClick()
+                if (event.x in 0f..width.toFloat() && event.y in 0f..height.toFloat()) performClick()
             }
             MotionEvent.ACTION_CANCEL -> setPressedState(false)
         }

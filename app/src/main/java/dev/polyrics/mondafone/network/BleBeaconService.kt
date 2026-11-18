@@ -49,9 +49,6 @@ class BleBeaconService : Service() {
     private var activeClient: GattSyncClient? = null
     private var gattServer: GattSyncServer? = null
 
-    private val eventLog: BeaconEventLog
-        get() = (application as MondafoneApp).beaconEventLog
-
     private val identity by lazy { (application as MondafoneApp).deviceIdentity }
 
     private val spamReportStore by lazy { (application as SpamDependencies).spamReportStore }
@@ -70,7 +67,7 @@ class BleBeaconService : Service() {
 
     private val advertiseCallback = object : AdvertiseCallback() {
         override fun onStartFailure(errorCode: Int) {
-            eventLog.log("advertise failed: $errorCode")
+            BeaconLog.log("advertise failed: $errorCode")
         }
     }
 
@@ -83,7 +80,7 @@ class BleBeaconService : Service() {
         }
 
         override fun onScanFailed(errorCode: Int) {
-            eventLog.log("scan failed: $errorCode")
+            BeaconLog.log("scan failed: $errorCode")
         }
     }
 
@@ -94,7 +91,7 @@ class BleBeaconService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (!hasBluetoothPermissions()) return START_NOT_STICKY
-        if (schedule == null) eventLog.log("invalid schedule")
+        if (schedule == null) BeaconLog.log("invalid schedule")
         logLateness(intent)
         scheduler.scheduleNext()
         startDiscoveryPhase()
@@ -113,28 +110,28 @@ class BleBeaconService : Service() {
 
     private fun startDiscoveryPhase() {
         if (!hasBluetoothPermissions()) {
-            eventLog.log("ble permission missing")
+            BeaconLog.log("ble permission missing")
             return
         }
         val fingerprint = identity.publicKeyFingerprint()
         if (fingerprint == null) {
-            eventLog.log("identity unavailable")
+            BeaconLog.log("identity unavailable")
             return
         }
         val beaconId = rotator.current(fingerprint)
         if (!codec.fits(beaconId)) {
-            eventLog.log("device id too long")
+            BeaconLog.log("device id too long")
             return
         }
         val adapter = bluetoothAdapter()
         if (adapter == null || !adapter.isEnabled) {
-            eventLog.log("bluetooth unavailable")
+            BeaconLog.log("bluetooth unavailable")
             return
         }
         val newAdvertiser = adapter.bluetoothLeAdvertiser
         val newScanner = adapter.bluetoothLeScanner
         if (newAdvertiser == null || newScanner == null) {
-            eventLog.log("ble unavailable")
+            BeaconLog.log("ble unavailable")
             return
         }
         advertiser = newAdvertiser
@@ -145,7 +142,7 @@ class BleBeaconService : Service() {
         centralQueue.clear()
         outbox.clear()
         turnCoordinator.clear()
-        eventLog.log("Beacon active")
+        BeaconLog.log("Beacon active $beaconId")
         openGattServer()
         startAdvertising(newAdvertiser, beaconId)
         startScanning(newScanner)
@@ -153,10 +150,14 @@ class BleBeaconService : Service() {
 
     private fun startTransmissionPhase() {
         stopScanning()
+        BeaconLog.log("discovery done: ${discoveredPeers.size} peers")
         discoveredPeers.forEach { (peerId, device) ->
             when (roleResolver.roleFor(activeId, peerId)) {
-                PeerRole.CENTRAL -> centralQueue.enqueue(CentralPeer(peerId, device.address, device))
-                PeerRole.PERIPHERAL -> eventLog.log("peer $peerId -> peripheral")
+                PeerRole.CENTRAL -> {
+                    BeaconLog.log("peer $peerId (${device.address}) -> central")
+                    centralQueue.enqueue(CentralPeer(peerId, device.address, device))
+                }
+                PeerRole.PERIPHERAL -> BeaconLog.log("peer $peerId (${device.address}) -> peripheral")
                 null -> Unit
             }
         }
@@ -173,11 +174,9 @@ class BleBeaconService : Service() {
     }
 
     private fun connectCentral(next: CentralPeer<BluetoothDevice>, turnId: String) {
-        eventLog.log("peer ${next.peerId} -> central")
         val client = GattSyncClient(
             context = this,
             device = next.device,
-            eventLog = eventLog,
             localInventoryProvider = { spamReportStore.sequenceInventory() },
             ownPubkeyProvider = { identity.publicKeyBase64() },
             reportsProvider = spamReportStore::reportsByReporter,
@@ -209,12 +208,11 @@ class BleBeaconService : Service() {
             reportCountProvider = spamReportStore::reportCount,
             ownPubkeyProvider = { identity.publicKeyBase64() },
             ingesterFactory = ::reportIngester,
-            eventLog = eventLog,
             outbox = outbox,
             turnCoordinator = turnCoordinator,
         )
         if (!server.open(bluetoothManager())) {
-            eventLog.log("gatt server unavailable")
+            BeaconLog.log("gatt server unavailable")
             return
         }
         gattServer = server
@@ -231,7 +229,7 @@ class BleBeaconService : Service() {
             .addServiceData(serviceUuid, codec.encode(beaconId))
             .build()
         runCatching { target.startAdvertising(settings, data, advertiseCallback) }
-            .onFailure { eventLog.log("advertise unavailable") }
+            .onFailure { BeaconLog.log("advertise unavailable") }
     }
 
     private fun startScanning(target: BluetoothLeScanner) {
@@ -239,14 +237,14 @@ class BleBeaconService : Service() {
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
             .build()
         runCatching { target.startScan(BeaconScanFilter.filters(), settings, scanCallback) }
-            .onFailure { eventLog.log("scan unavailable") }
+            .onFailure { BeaconLog.log("scan unavailable") }
     }
 
     private fun logLateness(intent: Intent?) {
         val expectedAt = intent?.getLongExtra(BeaconAlarmScheduler.EXTRA_EXPECTED_AT, 0L) ?: 0L
         if (expectedAt <= 0L) return
         val lateMillis = System.currentTimeMillis() - expectedAt
-        if (lateMillis > LATE_THRESHOLD_MS) eventLog.log("window late ${lateMillis / 1000}s")
+        if (lateMillis > LATE_THRESHOLD_MS) BeaconLog.log("window late ${lateMillis / 1000}s")
     }
 
     private fun finishWindow() {
@@ -264,7 +262,7 @@ class BleBeaconService : Service() {
         activeAdvertiser?.let { runCatching { it.stopAdvertising(advertiseCallback) } }
         advertiser = null
         closeGatt()
-        eventLog.log("count: ${counter.count()}")
+        BeaconLog.log("count: ${counter.count()}")
     }
 
     private fun closeGatt() {

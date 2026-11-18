@@ -2,7 +2,6 @@ package dev.polyrics.mondafone.ui
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.view.Gravity
@@ -17,10 +16,11 @@ class SpamReportView(
 ) : LinearLayout(context) {
 
     private val density = resources.displayMetrics.density
-    private val shadowPaint = Paint().apply { color = Color.BLACK }
+    private val shadowPaint = Paint().apply { color = context.getColor(R.color.ink) }
     private val panelPaint = Paint().apply { color = context.getColor(R.color.surface) }
+    private val bandPaint = Paint().apply { color = context.getColor(R.color.coin) }
     private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.BLACK
+        color = context.getColor(R.color.ink)
         style = Paint.Style.STROKE
         strokeWidth = 2 * density
     }
@@ -41,7 +41,7 @@ class SpamReportView(
         TextView(context).apply {
             this.text = text
             textSize = 16f
-            setTextColor(Color.BLACK)
+            setTextColor(context.getColor(R.color.ink))
             gravity = Gravity.CENTER
             if (mono) typeface = Typeface.MONOSPACE
             if (bold) setTypeface(typeface, Typeface.BOLD)
@@ -68,8 +68,13 @@ class SpamReportView(
 
     override fun onDraw(canvas: Canvas) {
         val shadow = 4 * density
+        val bandH = 8 * density
+        val cardW = width - shadow
+        val cardH = height - shadow
         canvas.drawRect(shadow, shadow, width.toFloat(), height.toFloat(), shadowPaint)
-        canvas.drawRect(0f, 0f, width - shadow, height - shadow, panelPaint)
-        canvas.drawRect(0f, 0f, width - shadow, height - shadow, borderPaint)
+        canvas.drawRect(0f, 0f, cardW, cardH, panelPaint)
+        canvas.drawRect(0f, 0f, cardW, bandH, bandPaint)
+        canvas.drawLine(0f, bandH, cardW, bandH, borderPaint)
+        canvas.drawRect(0f, 0f, cardW, cardH, borderPaint)
     }
 }
