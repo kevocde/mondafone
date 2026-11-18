@@ -142,7 +142,7 @@ class BleBeaconService : Service() {
         centralQueue.clear()
         outbox.clear()
         turnCoordinator.clear()
-        BeaconLog.log("Beacon active")
+        BeaconLog.log("Beacon active $beaconId")
         openGattServer()
         startAdvertising(newAdvertiser, beaconId)
         startScanning(newScanner)
@@ -150,10 +150,14 @@ class BleBeaconService : Service() {
 
     private fun startTransmissionPhase() {
         stopScanning()
+        BeaconLog.log("discovery done: ${discoveredPeers.size} peers")
         discoveredPeers.forEach { (peerId, device) ->
             when (roleResolver.roleFor(activeId, peerId)) {
-                PeerRole.CENTRAL -> centralQueue.enqueue(CentralPeer(peerId, device.address, device))
-                PeerRole.PERIPHERAL -> BeaconLog.log("peer $peerId -> peripheral")
+                PeerRole.CENTRAL -> {
+                    BeaconLog.log("peer $peerId (${device.address}) -> central")
+                    centralQueue.enqueue(CentralPeer(peerId, device.address, device))
+                }
+                PeerRole.PERIPHERAL -> BeaconLog.log("peer $peerId (${device.address}) -> peripheral")
                 null -> Unit
             }
         }
@@ -170,7 +174,6 @@ class BleBeaconService : Service() {
     }
 
     private fun connectCentral(next: CentralPeer<BluetoothDevice>, turnId: String) {
-        BeaconLog.log("peer ${next.peerId} -> central")
         val client = GattSyncClient(
             context = this,
             device = next.device,

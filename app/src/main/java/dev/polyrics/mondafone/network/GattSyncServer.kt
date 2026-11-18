@@ -112,6 +112,7 @@ class GattSyncServer(
         }
 
         override fun onMtuChanged(device: BluetoothDevice, mtu: Int) {
+            BeaconLog.log("server ${device.address} mtu $mtu")
             mtuByDevice[device.address] = mtu
         }
 
@@ -131,7 +132,10 @@ class GattSyncServer(
             }
             ensureSession(device)
             val payload = inventoryCodec.encode(inventoryProvider())
-            val chunk = payload.copyOfRange(offset.coerceAtMost(payload.size), payload.size)
+            val start = offset.coerceAtMost(payload.size)
+            val end = (start + maxPayloadFor(device)).coerceAtMost(payload.size)
+            val chunk = payload.copyOfRange(start, end)
+            BeaconLog.log("server ${device.address} state read $start-${end}/${payload.size}")
             respond(device, requestId, offset, chunk)
         }
 
@@ -165,8 +169,15 @@ class GattSyncServer(
                 ensureSession(device)
                 turnCoordinator.requestTurn(
                     id = turnId(device.address),
-                    onWait = { sendControl(device, DataPipeMessage.Wait) },
-                    onReady = { sendControl(device, DataPipeMessage.Ready) },
+                    onWait = {
+                        BeaconLog.log("server ${device.address} wait")
+                        sendControl(device, DataPipeMessage.Wait)
+                    },
+                    onReady = {
+                        BeaconLog.log("server ${device.address} ready")
+                        sendControl(device, DataPipeMessage.Ready)
+                        sendState(device)
+                    },
                 )
             }
         }
@@ -175,16 +186,26 @@ class GattSyncServer(
     private fun ensureSession(device: BluetoothDevice) {
         val address = device.address
         if (address in phases) return
-        BeaconLog.log("connected $address")
+        BeaconLog.log("server $address connected")
         ingesters[address] = ingesterFactory()
         phases[address] = Phase.AWAIT_PULL_REQUESTS
     }
 
     private fun handlePipeFrame(device: BluetoothDevice, message: DataPipeMessage?) {
+        val address = device.address
         when (message) {
-            is DataPipeMessage.Requests -> requestsFor(device).addAll(message.requests)
-            is DataPipeMessage.OfferState -> offersFor(device).addAll(message.entries)
-            is DataPipeMessage.Reports -> ingesterFor(device).ingest(message.reports)
+            is DataPipeMessage.Requests -> {
+                BeaconLog.log("server $address got ${message.requests.size} requests")
+                requestsFor(device).addAll(message.requests)
+            }
+            is DataPipeMessage.OfferState -> {
+                BeaconLog.log("server $address got ${message.entries.size} offers")
+                offersFor(device).addAll(message.entries)
+            }
+            is DataPipeMessage.Reports -> {
+                BeaconLog.log("server $address got ${message.reports.size} reports")
+                ingesterFor(device).ingest(message.reports)
+            }
             DataPipeMessage.End -> advancePhase(device)
             DataPipeMessage.Wait, DataPipeMessage.Ready, null -> Unit
         }
@@ -194,15 +215,28 @@ class GattSyncServer(
         val address = device.address
         when (phases[address] ?: Phase.AWAIT_PULL_REQUESTS) {
             Phase.AWAIT_PULL_REQUESTS -> {
+                BeaconLog.log("server $address pull done")
                 serveRequests(device, pendingRequests.remove(address).orEmpty())
                 phases[address] = Phase.AWAIT_OFFER
             }
             Phase.AWAIT_OFFER -> {
+                BeaconLog.log("server $address offer done")
                 replyWithRequests(device, pendingOffers.remove(address).orEmpty())
                 phases[address] = Phase.AWAIT_PUSH_REPORTS
             }
-            Phase.AWAIT_PUSH_REPORTS -> sendControl(device, DataPipeMessage.End)
+            Phase.AWAIT_PUSH_REPORTS -> {
+                BeaconLog.log("server $address push done")
+                sendControl(device, DataPipeMessage.End)
+            }
         }
+    }
+
+    private fun sendState(device: BluetoothDevice) {
+        val data = dataCharacteristic ?: return
+        val inventory = inventoryProvider()
+        BeaconLog.log("server ${device.address} push state: ${inventory.size} entries")
+        enqueue(device, data, pipeCodec.encode(DataPipeMessage.OfferState(inventory), maxPayloadFor(device)))
+        enqueue(device, data, pipeCodec.encode(DataPipeMessage.End, maxPayloadFor(device)))
     }
 
     private fun sendControl(device: BluetoothDevice, message: DataPipeMessage) {
@@ -223,14 +257,16 @@ class GattSyncServer(
         val data = dataCharacteristic ?: return
         enqueue(device, data, pipeCodec.encode(DataPipeMessage.Reports(reports), maxPayloadFor(device)))
         enqueue(device, data, pipeCodec.encode(DataPipeMessage.End, maxPayloadFor(device)))
-        if (reports.isNotEmpty()) {
-            BeaconLog.log("sync: sent ${reports.size}, total ${reportCountProvider()}")
-        }
+        BeaconLog.log(
+            "server ${device.address} serve: ${reports.size} reports for ${requests.size} requests, " +
+                "total ${reportCountProvider()}",
+        )
     }
 
     private fun replyWithRequests(device: BluetoothDevice, offered: List<SequenceInventoryEntry>) {
         val data = dataCharacteristic ?: return
         val requests = planner.plan(offered, inventoryProvider(), ownPubkeyProvider())
+        BeaconLog.log("server ${device.address} request: ${requests.size}")
         enqueue(device, data, pipeCodec.encode(DataPipeMessage.Requests(requests), maxPayloadFor(device)))
         enqueue(device, data, pipeCodec.encode(DataPipeMessage.End, maxPayloadFor(device)))
     }
@@ -260,6 +296,7 @@ class GattSyncServer(
         pendingRequests.remove(address)
         pendingOffers.remove(address)
         ingesters.remove(address)?.consumeSummaryLine(reportCountProvider())?.let(BeaconLog::log)
+        BeaconLog.log("server $address session end")
     }
 
     private fun turnId(address: String): String = "server:$address"
