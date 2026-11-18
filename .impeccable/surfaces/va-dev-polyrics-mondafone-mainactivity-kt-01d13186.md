@@ -2,7 +2,7 @@
 version: 1
 slug: "va-dev-polyrics-mondafone-mainactivity-kt-01d13186"
 primary_target: "app/src/main/java/dev/polyrics/mondafone/MainActivity.kt"
-related_targets: ["app/src/main/java/dev/polyrics/mondafone/ui/RetroTitle.kt","app/src/main/java/dev/polyrics/mondafone/ui/RetroStatsBar.kt","app/src/main/java/dev/polyrics/mondafone/ui/RetroStatItem.kt","app/src/main/java/dev/polyrics/mondafone/ui/RetroTabBar.kt","app/src/main/java/dev/polyrics/mondafone/ui/RetroPanel.kt","app/src/main/java/dev/polyrics/mondafone/ui/VerdictListItemView.kt","app/src/main/java/dev/polyrics/mondafone/ui/SpamReportView.kt","app/src/main/java/dev/polyrics/mondafone/ui/RetroButton.kt","app/src/main/java/dev/polyrics/mondafone/ui/RetroDebugBox.kt"]
+related_targets: ["app/src/main/java/dev/polyrics/mondafone/ui/RetroTitle.kt","app/src/main/java/dev/polyrics/mondafone/ui/RetroStatsBar.kt","app/src/main/java/dev/polyrics/mondafone/ui/RetroStatItem.kt","app/src/main/java/dev/polyrics/mondafone/ui/RetroTabBar.kt","app/src/main/java/dev/polyrics/mondafone/ui/RetroPanel.kt","app/src/main/java/dev/polyrics/mondafone/ui/VerdictListItemView.kt","app/src/main/java/dev/polyrics/mondafone/ui/SpamReportView.kt","app/src/main/java/dev/polyrics/mondafone/ui/RetroButton.kt"]
 ---
 
 # Main Activity & Call Protection Console

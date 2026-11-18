@@ -23,7 +23,6 @@ class GattSyncServer(
     private val reportCountProvider: () -> Int,
     private val ownPubkeyProvider: () -> String?,
     private val ingesterFactory: () -> ReportIngester,
-    private val eventLog: BeaconEventLog,
     private val outbox: GattOutbox = GattOutbox(),
     private val turnCoordinator: SyncTurnCoordinator = SyncTurnCoordinator(),
     private val inventoryCodec: SequenceInventoryCodec = SequenceInventoryCodec(),
@@ -176,7 +175,7 @@ class GattSyncServer(
     private fun ensureSession(device: BluetoothDevice) {
         val address = device.address
         if (address in phases) return
-        eventLog.log("connected $address")
+        BeaconLog.log("connected $address")
         ingesters[address] = ingesterFactory()
         phases[address] = Phase.AWAIT_PULL_REQUESTS
     }
@@ -225,7 +224,7 @@ class GattSyncServer(
         enqueue(device, data, pipeCodec.encode(DataPipeMessage.Reports(reports), maxPayloadFor(device)))
         enqueue(device, data, pipeCodec.encode(DataPipeMessage.End, maxPayloadFor(device)))
         if (reports.isNotEmpty()) {
-            eventLog.log("sync: sent ${reports.size}, total ${reportCountProvider()}")
+            BeaconLog.log("sync: sent ${reports.size}, total ${reportCountProvider()}")
         }
     }
 
@@ -246,7 +245,7 @@ class GattSyncServer(
             outbox.enqueue(
                 tag = tag,
                 send = { notify(device, characteristic, payload) },
-                onFailure = { eventLog.log("notify failed") },
+                onFailure = { BeaconLog.log("notify failed") },
             )
         }
     }
@@ -260,7 +259,7 @@ class GattSyncServer(
         phases.remove(address)
         pendingRequests.remove(address)
         pendingOffers.remove(address)
-        ingesters.remove(address)?.consumeSummaryLine(reportCountProvider())?.let(eventLog::log)
+        ingesters.remove(address)?.consumeSummaryLine(reportCountProvider())?.let(BeaconLog::log)
     }
 
     private fun turnId(address: String): String = "server:$address"

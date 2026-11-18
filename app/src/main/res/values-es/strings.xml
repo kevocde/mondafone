@@ -4,13 +4,8 @@
     <string name="answer_yes">Sí</string>
     <string name="answer_no">No</string>
     <string name="grant_access">Conceder acceso</string>
-    <string name="debug_title">Depuración:</string>
-    <string name="debug_device_id">ID disp.: %1$s</string>
-    <string name="debug_power_unrestricted">Energía: sin restricción</string>
-    <string name="debug_power_restricted">Energía: restringida</string>
     <string name="beacon_channel_name">Baliza de dispositivo</string>
     <string name="beacon_notification_text">Buscando dispositivos cercanos</string>
-    <string name="clear_store">Limpiar</string>
     <string name="blocked_call_channel_name">Llamada bloqueada</string>
     <string name="blocked_call_title">Llamada bloqueada</string>
     <string name="blocked_call_text">¿Seguir bloqueando esta llamada?</string>

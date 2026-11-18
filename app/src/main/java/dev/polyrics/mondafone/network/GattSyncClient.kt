@@ -18,7 +18,6 @@ import java.util.UUID
 class GattSyncClient(
     private val context: Context,
     private val device: BluetoothDevice,
-    private val eventLog: BeaconEventLog,
     private val localInventoryProvider: () -> List<SequenceInventoryEntry>,
     private val ownPubkeyProvider: () -> String?,
     private val reportsProvider: (createdBy: String, fromSeq: Long, toSeq: Long) -> List<SpamReport>,
@@ -74,11 +73,11 @@ class GattSyncClient(
             when (newState) {
                 BluetoothProfile.STATE_CONNECTED -> {
                     if (status != BluetoothGatt.GATT_SUCCESS) {
-                        eventLog.log("connect failed: $status")
+                        BeaconLog.log("connect failed: $status")
                         disconnect()
                         return
                     }
-                    eventLog.log("connected ${gatt.device.address}")
+                    BeaconLog.log("connected ${gatt.device.address}")
                     if (!gatt.requestMtu(GattSyncProtocol.TARGET_MTU)) {
                         gatt.discoverServices()
                     }
@@ -102,7 +101,7 @@ class GattSyncClient(
 
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             if (status != BluetoothGatt.GATT_SUCCESS) {
-                eventLog.log("services discovery failed: $status")
+                BeaconLog.log("services discovery failed: $status")
                 disconnect()
                 return
             }
@@ -160,7 +159,7 @@ class GattSyncClient(
             status: Int,
         ) {
             if (status != BluetoothGatt.GATT_SUCCESS) {
-                eventLog.log("descriptor write failed: $status")
+                BeaconLog.log("descriptor write failed: $status")
                 disconnect()
                 return
             }
@@ -224,7 +223,7 @@ class GattSyncClient(
         enqueue(pipeCodec.encode(DataPipeMessage.Reports(reports), maxPayload()))
         enqueue(pipeCodec.encode(DataPipeMessage.End, maxPayload()))
         if (reports.isNotEmpty()) {
-            eventLog.log("sync: sent ${reports.size}, total ${reportCountProvider()}")
+            BeaconLog.log("sync: sent ${reports.size}, total ${reportCountProvider()}")
         }
     }
 
@@ -240,7 +239,7 @@ class GattSyncClient(
                 tag = outboxTag,
                 send = { sendFrame(frame) },
                 onFailure = {
-                    eventLog.log("write failed")
+                    BeaconLog.log("write failed")
                     disconnect()
                 },
             )
@@ -271,7 +270,7 @@ class GattSyncClient(
     }
 
     private fun logSummary() {
-        ingester.consumeSummaryLine(reportCountProvider())?.let(eventLog::log)
+        ingester.consumeSummaryLine(reportCountProvider())?.let(BeaconLog::log)
     }
 
     private fun maxPayload(): Int = (mtu - ATT_OVERHEAD).coerceAtLeast(1)
@@ -296,7 +295,7 @@ class GattSyncClient(
             return
         }
         if (!gatt.readCharacteristic(state)) {
-            eventLog.log("state read failed")
+            BeaconLog.log("state read failed")
             disconnect()
         }
     }
@@ -318,7 +317,7 @@ class GattSyncClient(
     ) {
         val descriptor = characteristic.getDescriptor(GattSyncProtocol.CCC_DESCRIPTOR_UUID)
         if (descriptor == null) {
-            eventLog.log("$label descriptor missing")
+            BeaconLog.log("$label descriptor missing")
             disconnect()
             return
         }
@@ -330,7 +329,7 @@ class GattSyncClient(
             gatt.writeDescriptor(descriptor)
         }
         if (!sent) {
-            eventLog.log("$label subscribe failed")
+            BeaconLog.log("$label subscribe failed")
             disconnect()
         }
     }
@@ -339,7 +338,7 @@ class GattSyncClient(
         val characteristic = gatt
             .getService(GattSyncProtocol.SERVICE_UUID)
             ?.getCharacteristic(uuid)
-        if (characteristic == null) eventLog.log("$uuid characteristic missing")
+        if (characteristic == null) BeaconLog.log("$uuid characteristic missing")
         return characteristic
     }
 

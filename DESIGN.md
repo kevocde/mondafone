@@ -228,7 +228,7 @@ The vertical stack flows:
 Depth is expressed through a single structural device: a solid Navy-Charcoal Ink (`#141A1F`) rectangle offset down and right with zero blur (`4dp` on cards, stat tiles, primary buttons, and inactive tabs; `3dp` on readiness cells and compact buttons).
 
 ### Shadow Vocabulary
-- **Raised (`4dp` solid ink offset):** `RetroProtectionBanner`, `RetroStatItem`, default `RetroButton`, inactive `RetroTabBar` tabs, `SpamReportView`, `RetroDebugBox`.
+- **Raised (`4dp` solid ink offset):** `RetroProtectionBanner`, `RetroStatItem`, default `RetroButton`, inactive `RetroTabBar` tabs, `SpamReportView`.
 - **Raised Compact (`3dp` solid ink offset):** `RetroReadinessStrip` stage cells and compact `RetroButton`s.
 
 ### Named Rules

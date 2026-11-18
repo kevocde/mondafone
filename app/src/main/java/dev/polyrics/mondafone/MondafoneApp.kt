@@ -5,8 +5,6 @@ import dev.polyrics.mondafone.identity.DeviceIdentity
 import dev.polyrics.mondafone.identity.KeystoreDeviceIdentity
 import dev.polyrics.mondafone.network.BeaconAlarmScheduler
 import dev.polyrics.mondafone.network.BeaconConfig
-import dev.polyrics.mondafone.network.BeaconEventLog
-import dev.polyrics.mondafone.network.InMemoryBeaconEventLog
 import dev.polyrics.mondafone.spam.BlockedCallNotifier
 import dev.polyrics.mondafone.spam.BlockedCallStore
 import dev.polyrics.mondafone.spam.CallVerdictStore
@@ -30,7 +28,6 @@ import dev.polyrics.mondafone.spam.SqliteSpamReportStore
 
 open class MondafoneApp : Application(), SpamDependencies {
 
-    val beaconEventLog: BeaconEventLog = InMemoryBeaconEventLog()
     open val deviceIdentity: DeviceIdentity = KeystoreDeviceIdentity()
     override val verdictStore: CallVerdictStore by lazy {
         SqliteCallVerdictStore(this).also { store ->
