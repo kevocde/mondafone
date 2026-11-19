@@ -1,5 +1,5 @@
 ---
-name: Mondafone
+name: Mondafono
 description: Civil-defense and neighborhood-watch dispatch design system for a zero-configuration spam-call guardian
 colors:
   signal-sage: "#5A9E7C"
@@ -143,13 +143,13 @@ components:
     padding: "12dp"
 ---
 
-# Design System: Mondafone
+# Design System: Mondafono
 
 ## Overview
 
 **Creative North Star: "The Neighborhood Watch Dispatch (Boletín de Guardia Vecinal)"**
 
-Mondafone looks like an official civil-defense and neighborhood-watch protection bulletin printed on warm bone stock: stamped status headers, a geometric Canvas shield-and-node emblem, semantic color bands across every module, and hard architectural offset shadows in deep navy-charcoal ink. The visual language turns an invisible background service (`CallScreeningService` + serverless BLE P2P sync) into a tangible, inspectable guard station on duty.
+Mondafono looks like an official civil-defense and neighborhood-watch protection bulletin printed on warm bone stock: stamped status headers, a geometric Canvas shield-and-node emblem, semantic color bands across every module, and hard architectural offset shadows in deep navy-charcoal ink. The visual language turns an invisible background service (`CallScreeningService` + serverless BLE P2P sync) into a tangible, inspectable guard station on duty.
 
 Every interactive control and live module is physical and mechanical. Buttons, inactive tabs, and readiness stage cells depress into their solid offset shadow on touch. Every module carries a top color band or diagonal Canvas hatch strip so state reads before a single word is read.
 
@@ -158,7 +158,7 @@ The entire interface is built exclusively with Android framework `Canvas` and na
 **Key Characteristics:**
 - Warm Bone Paper ground (`#F2ECE1`) with Bright Dispatch Card Stock (`#FAF6EE`) and 2dp Navy-Charcoal Ink (`#141A1F`) borders.
 - Top semantic color bands (6dp–10dp high, framed by a 2dp horizontal ink rule) on stat tiles, readiness cells, ticket rows, and prompt cards, with diagonal Canvas ink hatching on ungranted or empty states.
-- Stamped Protection Banner (`RetroProtectionBanner`) pairing the `MONDAFONE` header with a live `[ ACTIVE GUARD ]` / `[ SETUP REQUIRED ]` stamp, a 45°/90° geometric Canvas shield/P2P emblem, and live stage/peer metrics.
+- Stamped Protection Banner (`RetroProtectionBanner`) pairing the `MONDAFONO` header with a live `[ ACTIVE GUARD ]` / `[ SETUP REQUIRED ]` stamp, a 45°/90° geometric Canvas shield/P2P emblem, and live stage/peer metrics.
 - 4-stage horizontal Readiness Strip (`RetroReadinessStrip`) tracking `FILTER`, `ALERTS`, `BLE NET`, and `POWER` with 48dp touch targets and press-collapse physics.
 - Slotted dispatch ticket rows (`VerdictListItemView`) with top semantic bands, `> number` monospace headers, inline classification prompt subtitles, and 48dp-touch-target compact keys.
 
@@ -196,7 +196,7 @@ A three-signal pastel dispatch palette inked in deep navy-charcoal on warm bone 
 **Character:** Sober sans-serif carries all human voices, labels, questions, and empty-state prose, while bold tabular monospace is strictly reserved for machine-truth values (phone numbers, zero-padded counters, `[OK]` / `[  ]` / `[ -- ]` status codes, and debug logs). Every text size is specified in `sp` (`ComplexUnit.COMPLEX_UNIT_SP`) to honor system font scaling.
 
 ### Hierarchy
-- **Display** (bold, 32sp): the `Mondafone` masthead wordmark — `masthead` fill with a 4dp `ink` outline and a 2dp bottom registration rule.
+- **Display** (bold, 32sp): the `Mondafono` masthead wordmark — `masthead` fill with a 4dp `ink` outline and a 2dp bottom registration rule.
 - **Headline** (bold, 15sp): the banner headline (`"The end of spam calls"`).
 - **Title** (bold, 14sp): folder tab labels, empty-state messages, and debug header.
 - **Body** (bold, 16sp): primary button labels and prompt questions.
@@ -245,7 +245,7 @@ Every surface, border, and shadow is an axis-aligned rectangle with `0dp` corner
 ## Components
 
 ### Protection Dispatch Banner (`RetroProtectionBanner`)
-- **Structure:** `94dp` high raised card (`surface` fill, `2dp` border, `4dp` shadow) with a `30dp` top header bar (`background` fill) displaying `MONDAFONE` on the left and a bordered status stamp (`[ ACTIVE GUARD ]` in `primary` sage or `[ SETUP REQUIRED ]` in `coin` ochre) on the right.
+- **Structure:** `94dp` high raised card (`surface` fill, `2dp` border, `4dp` shadow) with a `30dp` top header bar (`background` fill) displaying `MONDAFONO` on the left and a bordered status stamp (`[ ACTIVE GUARD ]` in `primary` sage or `[ SETUP REQUIRED ]` in `coin` ochre) on the right.
 - **Body:** Left `40dp×40dp` framed emblem box with the geometric Canvas shield + P2P node icon; right headline (`app_subtitle`, bold 15sp) and live stage/peer status line (`status_protection_metrics` or `status_onboarding_detail`, 12sp).
 
 ### 4-Stage Readiness Strip (`RetroReadinessStrip`)

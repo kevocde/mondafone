@@ -1,0 +1,71 @@
+package dev.polyrics.mondafono.spam
+
+import android.content.ContentValues
+import android.content.Context
+import android.database.Cursor
+import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteOpenHelper
+
+class SqlitePeerStatusStore(private val helper: SQLiteOpenHelper) : PeerStatusStore {
+
+    constructor(context: Context) : this(VerdictDbHelper(context))
+
+    override fun upsert(peer: PeerStatus) {
+        val values = ContentValues().apply {
+            put(VerdictContract.COLUMN_ID_PUBKEY, peer.idPubkey)
+            put(VerdictContract.COLUMN_MAX_SEQ_NUM, peer.maxSeqNum)
+            put(VerdictContract.COLUMN_LAST_SYNC_AT, peer.lastSyncAt)
+        }
+        database().insertWithOnConflict(
+            VerdictContract.TABLE_PEERS_STATUS,
+            null,
+            values,
+            SQLiteDatabase.CONFLICT_REPLACE,
+        )
+    }
+
+    override fun recordReport(idPubkey: String, seqNum: Long, syncedAt: Long) {
+        database().execSQL(RECORD_REPORT_SQL, arrayOf(idPubkey, seqNum, syncedAt))
+    }
+
+    override fun find(idPubkey: String): PeerStatus? =
+        query("${VerdictContract.COLUMN_ID_PUBKEY} = ?", arrayOf(idPubkey)).firstOrNull()
+
+    override fun all(): List<PeerStatus> = query(null, null)
+
+    private fun query(selection: String?, arguments: Array<String>?): List<PeerStatus> =
+        database()
+            .query(
+                VerdictContract.TABLE_PEERS_STATUS,
+                null,
+                selection,
+                arguments,
+                null,
+                null,
+                "${VerdictContract.COLUMN_LAST_SYNC_AT} DESC",
+            )
+            .use { cursor ->
+                buildList {
+                    while (cursor.moveToNext()) add(cursor.toPeerStatus())
+                }
+            }
+
+    private fun Cursor.toPeerStatus(): PeerStatus = PeerStatus(
+        idPubkey = getString(getColumnIndexOrThrow(VerdictContract.COLUMN_ID_PUBKEY)),
+        maxSeqNum = getLong(getColumnIndexOrThrow(VerdictContract.COLUMN_MAX_SEQ_NUM)),
+        lastSyncAt = getLong(getColumnIndexOrThrow(VerdictContract.COLUMN_LAST_SYNC_AT)),
+    )
+
+    private fun database(): SQLiteDatabase = helper.writableDatabase
+
+    private companion object {
+        val RECORD_REPORT_SQL =
+            "INSERT INTO ${VerdictContract.TABLE_PEERS_STATUS} " +
+                "(${VerdictContract.COLUMN_ID_PUBKEY}, ${VerdictContract.COLUMN_MAX_SEQ_NUM}, " +
+                "${VerdictContract.COLUMN_LAST_SYNC_AT}) VALUES (?, ?, ?) " +
+                "ON CONFLICT(${VerdictContract.COLUMN_ID_PUBKEY}) DO UPDATE SET " +
+                "${VerdictContract.COLUMN_MAX_SEQ_NUM} = MAX(" +
+                "${VerdictContract.TABLE_PEERS_STATUS}.${VerdictContract.COLUMN_MAX_SEQ_NUM}, excluded.${VerdictContract.COLUMN_MAX_SEQ_NUM}), " +
+                "${VerdictContract.COLUMN_LAST_SYNC_AT} = excluded.${VerdictContract.COLUMN_LAST_SYNC_AT}"
+    }
+}

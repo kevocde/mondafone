@@ -21,13 +21,13 @@ val syncIdleTimeoutMs = localProperties.getProperty("mondafono.sync.idle.timeout
 val gattLifetimeMs = localProperties.getProperty("mondafono.gatt.lifetime.ms", "7000")
 
 android {
-    namespace = "dev.polyrics.mondafone"
+    namespace = "dev.polyrics.mondafono"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "dev.polyrics.mondafone"
+        applicationId = "dev.polyrics.mondafono"
         minSdk = 31
         targetSdk = 37
         versionCode = 1

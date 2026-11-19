@@ -1,0 +1,252 @@
+package dev.polyrics.mondafono.spam
+
+import android.telecom.CallScreeningService.CallResponse
+import dev.polyrics.mondafono.MondafonoApp
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.Robolectric
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
+import org.robolectric.annotation.Config
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [31], application = TrustCallScreeningServiceTest.TestMondafonoApp::class)
+class TrustCallScreeningServiceTest {
+
+    private val app = RuntimeEnvironment.getApplication() as TestMondafonoApp
+    private val screeningService =
+        Robolectric.buildService(TrustCallScreeningService::class.java).create().get()
+
+    @Test
+    fun blocksNumberReportedByMe() {
+        app.ownReported += CANONICAL
+
+        assertTrue(screeningService.shouldBlockCall(NATIONAL))
+    }
+
+    @Test
+    fun allowsWhitelistedNumber() {
+        app.whitelisted += CANONICAL
+
+        assertFalse(screeningService.shouldBlockCall(NATIONAL))
+    }
+
+    @Test
+    fun allowsUnknownNumber() {
+        assertFalse(screeningService.shouldBlockCall("600999888"))
+    }
+
+    @Test
+    fun allowsPendingNumber() {
+        app.pendingNumbers += CANONICAL
+
+        assertFalse(screeningService.shouldBlockCall(NATIONAL))
+    }
+
+    @Test
+    fun whitelistOverridesOwnReport() {
+        app.whitelisted += CANONICAL
+        app.ownReported += CANONICAL
+
+        assertFalse(screeningService.shouldBlockCall(NATIONAL))
+    }
+
+    @Test
+    fun ownReportedIncomingCallRejectsAndNotifiesBlocked() {
+        app.ownReported += CANONICAL
+
+        val response = requireNotNull(screen(NATIONAL))
+
+        assertTrue(response.disallowCall)
+        assertTrue(response.rejectCall)
+        assertEquals(listOf(NATIONAL), app.blockedNumbers)
+    }
+
+    @Test
+    fun blockedIncomingCallIsCounted() {
+        app.ownReported += CANONICAL
+
+        screen(NATIONAL)
+
+        assertEquals(listOf(CANONICAL), app.blockedCalls)
+    }
+
+    @Test
+    fun allowedIncomingCallIsNotCounted() {
+        app.whitelisted += CANONICAL
+
+        screen(NATIONAL)
+
+        assertTrue(app.blockedCalls.isEmpty())
+    }
+
+    @Test
+    fun globalChanceBlocksWhenDrawIsBelowProbability() {
+        app.foreignReports[CANONICAL] = 1
+        screeningService.globalSpamProbability = GlobalSpamProbability(FixedRandom(0.4))
+
+        val response = requireNotNull(screen(NATIONAL))
+
+        assertTrue(response.disallowCall)
+        assertEquals(listOf(NATIONAL), app.blockedNumbers)
+        assertTrue(app.promptedNumbers.isEmpty())
+    }
+
+    @Test
+    fun globalChanceAllowsAndPromptsUnknownWhenDrawIsAboveProbability() {
+        app.foreignReports[CANONICAL] = 1
+        screeningService.globalSpamProbability = GlobalSpamProbability(FixedRandom(0.6))
+
+        val response = requireNotNull(screen(NATIONAL))
+
+        assertFalse(response.disallowCall)
+        assertTrue(app.blockedNumbers.isEmpty())
+        assertEquals(listOf(CANONICAL), app.pendingNumbers)
+        assertEquals(listOf(NATIONAL), app.promptedNumbers)
+    }
+
+    @Test
+    fun whitelistOverridesGlobalReports() {
+        app.whitelisted += CANONICAL
+        app.foreignReports[CANONICAL] = 5
+        screeningService.globalSpamProbability = GlobalSpamProbability(FixedRandom(0.0))
+
+        val response = requireNotNull(screen(NATIONAL))
+
+        assertFalse(response.disallowCall)
+        assertTrue(app.blockedNumbers.isEmpty())
+        assertTrue(app.promptedNumbers.isEmpty())
+    }
+
+    @Test
+    fun unclassifiedIncomingCallAllowsAddsCanonicalPendingAndPrompts() {
+        val response = requireNotNull(screen(NATIONAL))
+
+        assertFalse(response.disallowCall)
+        assertEquals(listOf(CANONICAL), app.pendingNumbers)
+        assertEquals(listOf(NATIONAL), app.promptedNumbers)
+    }
+
+    @Test
+    fun whitelistedIncomingCallAllowsWithoutNotifications() {
+        app.whitelisted += CANONICAL
+
+        val response = requireNotNull(screen(NATIONAL))
+
+        assertFalse(response.disallowCall)
+        assertTrue(app.blockedNumbers.isEmpty())
+        assertTrue(app.promptedNumbers.isEmpty())
+    }
+
+    private fun screen(number: String): CallResponse? {
+        var captured: CallResponse? = null
+        screeningService.screenIncomingNumber(number) { captured = it }
+        return captured
+    }
+
+    class TestMondafonoApp : MondafonoApp() {
+        val whitelisted = mutableSetOf<String>()
+        val pendingNumbers = mutableListOf<String>()
+        val ownReported = mutableSetOf<String>()
+        val foreignReports = mutableMapOf<String, Int>()
+        val blockedNumbers = mutableListOf<String>()
+        val blockedCalls = mutableListOf<String>()
+        val promptedNumbers = mutableListOf<String>()
+
+        override fun onCreate() = Unit
+
+        override val verdictStore: CallVerdictStore = object : CallVerdictStore {
+            override fun isWhitelisted(number: String) = number in whitelisted
+            override fun isClassified(number: String) = number in whitelisted
+            override fun addToWhitelist(number: String) {
+                whitelisted += number
+                pendingNumbers -= number
+            }
+            override fun addPending(number: String) {
+                if (!isClassified(number)) pendingNumbers += number
+            }
+            override fun pendingNumbers(): List<String> = pendingNumbers
+            override fun whitelistNumbers(): List<String> = whitelisted.toList()
+            override fun remove(number: String) {
+                whitelisted -= number
+                pendingNumbers -= number
+            }
+            override fun clear() {
+                whitelisted.clear()
+                pendingNumbers.clear()
+            }
+            override fun registerOnChangeListener(listener: () -> Unit) {}
+            override fun unregisterOnChangeListener() {}
+        }
+
+        override val spamReportStore: SpamReportStore = object : SpamReportStore {
+            override fun reportOwn(canonicalNumber: String, displayNumber: String): SpamReport? {
+                ownReported += canonicalNumber
+                return null
+            }
+            override fun acceptRemoteReport(report: SpamReport): Boolean = false
+            override fun isReportedByMe(canonicalNumber: String) = canonicalNumber in ownReported
+            override fun foreignReportCount(canonicalNumber: String) = foreignReports[canonicalNumber] ?: 0
+            override fun ownReports(): List<OwnSpamReport> = emptyList()
+            override fun sequenceInventory(): List<SequenceInventoryEntry> = emptyList()
+            override fun reportsByReporter(
+                createdBy: String,
+                fromSeq: Long,
+                toSeq: Long,
+            ): List<SpamReport> = emptyList()
+            override fun reportCount(): Int = 0
+            override fun spamNumberCount(notOlderThan: Long): Int = 0
+            override fun networkDeviceCount(notOlderThan: Long, excludePubkey: String): Int = 0
+            override fun removeOwnReport(phoneHash: String) = Unit
+            override fun registerOnChangeListener(listener: () -> Unit) {}
+            override fun unregisterOnChangeListener() {}
+        }
+
+        override val peerStatusStore: PeerStatusStore = object : PeerStatusStore {
+            private val peers = mutableMapOf<String, PeerStatus>()
+            override fun upsert(peer: PeerStatus) {
+                peers[peer.idPubkey] = peer
+            }
+            override fun recordReport(idPubkey: String, seqNum: Long, syncedAt: Long) {
+                upsert(PeerStatus(idPubkey, seqNum, syncedAt))
+            }
+            override fun find(idPubkey: String): PeerStatus? = peers[idPubkey]
+            override fun all(): List<PeerStatus> = peers.values.toList()
+        }
+
+        override val phoneNumberNormalizer: PhoneNumberNormalizer =
+            PhoneNumberNormalizer(object : RegionProvider {
+                override fun regionIso(): String = "ES"
+            })
+
+        override val blockedCallStore: BlockedCallStore = object : BlockedCallStore {
+            override fun record(number: String, at: Long) {
+                blockedCalls += number
+            }
+
+            override fun count(): Int = blockedCalls.size
+        }
+
+        override val blockedCallNotifier: BlockedCallNotifier = object : BlockedCallNotifier {
+            override fun notifyBlocked(number: String) {
+                blockedNumbers += number
+            }
+        }
+
+        override val verdictPromptNotifier: SpamVerdictPromptNotifier =
+            object : SpamVerdictPromptNotifier {
+                override fun promptVerdict(number: String) {
+                    promptedNumbers += number
+                }
+            }
+    }
+
+    private companion object {
+        const val NATIONAL = "600111222"
+        const val CANONICAL = "0034600111222"
+    }
+}
