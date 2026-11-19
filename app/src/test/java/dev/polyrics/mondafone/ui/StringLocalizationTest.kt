@@ -17,7 +17,7 @@ class StringLocalizationTest {
     fun resolvesSpanishTranslationsWhenDeviceLocaleIsSpanish() {
         val context = RuntimeEnvironment.getApplication()
 
-        assertEquals("Mondafone", context.getString(R.string.app_name))
+        assertEquals("Mondafono", context.getString(R.string.app_name))
         assertEquals("El fin de las llamadas spam", context.getString(R.string.app_subtitle))
         assertEquals("Conceder acceso", context.getString(R.string.grant_access))
         assertEquals("Bloqueadas", context.getString(R.string.stat_blocked_calls))
@@ -48,7 +48,7 @@ class StringLocalizationTest {
     fun resolvesDefaultEnglishStringsWhenDeviceLocaleIsEnglish() {
         val context = RuntimeEnvironment.getApplication()
 
-        assertEquals("Mondafone", context.getString(R.string.app_name))
+        assertEquals("Mondafono", context.getString(R.string.app_name))
         assertEquals("The end of spam calls", context.getString(R.string.app_subtitle))
         assertEquals("Pending", context.getString(R.string.tab_pending))
         assertEquals("Whitelist", context.getString(R.string.tab_whitelist))

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">Mondafone</string>
+    <string name="app_name" translatable="false">Mondafono</string>
     <string name="app_subtitle">The end of spam calls</string>
     <string name="spam_question">Was this call spam?</string>
     <string name="answer_yes">Yes</string>

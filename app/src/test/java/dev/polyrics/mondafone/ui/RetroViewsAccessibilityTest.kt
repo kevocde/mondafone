@@ -73,12 +73,12 @@ class RetroViewsAccessibilityTest {
 
     @Test
     fun retroTitleExposesAccessibleHeading() {
-        val title = RetroTitle(context, "Mondafone")
+        val title = RetroTitle(context, "Mondafono")
 
         val info = title.createAccessibilityNodeInfo()
 
         assertTrue(info.isHeading)
-        assertEquals("Mondafone", title.contentDescription.toString())
+        assertEquals("Mondafono", title.contentDescription.toString())
     }
 
     @Test
