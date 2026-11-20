@@ -1,9 +1,11 @@
 package dev.polyrics.mondafono.ui
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.graphics.Path
+import android.graphics.RectF
 import android.graphics.Typeface
 import android.util.TypedValue
 import android.view.View
@@ -18,7 +20,9 @@ class RetroProtectionBanner(
     private val borderPx = 2 * density
     private val shadowPx = 4 * density
     private val headerHeightPx = 30 * density
-    private val shieldPath = Path()
+    internal val emblemBitmap: Bitmap? =
+        BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher_foreground)
+    private val emblemPaint = Paint(Paint.FILTER_BITMAP_FLAG)
 
     private val surfacePaint = Paint().apply { color = context.getColor(R.color.surface) }
     private val backgroundPaint = Paint().apply { color = context.getColor(R.color.background) }
@@ -148,8 +152,8 @@ class RetroProtectionBanner(
         val boxTop = headerHeightPx + (cardH - headerHeightPx - boxSize) / 2f
         val fill = if (isGuardActive) primaryPaint else coinPaint
         canvas.drawRect(pad, boxTop, pad + boxSize, boxTop + boxSize, fill)
+        drawAppIcon(canvas, pad + borderPx, boxTop + borderPx, boxSize - 2 * borderPx)
         canvas.drawRect(pad, boxTop, pad + boxSize, boxTop + boxSize, borderPaint)
-        drawShieldEmblem(canvas, pad, boxTop, boxSize)
 
         val textX = pad + boxSize + 10 * density
         val centerY = headerHeightPx + (cardH - headerHeightPx) / 2f
@@ -158,26 +162,18 @@ class RetroProtectionBanner(
         canvas.drawText(detailText(), textX, centerY + 13 * density, detailPaint)
     }
 
-    private fun drawShieldEmblem(canvas: Canvas, left: Float, top: Float, size: Float) {
-        val cx = left + size / 2f
-        val sTop = top + size * 0.18f
-        val sMid = top + size * 0.54f
-        val sBot = top + size * 0.84f
-        val halfW = size * 0.30f
-
-        shieldPath.reset()
-        shieldPath.moveTo(cx - halfW, sTop)
-        shieldPath.lineTo(cx + halfW, sTop)
-        shieldPath.lineTo(cx + halfW, sMid)
-        shieldPath.lineTo(cx, sBot)
-        shieldPath.lineTo(cx - halfW, sMid)
-        shieldPath.close()
-        canvas.drawPath(shieldPath, surfacePaint)
-        canvas.drawPath(shieldPath, borderPaint)
-
-        val nodeR = 2 * density
-        canvas.drawLine(cx - halfW * 0.5f, sMid, cx, sMid - halfW * 0.5f, borderPaint)
-        canvas.drawLine(cx, sMid - halfW * 0.5f, cx + halfW * 0.5f, sMid, borderPaint)
-        canvas.drawRect(cx - nodeR, sMid - halfW * 0.5f - nodeR, cx + nodeR, sMid - halfW * 0.5f + nodeR, shadowPaint)
+    private fun drawAppIcon(canvas: Canvas, left: Float, top: Float, size: Float) {
+        val bitmap = emblemBitmap ?: return
+        val drawn = size * 2f
+        val dst = RectF(
+            left + (size - drawn) / 2f,
+            top + (size - drawn) / 2f,
+            left + (size + drawn) / 2f,
+            top + (size + drawn) / 2f,
+        )
+        canvas.save()
+        canvas.clipRect(left, top, left + size, top + size)
+        canvas.drawBitmap(bitmap, null, dst, emblemPaint)
+        canvas.restore()
     }
 }
