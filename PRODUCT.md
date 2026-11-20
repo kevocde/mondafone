@@ -12,7 +12,7 @@ Non-technical people harassed by spam and scam calls who want automatic protecti
 
 ## Product Purpose
 
-Mondafone rejects spam calls before the phone rings, using Android's `CallScreeningService`. It combines the user's own verdicts (whitelist / spam reports) with a global spam probability built from reports received from nearby devices, and it records every blocking decision so the user can review it. Success means spam calls never ring and the user never has to think about configuration.
+Mondafono rejects spam calls before the phone rings, using Android's `CallScreeningService`. It combines the user's own verdicts (whitelist / spam reports) with a global spam probability built from reports received from nearby devices, and it records every blocking decision so the user can review it. Success means spam calls never ring and the user never has to think about configuration.
 
 ## Positioning
 
@@ -36,7 +36,7 @@ Distributed as a public FOSS release and on the Play Store. Runs on Android 12+ 
 
 ## Brand Commitments
 
-- Name: **Mondafone** (`dev.polyrics.mondafone`).
+- Name: **Mondafono** (`dev.polyrics.mondafono`).
 - Binding aesthetic: a retro-print design system (flat pastel surfaces, 2dp ink borders, hard rectangular 4dp shadows, square corners, sans-serif type, ASCII markers). The palette is guardian-green primary (safe/trust), pastel brick secondary (danger), warm retro paper backgrounds, and a mustard coin accent, defined in `app/src/main/res/values/colors.xml`. This system deliberately overrides Material 3 defaults.
 - Voice: sober and minimal; ASCII characters give relevance to content, never decoration.
 

@@ -2,9 +2,9 @@
 
 ## Goal Description
 
-Currently, Mondafone requires **8 manifest permissions** (`READ_CALL_LOG`, `READ_PHONE_STATE`, `READ_CONTACTS`, `SYSTEM_ALERT_WINDOW`, `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_PHONE_CALL`, `MANAGE_OWN_CALLS`) plus `ROLE_CALL_SCREENING`, and runs a permanent 24/7 foreground daemon (`CallMonitorService`). Users must tap **"Grant access" three separate times** and navigate Android's restricted System Settings ("Display over other apps") before the app works.
+Currently, Mondafono requires **8 manifest permissions** (`READ_CALL_LOG`, `READ_PHONE_STATE`, `READ_CONTACTS`, `SYSTEM_ALERT_WINDOW`, `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_PHONE_CALL`, `MANAGE_OWN_CALLS`) plus `ROLE_CALL_SCREENING`, and runs a permanent 24/7 foreground daemon (`CallMonitorService`). Users must tap **"Grant access" three separate times** and navigate Android's restricted System Settings ("Display over other apps") before the app works.
 
-This plan redesigns Mondafone into an **"Install and Shoot"** experience by leveraging Android's native `CallScreeningService` guarantees on `minSdk 31`:
+This plan redesigns Mondafono into an **"Install and Shoot"** experience by leveraging Android's native `CallScreeningService` guarantees on `minSdk 31`:
 
 1. **Remove `READ_CONTACTS` (Native Telecom Contact Filtering)**: On Android 10+ (`minSdk 31`), when a `CallScreeningService` does **not** hold `READ_CONTACTS`, Android's `TelecomManager` automatically skips contacts and **only** invokes `onScreenCall()` for numbers *not* in the user's contacts.
 2. **Remove `READ_CALL_LOG`, `READ_PHONE_STATE`, and `CallMonitorService` (`FOREGROUND_SERVICE*`, `MANAGE_OWN_CALLS`)**: Instead of polling `CallLog` from a 24/7 foreground daemon, `SpamCallScreeningService` is woken up on-demand by Android Telecom for every unknown incoming call.
@@ -63,50 +63,50 @@ flowchart LR
 
 ## Proposed Changes
 
-### 1. Spam Domain & Storage (`dev.polyrics.mondafone.spam`)
+### 1. Spam Domain & Storage (`dev.polyrics.mondafono.spam`)
 
-#### [MODIFY] `app/src/main/java/dev/polyrics/mondafone/spam/SpamStore.kt`
+#### [MODIFY] `app/src/main/java/dev/polyrics/mondafono/spam/SpamStore.kt`
 - Add `addPending(number: String)` and `pendingNumbers(): List<String>` to `SpamStore` (with default implementations so existing test doubles stay minimal).
 - When `mark(number, isSpam)` is called, the number moves from pending to decided (`spam` or `not_spam`).
 
-#### [MODIFY] `app/src/main/java/dev/polyrics/mondafone/spam/PrefsSpamStore.kt`
+#### [MODIFY] `app/src/main/java/dev/polyrics/mondafono/spam/PrefsSpamStore.kt`
 - Store `"pending"` state in `SharedPreferences` when `addPending(number)` is called (only if `!isRegistered(number)`).
 - Ensure `isRegistered(number)` returns `true` only when a verdict (`spam` or `not_spam`) has been recorded.
 - Implement `pendingNumbers(): List<String>` returning all numbers currently in `"pending"` state.
 
-#### [NEW] `app/src/main/java/dev/polyrics/mondafone/spam/SpamVerdictPromptNotifier.kt`
+#### [NEW] `app/src/main/java/dev/polyrics/mondafono/spam/SpamVerdictPromptNotifier.kt`
 - Interface `SpamVerdictPromptNotifier` with `fun promptVerdict(number: String)`.
 - Implementation `NotificationSpamVerdictPromptNotifier(context: Context)` that posts a notification asking `"Was this call spam?"` for `> number <` with two `Notification.Action` buttons (`Yes` / `No`) targeting `SpamVerdictReceiver`, and a content `PendingIntent` opening `MainActivity`.
 
-#### [NEW] `app/src/main/java/dev/polyrics/mondafone/spam/SpamVerdictReceiver.kt`
+#### [NEW] `app/src/main/java/dev/polyrics/mondafono/spam/SpamVerdictReceiver.kt`
 - `BroadcastReceiver` handling `ACTION_MARK_SPAM` and `ACTION_MARK_NOT_SPAM` from the notification buttons:
   - Calls `PrefsSpamStore(context).mark(number, isSpam)`.
   - Cancels the prompt notification for that number.
 
-#### [MODIFY] `app/src/main/java/dev/polyrics/mondafone/spam/SpamCallScreeningService.kt`
+#### [MODIFY] `app/src/main/java/dev/polyrics/mondafono/spam/SpamCallScreeningService.kt`
 - Ignore outgoing calls (`if (callDetails.callDirection != Call.Details.DIRECTION_INCOMING) return`).
 - Delegate decision logic:
   - If `store.isSpam(number)` -> block call + `notifier.notifyBlocked(number)`.
   - If `!store.isRegistered(number)` -> allow call + `store.addPending(number)` + `promptNotifier.promptVerdict(number)`.
   - Otherwise (already marked not spam) -> allow call.
 
-#### [MODIFY] `app/src/main/java/dev/polyrics/mondafone/spam/SpamReportDecider.kt`
+#### [MODIFY] `app/src/main/java/dev/polyrics/mondafono/spam/SpamReportDecider.kt`
 - Simplify `SpamReportDecider` to evaluate incoming call screening rules without `ContactsLookup` or minimum call duration:
   - `shouldAsk(call: CallInfo): Boolean = call.type == CallType.INCOMING && !store.isRegistered(call.number)`
 
-#### [MODIFY] `app/src/main/java/dev/polyrics/mondafone/spam/CallInfo.kt`
+#### [MODIFY] `app/src/main/java/dev/polyrics/mondafono/spam/CallInfo.kt`
 - Remove unused `durationSeconds` or default it to `0L` so call screening only requires `number` and `type`.
 
 ---
 
 ### 2. Remove Obsolete Monitor, Contacts & Overlay Components
 
-#### [DELETE] `app/src/main/java/dev/polyrics/mondafone/monitor/CallMonitorService.kt`
-#### [DELETE] `app/src/main/java/dev/polyrics/mondafone/monitor/CallLogReader.kt`
-#### [DELETE] `app/src/main/java/dev/polyrics/mondafone/monitor/CallEndTrigger.kt`
-#### [DELETE] `app/src/main/java/dev/polyrics/mondafone/contacts/ContactsLookup.kt`
-#### [DELETE] `app/src/main/java/dev/polyrics/mondafone/contacts/PhoneContactsLookup.kt`
-#### [DELETE] `app/src/main/java/dev/polyrics/mondafone/ui/SpamReportOverlay.kt`
+#### [DELETE] `app/src/main/java/dev/polyrics/mondafono/monitor/CallMonitorService.kt`
+#### [DELETE] `app/src/main/java/dev/polyrics/mondafono/monitor/CallLogReader.kt`
+#### [DELETE] `app/src/main/java/dev/polyrics/mondafono/monitor/CallEndTrigger.kt`
+#### [DELETE] `app/src/main/java/dev/polyrics/mondafono/contacts/ContactsLookup.kt`
+#### [DELETE] `app/src/main/java/dev/polyrics/mondafono/contacts/PhoneContactsLookup.kt`
+#### [DELETE] `app/src/main/java/dev/polyrics/mondafono/ui/SpamReportOverlay.kt`
 
 ---
 
@@ -129,7 +129,7 @@ flowchart LR
 -    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
 ```
 
-#### [MODIFY] `app/src/main/java/dev/polyrics/mondafone/MainActivity.kt`
+#### [MODIFY] `app/src/main/java/dev/polyrics/mondafono/MainActivity.kt`
 - **Install & Shoot Onboarding**:
   - Status report checks only `Call screening role` and `Notifications` (on API 33+).
   - Clicking `Grant access` requests `ROLE_CALL_SCREENING` first, and upon returning in `onActivityResult`, automatically chains `requestPermissions(arrayOf(POST_NOTIFICATIONS))` if needed—completing setup in a single user action.

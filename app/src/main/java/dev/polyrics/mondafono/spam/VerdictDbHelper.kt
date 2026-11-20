@@ -1,0 +1,23 @@
+package dev.polyrics.mondafono.spam
+
+import android.content.Context
+import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteOpenHelper
+
+class VerdictDbHelper(context: Context) : SQLiteOpenHelper(
+    context,
+    VerdictContract.DATABASE_NAME,
+    null,
+    VerdictContract.DATABASE_VERSION,
+) {
+
+    override fun onCreate(db: SQLiteDatabase) {
+        VerdictContract.CREATE_ALL_TABLES.forEach(db::execSQL)
+    }
+
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        if (oldVersion < 2) VerdictContract.CREATE_TABLES_ADDED_IN_VERSION_TWO.forEach(db::execSQL)
+        if (oldVersion < 3) db.execSQL(VerdictContract.BACKFILL_PEERS_STATUS)
+        if (oldVersion < 4) db.execSQL(VerdictContract.CREATE_BLOCKED_CALLS_TABLE)
+    }
+}

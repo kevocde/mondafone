@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-11-17T09:00:00-05:00",
-  "title": "Design System: Mondafone",
+  "title": "Design System: Mondafono",
   "extensions": {
     "colorMeta": {
       "signal-sage": {
@@ -155,8 +155,8 @@
       "name": "Protection Dispatch Banner",
       "kind": "card",
       "refersTo": "protection-banner",
-      "description": "Top status card with MONDAFONE header bar, [ ACTIVE GUARD ] stamp, geometric shield/P2P emblem, and live stage/peer metrics.",
-      "html": "<div class=\"ds-banner\"><div class=\"ds-banner-head\"><span>MONDAFONE</span><span class=\"ds-stamp\">[ ACTIVE GUARD ]</span></div><div class=\"ds-banner-body\"><div class=\"ds-emblem\">[#]</div><div><div class=\"ds-hl\">The end of spam calls</div><div class=\"ds-sub\">Stages: 4/4 · P2P nodes: 2</div></div></div></div>",
+      "description": "Top status card with MONDAFONO header bar, [ ACTIVE GUARD ] stamp, geometric shield/P2P emblem, and live stage/peer metrics.",
+      "html": "<div class=\"ds-banner\"><div class=\"ds-banner-head\"><span>MONDAFONO</span><span class=\"ds-stamp\">[ ACTIVE GUARD ]</span></div><div class=\"ds-banner-body\"><div class=\"ds-emblem\">[#]</div><div><div class=\"ds-hl\">The end of spam calls</div><div class=\"ds-sub\">Stages: 4/4 · P2P nodes: 2</div></div></div></div>",
       "css": ".ds-banner { background: #FAF6EE; color: #141A1F; border: 2px solid #141A1F; box-shadow: 4px 4px 0 #141A1F; font-family: sans-serif; } .ds-banner-head { background: #F2ECE1; border-bottom: 2px solid #141A1F; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 13px; } .ds-stamp { background: #5A9E7C; border: 2px solid #141A1F; padding: 2px 8px; font-size: 10px; } .ds-banner-body { padding: 10px; display: flex; gap: 10px; align-items: center; } .ds-emblem { width: 40px; height: 40px; background: #5A9E7C; border: 2px solid #141A1F; display: flex; align-items: center; justify-content: center; font-family: monospace; font-weight: 700; } .ds-hl { font-size: 15px; font-weight: 700; } .ds-sub { font-size: 12px; }"
     },
     {
@@ -186,11 +186,11 @@
   ],
   "narrative": {
     "northStar": "The Neighborhood Watch Dispatch (Boletín de Guardia Vecinal)",
-    "overview": "Mondafone looks like an official civil-defense and neighborhood-watch protection bulletin printed on warm bone stock: stamped status headers, a geometric Canvas shield-and-node emblem, semantic color bands across every module, and hard architectural offset shadows in deep navy-charcoal ink.",
+    "overview": "Mondafono looks like an official civil-defense and neighborhood-watch protection bulletin printed on warm bone stock: stamped status headers, a geometric Canvas shield-and-node emblem, semantic color bands across every module, and hard architectural offset shadows in deep navy-charcoal ink.",
     "keyCharacteristics": [
       "Warm Bone Paper ground (#F2ECE1) with Bright Dispatch Card Stock (#FAF6EE) and 2dp Navy-Charcoal Ink (#141A1F) borders.",
       "Top semantic color bands (6dp–10dp high, framed by a 2dp horizontal ink rule) on stat tiles, readiness cells, ticket rows, and prompt cards.",
-      "Stamped Protection Banner pairing MONDAFONE with a live [ ACTIVE GUARD ] / [ SETUP REQUIRED ] stamp and a 45°/90° geometric Canvas shield/P2P emblem.",
+      "Stamped Protection Banner pairing MONDAFONO with a live [ ACTIVE GUARD ] / [ SETUP REQUIRED ] stamp and a 45°/90° geometric Canvas shield/P2P emblem.",
       "4-stage horizontal Readiness Strip tracking FILTER, ALERTS, BLE NET, and POWER with 48dp touch targets and press-collapse physics.",
       "Slotted dispatch ticket rows with top semantic bands, > number monospace headers, inline classification prompt subtitles, and 48dp-touch-target compact keys."
     ],

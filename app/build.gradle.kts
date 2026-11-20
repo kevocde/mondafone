@@ -10,24 +10,24 @@ val localProperties = Properties().apply {
     if (localPropertiesFile.exists()) localPropertiesFile.inputStream().use { load(it) }
 }
 
-val beaconCron = localProperties.getProperty("mondafone.beacon.cron", "*/5 5-21 * * *")
-val beaconWindowMs = localProperties.getProperty("mondafone.beacon.window.ms", "10000")
-val beaconAppSecret = localProperties.getProperty("mondafone.beacon.app.secret")
+val beaconCron = localProperties.getProperty("mondafono.beacon.cron", "*/5 5-21 * * *")
+val beaconWindowMs = localProperties.getProperty("mondafono.beacon.window.ms", "10000")
+val beaconAppSecret = localProperties.getProperty("mondafono.beacon.app.secret")
     ?: UUID.randomUUID().toString().also { generated ->
-        localPropertiesFile.appendText("\nmondafone.beacon.app.secret=$generated\n")
+        localPropertiesFile.appendText("\nmondafono.beacon.app.secret=$generated\n")
     }
-val reportMaxAgeDays = localProperties.getProperty("mondafone.report.max.age.days", "20")
-val syncIdleTimeoutMs = localProperties.getProperty("mondafone.sync.idle.timeout.ms", "2000")
-val gattLifetimeMs = localProperties.getProperty("mondafone.gatt.lifetime.ms", "7000")
+val reportMaxAgeDays = localProperties.getProperty("mondafono.report.max.age.days", "20")
+val syncIdleTimeoutMs = localProperties.getProperty("mondafono.sync.idle.timeout.ms", "2000")
+val gattLifetimeMs = localProperties.getProperty("mondafono.gatt.lifetime.ms", "7000")
 
 android {
-    namespace = "dev.polyrics.mondafone"
+    namespace = "dev.polyrics.mondafono"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "dev.polyrics.mondafone"
+        applicationId = "dev.polyrics.mondafono"
         minSdk = 31
         targetSdk = 37
         versionCode = 1

@@ -22,6 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Mondafone"
+rootProject.name = "Mondafono"
 include(":app")
  
