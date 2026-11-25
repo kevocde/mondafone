@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="es" data-lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mondafono — Política de Privacidad y Protección de Datos / Privacy Policy</title>
+    <meta name="description" content="Política de Privacidad técnica, criptográfica y legal de Mondafono (dev.polyrics.mondafono). Filtro de llamadas anti-spam en Android con red P2P Bluetooth Low Energy sin servidores, sin permiso de Internet y protección de datos desde el diseño (RGPD / GDPR, CCPA / CPRA).">
+    <meta name="keywords" content="Mondafono, dev.polyrics.mondafono, política de privacidad, privacy policy, CallScreeningService, anti-spam Android, BLE P2P, RGPD, GDPR, CCPA, CPRA, Kevocde">
+    <meta name="author" content="Kevocde">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="theme-color" content="#F2ECE1">
+    <meta name="color-scheme" content="light">
+
+    <link rel="alternate" hreflang="es" href="?lang=es">
+    <link rel="alternate" hreflang="en" href="?lang=en">
+    <link rel="alternate" hreflang="x-default" href="./index.html">
+
+    <link rel="icon" type="image/webp" href="logo.webp">
+    <link rel="apple-touch-icon" href="logo.webp">
+
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Mondafono">
+    <meta property="og:title" content="Mondafono — Política de Privacidad y Protección de Datos / Privacy Policy">
+    <meta property="og:description" content="Especificación técnica, criptográfica y jurídica del tratamiento de datos de Mondafono (dev.polyrics.mondafono). Sin servidores, sin permiso INTERNET, sincronización BLE P2P con HMAC-SHA256 y Android Keystore.">
+    <meta property="og:image" content="./logo.webp">
+    <meta property="og:image:alt" content="Logotipo oficial de Mondafono">
+    <meta property="og:locale" content="es_ES">
+    <meta property="og:locale:alternate" content="en_US">
+    <meta property="article:published_time" content="2026-11-24T00:00:00Z">
+    <meta property="article:modified_time" content="2026-11-25T00:00:00Z">
+    <meta property="article:author" content="Kevocde">
+
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Mondafono — Política de Privacidad / Privacy Policy">
+    <meta name="twitter:description" content="Filtro anti-spam Android P2P sin servidores ni permiso INTERNET. Privacidad por arquitectura bajo RGPD/GDPR y CCPA/CPRA.">
+    <meta name="twitter:image" content="./logo.webp">
+
+    <link rel="stylesheet" href="privacy-policy.css">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "WebPage",
+                "@id": "#privacy-policy-page",
+                "name": "Mondafono — Política de Privacidad y Protección de Datos Personales / Privacy Policy",
+                "description": "Especificación técnica, criptográfica y jurídica de qué datos procesa Mondafono (dev.polyrics.mondafono), cómo los protege dentro del dispositivo y por qué opera sin servidores centrales ni permiso INTERNET.",
+                "inLanguage": ["es", "en"],
+                "datePublished": "2026-11-24",
+                "dateModified": "2026-11-25",
+                "isAccessibleForFree": true,
+                "publisher": {
+                    "@type": "Person",
+                    "name": "Kevocde",
+                    "email": "kevind.guzmand@gmail.com"
+                },
+                "about": {
+                    "@id": "#mondafono-app"
+                }
+            },
+            {
+                "@type": "SoftwareApplication",
+                "@id": "#mondafono-app",
+                "name": "Mondafono",
+                "identifier": "dev.polyrics.mondafono",
+                "applicationCategory": "UtilitiesApplication",
+                "operatingSystem": "Android 12+ (API 31+)",
+                "softwareVersion": "1.0",
+                "image": "./logo.webp",
+                "author": {
+                    "@type": "Person",
+                    "name": "Kevocde",
+                    "email": "kevind.guzmand@gmail.com"
+                },
+                "offers": {
+                    "@type": "Offer",
+                    "price": "0",
+                    "priceCurrency": "USD"
+                }
+            },
+            {
+                "@type": "FAQPage",
+                "@id": "#privacy-faq",
+                "mainEntity": [
+                    {
+                        "@type": "Question",
+                        "name": "¿Mondafono recopila o transmite datos del usuario fuera del dispositivo?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Sí, únicamente de forma seudonimizada y descentralizada entre dispositivos cercanos por Bluetooth Low Energy (BLE P2P). Aunque Mondafono no tiene permiso INTERNET ni servidores centrales y los números en texto claro nunca salen de la base de datos SQLite local (spam_verdicts.db), cuando el usuario reporta un número como Spam se transmite por BLE su hash criptográfico HMAC-SHA256 junto con la clave pública ECC del dispositivo y un identificador rotatorio horario. Bajo las normativas de privacidad (RGPD y CCPA/CPRA), estos hashes e identificadores criptográficos siguen considerándose datos del usuario (datos personales seudonimizados)."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "¿Cómo funciona la red colaborativa anti-spam por Bluetooth (BLE) protegiendo los datos seudonimizados?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Cuando el usuario marca un número como Spam, la aplicación calcula un resumen criptográfico HMAC-SHA256 del número canonicalizado y lo firma con una clave privada ECDSA (secp256r1) custodiada en el hardware Android Keystore. Por Bluetooth Low Energy se comparten estos hashes firmados con vigencia máxima de 20 días y un identificador de baliza de 7 bytes que rota cada hora, impidiendo que otros nodos lean números en texto claro."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "¿Cómo puede el usuario eliminar sus datos en Mondafono?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "El usuario puede borrar registros individuales pulsando el botón [x] en las pestañas Whitelist o Blacklist dentro de la aplicación, o destruir de forma instantánea toda la base de datos SQLite y el par de claves de Android Keystore borrando el almacenamiento de la aplicación en los Ajustes de Android o desinstalándola."
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+    </script>
+</head>
+<body>
+
+<a class="page__skip-link" href="#main-content">
+    <span lang="es">Saltar al contenido principal</span>
+    <span lang="en">Skip to main content</span>
+</a>
+
+<div class="page">
+
+    <header class="masthead">
+        <div class="masthead__brand">
+            <figure class="masthead__logo-box">
+                <img class="masthead__logo-img" src="logo.webp" alt="Logotipo de Mondafono" width="68" height="68" decoding="async">
+            </figure>
+            <p class="masthead__title">MONDAFONO</p>
+        </div>
+        <nav class="masthead__lang-nav" aria-label="Selector de idioma / Language selector">
+            <button type="button" id="btn-es" class="retro-btn retro-btn--active" onclick="setLanguage('es')" aria-pressed="true">
+                [ ES // ESPAÑOL ]
+            </button>
+            <button type="button" id="btn-en" class="retro-btn" onclick="setLanguage('en')" aria-pressed="false">
+                [ EN // ENGLISH ]
+            </button>
+        </nav>
+    </header>
+
+    <main id="main-content" class="page__main">
+        <article class="page__article" itemscope itemtype="https://schema.org/WebPage">
+
+            <header class="hero-banner">
+                <div class="band band--hero"></div>
+                <div class="hero-banner__body">
+                    <div class="hero-banner__copy">
+                        <h1 id="policy-main-heading" class="hero-banner__title" itemprop="headline">
+                            <span lang="es">Política de Privacidad y Protección de Datos Personales</span>
+                            <span lang="en">Privacy Policy &amp; Personal Data Protection Notice</span>
+                        </h1>
+                        <p class="hero-banner__description" lang="es" itemprop="description">
+                            Especificación técnica, criptográfica y jurídica de qué datos procesa <strong>Mondafono</strong>, cómo los protege dentro de tu dispositivo y por qué su arquitectura descentralizada <abbr title="Peer-to-Peer">P2P</abbr> carece de servidores centrales y del permiso <code>INTERNET</code>, bajo el marco del <strong><abbr title="Reglamento General de Protección de Datos">RGPD</abbr> / <abbr title="General Data Protection Regulation">GDPR</abbr></strong> europeo y las leyes estatales de EE. UU. (<strong><abbr title="California Consumer Privacy Act">CCPA</abbr> / <abbr title="California Privacy Rights Act">CPRA</abbr></strong>).
+                        </p>
+                        <p class="hero-banner__description" lang="en">
+                            Technical, cryptographic, and legal specification of what data <strong>Mondafono</strong> processes, how it is protected inside your device, and why its serverless peer-to-peer architecture operates with zero central servers and without the <code>INTERNET</code> permission, under the European <strong><abbr title="General Data Protection Regulation">GDPR</abbr> / ePrivacy</strong> framework and US state privacy laws (<strong><abbr title="California Consumer Privacy Act">CCPA</abbr> / <abbr title="California Privacy Rights Act">CPRA</abbr></strong>).
+                        </p>
+                    </div>
+                </div>
+            </header>
+
+            <dl class="meta-strip" aria-label="Metadatos del documento legal / Legal document metadata">
+                <div class="meta-strip__card">
+                    <dt class="meta-strip__header">
+                        <span class="meta-strip__label" lang="es">APLICACIÓN / ID DE PAQUETE</span>
+                        <span class="meta-strip__label" lang="en">APPLICATION / PACKAGE ID</span>
+                    </dt>
+                    <dd class="meta-strip__body">
+                        <span class="meta-strip__value" itemprop="about">Mondafono (dev.polyrics.mondafono)</span>
+                    </dd>
+                </div>
+                <div class="meta-strip__card">
+                    <dt class="meta-strip__header">
+                        <span class="meta-strip__label" lang="es">DESARROLLADOR / RESPONSABLE</span>
+                        <span class="meta-strip__label" lang="en">DEVELOPER / DATA CONTROLLER</span>
+                    </dt>
+                    <dd class="meta-strip__body">
+                        <span class="meta-strip__value" id="controller-name" itemprop="author">Kevocde</span>
+                    </dd>
+                </div>
+                <div class="meta-strip__card">
+                    <dt class="meta-strip__header">
+                        <span class="meta-strip__label" lang="es">CONTACTO DE PRIVACIDAD</span>
+                        <span class="meta-strip__label" lang="en">PRIVACY CONTACT POINT</span>
+                    </dt>
+                    <dd class="meta-strip__body">
+                        <address class="meta-strip__address">
+                            <a class="meta-strip__value meta-strip__link" id="controller-email" href="mailto:kevind.guzmand@gmail.com">kevind.guzmand@gmail.com</a>
+                        </address>
+                    </dd>
+                </div>
+                <div class="meta-strip__card">
+                    <dt class="meta-strip__header">
+                        <span class="meta-strip__label" lang="es">ENTRADA EN VIGOR / VERSIÓN</span>
+                        <span class="meta-strip__label" lang="en">EFFECTIVE DATE / VERSION</span>
+                    </dt>
+                    <dd class="meta-strip__body">
+                        <span class="meta-strip__value"><time datetime="2026-11-24" itemprop="datePublished">2026-11-24</time> // v1.0 (minSdk 31)</span>
+                    </dd>
+                </div>
+            </dl>
+
+            <nav class="toc" aria-labelledby="toc-heading">
+                <div class="band band--ink"></div>
+                <header class="toc__header">
+                    <h2 id="toc-heading" class="toc__title">
+                        <span lang="es">Índice del Boletín de Privacidad</span>
+                        <span lang="en">Privacy Dispatch Table of Contents</span>
+                    </h2>
+                    <span class="toc__code">[ INDEX // 01-10 ]</span>
+                </header>
+                <ol class="toc__list">
+                    <li class="toc__item">
+                        <a class="toc__link" href="#sec-01">
+                            <span class="toc__badge toc__badge--sage">01</span>
+                            <span lang="es">Principio Rector: Privacidad por Arquitectura</span>
+                            <span lang="en">Core Principle: Privacy by Architecture</span>
+                        </a>
+                    </li>
+                    <li class="toc__item">
+                        <a class="toc__link" href="#sec-02">
+                            <span class="toc__badge toc__badge--ochre">02</span>
+                            <span lang="es">Declaración de Seguridad de Datos</span>
+                            <span lang="en">Data Safety &amp; Processing Disclosure</span>
+                        </a>
+                    </li>
+                    <li class="toc__item">
+                        <a class="toc__link" href="#sec-03">
+                            <span class="toc__badge toc__badge--ochre">03</span>
+                            <span lang="es">Inventario de Datos: Qué, Cómo y Por Qué</span>
+                            <span lang="en">Data Inventory: What, How &amp; Why</span>
+                        </a>
+                    </li>
+                    <li class="toc__item">
+                        <a class="toc__link" href="#sec-04">
+                            <span class="toc__badge toc__badge--ochre">04</span>
+                            <span lang="es">Esquema SQLite Local (spam_verdicts.db)</span>
+                            <span lang="en">On-Device SQLite Schema (spam_verdicts.db)</span>
+                        </a>
+                    </li>
+                    <li class="toc__item">
+                        <a class="toc__link" href="#sec-05">
+                            <span class="toc__badge toc__badge--ochre">05</span>
+                            <span lang="es">Protocolo P2P Bluetooth Low Energy (BLE)</span>
+                            <span lang="en">Bluetooth Low Energy (BLE) P2P Protocol</span>
+                        </a>
+                    </li>
+                    <li class="toc__item">
+                        <a class="toc__link" href="#sec-06">
+                            <span class="toc__badge toc__badge--brick">06</span>
+                            <span lang="es">Auditoría de Permisos y Garantía Cero-Acceso</span>
+                            <span lang="en">Android Permissions Audit &amp; Zero-Access Guarantee</span>
+                        </a>
+                    </li>
+                    <li class="toc__item">
+                        <a class="toc__link" href="#sec-07">
+                            <span class="toc__badge toc__badge--brick">07</span>
+                            <span lang="es">Seguridad, Retención (20 días) y Eliminación</span>
+                            <span lang="en">Security, Retention (20 Days) &amp; Data Deletion</span>
+                        </a>
+                    </li>
+                    <li class="toc__item">
+                        <a class="toc__link" href="#sec-08">
+                            <span class="toc__badge toc__badge--glint">08</span>
+                            <span lang="es">Marco Europeo: RGPD / GDPR y Directiva ePrivacy</span>
+                            <span lang="en">European Framework: GDPR &amp; ePrivacy Directive</span>
+                        </a>
+                    </li>
+                    <li class="toc__item">
+                        <a class="toc__link" href="#sec-09">
+                            <span class="toc__badge toc__badge--glint">09</span>
+                            <span lang="es">Marco de EE. UU.: CCPA / CPRA, Leyes Estatales y COPPA</span>
+                            <span lang="en">US Framework: CCPA / CPRA, State Laws &amp; COPPA</span>
+                        </a>
+                    </li>
+                    <li class="toc__item">
+                        <a class="toc__link" href="#sec-10">
+                            <span class="toc__badge toc__badge--glint">10</span>
+                            <span lang="es">Contacto Legal, Código Abierto y Cambios</span>
+                            <span lang="en">Legal Contact, Open Source Verification &amp; Changes</span>
+                        </a>
+                    </li>
+                </ol>
+            </nav>
+
+            <section id="sec-01" class="policy-section" aria-labelledby="h2-sec-01">
+                <div class="band band--sage"></div>
+                <header class="policy-section__header">
+                    <h2 id="h2-sec-01" class="policy-section__title">
+                        <span lang="es">01. Principio Rector: Privacidad por Arquitectura, No Solo por Promesa</span>
+                        <span lang="en">01. Core Principle: Privacy by Architecture, Not Merely by Policy</span>
+                    </h2>
+                    <span class="policy-section__code">[ SEC-01 // ARCHITECTURE ]</span>
+                </header>
+                <div class="policy-section__body">
+                    <div lang="es">
+                        <p>
+                            <strong>Mondafono</strong> (<code>dev.polyrics.mondafono</code>) es una aplicación Android minimalista de código abierto diseñada para rechazar llamadas de spam y fraude antes de que el teléfono suene, utilizando exclusivamente la <abbr title="Application Programming Interface">API</abbr> nativa del sistema operativo <code>android.telecom.CallScreeningService</code> y una red colaborativa descentralizada de proximidad por Bluetooth de Baja Energía (<strong><abbr title="Bluetooth Low Energy">BLE</abbr> Peer-to-Peer</strong>).
+                        </p>
+                        <p>
+                            A diferencia de los bloqueadores de llamadas tradicionales que suben tu agenda de contactos, tu historial de llamadas o los números entrantes a servidores en la nube para consultarlos o monetizarlos, Mondafono aplica el principio de <dfn>Privacidad por Arquitectura</dfn> (Art. 25 del <abbr title="Reglamento General de Protección de Datos">RGPD</abbr> — <em>Protección de datos desde el diseño y por defecto</em>):
+                        </p>
+                        <ul>
+                            <li><strong>Ausencia total de permiso de red (<code>INTERNET</code>):</strong> La aplicación no declara <code>android.permission.INTERNET</code> en su archivo <code>AndroidManifest.xml</code>. El sistema operativo Android bloquea a nivel de kernel cualquier intento de abrir sockets <abbr title="Transmission Control Protocol / User Datagram Protocol">TCP/UDP</abbr> o realizar peticiones <abbr title="Hypertext Transfer Protocol Secure">HTTP/HTTPS</abbr>.</li>
+                            <li><strong>Sin servidores centrales, sin cuentas y sin telemetría:</strong> No existe ningún servidor backend operado por el desarrollador ni por terceros. No necesitas registrarte con tu nombre, correo electrónico ni número de teléfono.</li>
+                            <li><strong>Cero bibliotecas de terceros (Zero Third-Party <abbr title="Software Development Kits">SDKs</abbr>):</strong> El <abbr title="Android Package">APK</abbr> (~161 KB) está construido exclusivamente sobre las APIs nativas del framework de Android. No incluye Google Analytics, Firebase, Crashlytics, Facebook SDK, redes publicitarias ni rastreadores.</li>
+                            <li><strong>Soberanía local absoluta:</strong> Todas las decisiones de filtrado ocurren de forma síncrona y en milisegundos dentro de la memoria y la base de datos SQLite privada de tu propio teléfono.</li>
+                        </ul>
+                    </div>
+
+                    <div lang="en">
+                        <p>
+                            <strong>Mondafono</strong> (<code>dev.polyrics.mondafono</code>) is a minimal, open-source Android anti-spam call-screening application designed to reject spam and scam calls before your phone rings, built exclusively on Android's native <code>android.telecom.CallScreeningService</code> framework <abbr title="Application Programming Interface">API</abbr> and a serverless, proximity-based Bluetooth Low Energy (<strong><abbr title="Bluetooth Low Energy">BLE</abbr> Peer-to-Peer</strong>) trust network.
+                        </p>
+                        <p>
+                            Unlike conventional call blockers that upload your address book, call logs, or incoming caller IDs to cloud servers for lookup or monetization, Mondafono enforces <dfn>Privacy by Architecture</dfn> (<abbr title="General Data Protection Regulation">GDPR</abbr> Art. 25 — <em>Data protection by design and by default</em>):
+                        </p>
+                        <ul>
+                            <li><strong>No <code>INTERNET</code> permission:</strong> Mondafono does not declare <code>android.permission.INTERNET</code> in its <code>AndroidManifest.xml</code>. The Android operating system kernel prevents the app from opening any <abbr title="Transmission Control Protocol / User Datagram Protocol">TCP/UDP</abbr> socket or making any <abbr title="Hypertext Transfer Protocol Secure">HTTP/HTTPS</abbr> request.</li>
+                            <li><strong>Zero backend servers, zero accounts, zero telemetry:</strong> There is no central server, cloud database, or backend operated by the developer or any third party. You never create an account or provide your name, email address, or phone number.</li>
+                            <li><strong>Zero third-party libraries or <abbr title="Software Development Kits">SDKs</abbr>:</strong> The entire application (~161 KB release <abbr title="Android Package">APK</abbr>) is built strictly on native Android framework APIs. It contains no analytics, no crash-reporting SDKs, no advertising networks, and no trackers.</li>
+                            <li><strong>Complete on-device sovereignty:</strong> Every call-screening decision executes synchronously in milliseconds against your local, sandboxed SQLite database on your own device.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-02" class="policy-section" aria-labelledby="h2-sec-02">
+                <div class="band band--ochre"></div>
+                <header class="policy-section__header">
+                    <h2 id="h2-sec-02" class="policy-section__title">
+                        <span lang="es">02. Declaración de Seguridad de Datos</span>
+                        <span lang="en">02. Data Safety &amp; Processing Disclosure</span>
+                    </h2>
+                    <span class="policy-section__code">[ SEC-02 // DATA-SAFETY ]</span>
+                </header>
+                <div class="policy-section__body">
+                    <div lang="es">
+                        <p>
+                            A continuación se declara qué categorías de datos del usuario se recopilan, transmiten o comparten fuera del dispositivo, cuáles permanecen exclusivamente en almacenamiento local y bajo qué garantías criptográficas se procesan:
+                        </p>
+
+                        <aside class="callout" aria-label="Estatus legal del hash criptográfico como dato del usuario">
+                            <div class="band band--glint"></div>
+                            <div class="callout__body">
+                                <strong class="callout__title">[ EL HASH CRIPTOGRÁFICO Y LA CLAVE PÚBLICA SON DATOS DEL USUARIO (SEUDONIMIZADOS) ]</strong>
+                                <p>
+                                    Un resumen criptográfico (<code>HMAC-SHA256</code>) derivado de un número telefónico, así como la clave pública <abbr title="Elliptic Curve Cryptography">ECC</abbr> del dispositivo que firma un reporte y su identificador rotatorio de baliza, <strong>siguen siendo considerados legal y técnicamente datos del usuario (datos personales seudonimizados)</strong>. Aunque Mondafono carece del permiso <code>INTERNET</code> y de servidores centrales —por lo que el desarrollador jamás recibe ni almacena estos datos—, la aplicación <strong>sí recopila y comparte dichos datos seudonimizados fuera de tu teléfono a través de Bluetooth Low Energy (<abbr title="Bluetooth Low Energy">BLE</abbr> <abbr title="Peer-to-Peer">P2P</abbr>)</strong> hacia otros dispositivos Mondafono cercanos cuando participas en la red colaborativa anti-spam.
+                                </p>
+                            </div>
+                        </aside>
+
+                        <div class="data-table">
+                            <table class="data-table__table">
+                                <caption class="data-table__caption">Matriz de categorías de Seguridad de Datos de Mondafono</caption>
+                                <thead>
+                                    <tr>
+                                        <th class="data-table__head-cell" scope="col">Categoría de Datos</th>
+                                        <th class="data-table__head-cell" scope="col">¿Se Recopila / Transmite Fuera del Dispositivo?</th>
+                                        <th class="data-table__head-cell" scope="col">¿Se Comparte con Otros Dispositivos o Terceros?</th>
+                                        <th class="data-table__head-cell" scope="col">Alcance Técnico, Criptográfico y Finalidad</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><strong>Información personal</strong><br>(Nombre, correo, dirección, número propio del usuario)</th>
+                                        <td class="data-table__cell"><span class="stamp stamp--neutral">NO</span></td>
+                                        <td class="data-table__cell"><span class="stamp stamp--neutral">NO</span></td>
+                                        <td class="data-table__cell"><strong>No se solicita ni se accede.</strong> La app desconoce quién eres y cuál es tu propio número telefónico.</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><strong>Contactos / Agenda</strong></th>
+                                        <td class="data-table__cell"><span class="stamp stamp--neutral">NO</span></td>
+                                        <td class="data-table__cell"><span class="stamp stamp--neutral">NO</span></td>
+                                        <td class="data-table__cell"><strong>No se accede.</strong> La app no tiene el permiso <code>READ_CONTACTS</code>. El subsistema Android Telecom omite automáticamente las llamadas de tus contactos antes de invocar el filtro cuando la app posee <code>ROLE_CALL_SCREENING</code>.</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><strong>Número de teléfono de la llamada entrante y su Hash</strong><br>(<code>Call.Details.handle</code> / <code>phone_hash</code>)</th>
+                                        <td class="data-table__cell"><span class="stamp stamp--ochre">SÍ (HASH HMAC-SHA256)</span></td>
+                                        <td class="data-table__cell"><span class="stamp stamp--ochre">SÍ (PARES BLE P2P)</span></td>
+                                        <td class="data-table__cell"><strong>Sí se recopila y comparte como dato seudonimizado:</strong> El número en texto claro se procesa en la base de datos SQLite local (<code>verdicts</code>, <code>blocked_calls</code>, <code>spam_report_aliases</code>). Cuando el usuario pulsa explícitamente <code>[Spam]</code>, el número normalizado se transforma en un hash <code>HMAC-SHA256</code> (que sigue siendo considerado dato del usuario) y <strong>sí se transmite y comparte fuera del dispositivo por Bluetooth Low Energy</strong> con otros dispositivos Mondafono cercanos para protección comunitaria anti-spam (jamás con servidores centrales ni terceros comerciales).</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><strong>Ubicación física o GPS</strong><br>(Aproximada o precisa)</th>
+                                        <td class="data-table__cell"><span class="stamp stamp--neutral">NO</span></td>
+                                        <td class="data-table__cell"><span class="stamp stamp--neutral">NO</span></td>
+                                        <td class="data-table__cell"><strong>No se accede.</strong> El permiso <code>BLUETOOTH_SCAN</code> incluye el atributo obligatorio <code>android:usesPermissionFlags="neverForLocation"</code>, por lo que Android bloquea a nivel de sistema cualquier dato de ubicación derivado de balizas Bluetooth.</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><strong>Identificadores del dispositivo y de la aplicación</strong><br>(Clave pública <code>created_by</code> e ID rotatorio <code>RotatingBeaconId</code>)</th>
+                                        <td class="data-table__cell"><span class="stamp stamp--ochre">SÍ (ID CRIPTOGRÁFICO)</span></td>
+                                        <td class="data-table__cell"><span class="stamp stamp--ochre">SÍ (PARES BLE P2P)</span></td>
+                                        <td class="data-table__cell"><strong>Sí se recopila y comparte como identificador seudonimizado de la app:</strong> No se accede nunca a IMEI, IMSI, MAC ni Advertising ID. Sin embargo, la app genera una clave pública <abbr title="Elliptic Curve Cryptography">ECC</abbr> (<code>secp256r1</code>) en Android Keystore y un identificador efímero de 7 bytes que rota cada hora (<code>RotatingBeaconId</code>); ambos son considerados datos del usuario y <strong>sí se transmiten por Bluetooth a dispositivos Mondafono cercanos</strong> para autenticar firmas digitales <abbr title="Elliptic Curve Digital Signature Algorithm">ECDSA</abbr> y sincronizar inventarios de reportes.</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><strong>Diagnósticos, fallos y analíticas de uso</strong></th>
+                                        <td class="data-table__cell"><span class="stamp stamp--neutral">NO</span></td>
+                                        <td class="data-table__cell"><span class="stamp stamp--neutral">NO</span></td>
+                                        <td class="data-table__cell"><strong>Ninguno.</strong> En compilaciones de producción (<em>Release</em>) no existe telemetría ni registro externo.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div lang="en">
+                        <p>
+                            Below we disclose which categories of user data are collected, transmitted, or shared off-device, which remain strictly in local storage, and the cryptographic safeguards governing their processing:
+                        </p>
+
+                        <aside class="callout" aria-label="Legal status of cryptographic hashes as user data">
+                            <div class="band band--glint"></div>
+                            <div class="callout__body">
+                                <strong class="callout__title">[ CRYPTOGRAPHIC HASHES &amp; PUBLIC KEYS ARE USER DATA (PSEUDONYMIZED) ]</strong>
+                                <p>
+                                    A cryptographic digest (<code>HMAC-SHA256</code>) derived from a phone number, together with the device's <abbr title="Elliptic Curve Cryptography">ECC</abbr> public signing key and hourly rotating beacon ID, <strong>are legally and technically considered user data (pseudonymized personal data)</strong>. While Mondafono has no <code>INTERNET</code> permission and no central servers—meaning the developer never receives or stores this information—the application <strong>does collect and share this pseudonymized user data off your device over Bluetooth Low Energy (<abbr title="Bluetooth Low Energy">BLE</abbr> <abbr title="Peer-to-Peer">P2P</abbr>)</strong> with nearby Mondafono peers when participating in collaborative spam protection.
+                                </p>
+                            </div>
+                        </aside>
+
+                        <div class="data-table">
+                            <table class="data-table__table">
+                                <caption class="data-table__caption">Data Safety category matrix for Mondafono</caption>
+                                <thead>
+                                    <tr>
+                                        <th class="data-table__head-cell" scope="col">Data Category</th>
+                                        <th class="data-table__head-cell" scope="col">Collected / Transmitted Off-Device?</th>
+                                        <th class="data-table__head-cell" scope="col">Shared with Other Devices or Third Parties?</th>
+                                        <th class="data-table__head-cell" scope="col">Technical, Cryptographic Scope &amp; Purpose</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><strong>Personal Information</strong><br>(Name, email, address, user's own phone number)</th>
+                                        <td class="data-table__cell"><span class="stamp stamp--neutral">NO</span></td>
+                                        <td class="data-table__cell"><span class="stamp stamp--neutral">NO</span></td>
+                                        <td class="data-table__cell"><strong>Never requested or accessed.</strong> The app does not know your name, email, or your own phone number.</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><strong>Contacts / Address Book</strong></th>
+                                        <td class="data-table__cell"><span class="stamp stamp--neutral">NO</span></td>
+                                        <td class="data-table__cell"><span class="stamp stamp--neutral">NO</span></td>
+                                        <td class="data-table__cell"><strong>Never accessed.</strong> The app does not request <code>READ_CONTACTS</code>. When granted <code>ROLE_CALL_SCREENING</code>, Android Telecom natively bypasses screening for numbers saved in your system contacts without exposing your contacts to the app.</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><strong>Incoming Caller Phone Number &amp; Hash</strong><br>(<code>Call.Details.handle</code> / <code>phone_hash</code>)</th>
+                                        <td class="data-table__cell"><span class="stamp stamp--ochre">YES (HMAC-SHA256 HASH)</span></td>
+                                        <td class="data-table__cell"><span class="stamp stamp--ochre">YES (BLE P2P PEERS)</span></td>
+                                        <td class="data-table__cell"><strong>Collected and shared as pseudonymized user data:</strong> Plaintext incoming numbers remain inside your local SQLite database (<code>verdicts</code>, <code>blocked_calls</code>, <code>spam_report_aliases</code>). When you explicitly tap <code>[Spam]</code>, the canonicalized number is converted into an <code>HMAC-SHA256</code> hash (which remains classified as user data) and <strong>is transmitted and shared off-device over Bluetooth Low Energy</strong> with nearby Mondafono devices for community anti-spam filtering (never with central servers or commercial third parties).</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><strong>Location (Precise or Approximate)</strong></th>
+                                        <td class="data-table__cell"><span class="stamp stamp--neutral">NO</span></td>
+                                        <td class="data-table__cell"><span class="stamp stamp--neutral">NO</span></td>
+                                        <td class="data-table__cell"><strong>Never accessed.</strong> The <code>BLUETOOTH_SCAN</code> permission declares <code>android:usesPermissionFlags="neverForLocation"</code>, instructing Android to strip location derivation at the OS level.</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><strong>Device &amp; Application Identifiers</strong><br>(ECC public key <code>created_by</code> &amp; <code>RotatingBeaconId</code>)</th>
+                                        <td class="data-table__cell"><span class="stamp stamp--ochre">YES (CRYPTOGRAPHIC ID)</span></td>
+                                        <td class="data-table__cell"><span class="stamp stamp--ochre">YES (BLE P2P PEERS)</span></td>
+                                        <td class="data-table__cell"><strong>Collected and shared as pseudonymized app identifiers:</strong> IMEI, IMSI, MAC, and Advertising ID are never accessed. However, the app generates an app-scoped <abbr title="Elliptic Curve Cryptography">ECC</abbr> public key (<code>secp256r1</code>) in Android Keystore and a 7-byte hourly rotating beacon ID (<code>RotatingBeaconId</code>); both constitute user data and <strong>are transmitted over Bluetooth to nearby Mondafono peers</strong> to verify <abbr title="Elliptic Curve Digital Signature Algorithm">ECDSA</abbr> report signatures and synchronize report inventories.</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><strong>App Info, Crash Logs &amp; Diagnostics</strong></th>
+                                        <td class="data-table__cell"><span class="stamp stamp--neutral">NO</span></td>
+                                        <td class="data-table__cell"><span class="stamp stamp--neutral">NO</span></td>
+                                        <td class="data-table__cell"><strong>None.</strong> No crash reporting, diagnostics, or usage telemetry exists in the app.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-03" class="policy-section" aria-labelledby="h2-sec-03">
+                <div class="band band--ochre"></div>
+                <header class="policy-section__header">
+                    <h2 id="h2-sec-03" class="policy-section__title">
+                        <span lang="es">03. Inventario Técnico de Datos: Qué Datos Usa la App, Cómo los Usa y Por Qué</span>
+                        <span lang="en">03. Technical Data Inventory: What Data Is Used, How It Is Used &amp; Why</span>
+                    </h2>
+                    <span class="policy-section__code">[ SEC-03 // DATA-FLOWS ]</span>
+                </header>
+                <div class="policy-section__body">
+                    <div lang="es">
+                        <p>
+                            A continuación se documenta cada elemento de información que interviene en la ejecución de Mondafono, referenciando directamente los componentes reales del código fuente:
+                        </p>
+
+                        <h3>3.1. Número de Teléfono de la Llamada Entrante (<code>Call.Details.handle</code>)</h3>
+                        <ul>
+                            <li><strong>Qué es:</strong> El identificador numérico (<abbr title="Uniform Resource Identifier">URI</abbr> <code>tel:</code>) de una llamada entrante que el sistema operativo Android entrega bajo demanda a nuestro servicio <code>TrustCallScreeningService</code> (que extiende <code>android.telecom.CallScreeningService</code>) únicamente en el instante en que recibes una llamada de un número que <em>no</em> está en la agenda de contactos de tu teléfono. Las llamadas salientes se ignoran de inmediato (<code>callDetails.callDirection != DIRECTION_INCOMING</code>).</li>
+                            <li><strong>Cómo lo usa la aplicación:</strong>
+                                <ol>
+                                    <li><strong>Canonicalización en memoria (<code>PhoneNumberNormalizer</code>):</strong> Para que un número tenga una representación única independientemente de si la operadora lo entrega con prefijo internacional (ej. <code>+34...</code>, <code>+57...</code>, <code>+1...</code>) o en formato nacional, se normaliza al formato canónico de dígitos puros: <code>{código de país rellenado con ceros a 4 dígitos}{número nacional}</code> (por ejemplo, el prefijo <code>+57</code> se convierte en <code>0057</code> seguido del número nacional).</li>
+                                    <li><strong>Evaluación jerárquica síncrona (4 niveles):</strong>
+                                        <ul>
+                                            <li><em>Nivel 1 — Contactos del sistema (Nativo en Android Telecom):</em> Antes de invocar a Mondafono, Android verifica si el número pertenece a tus contactos; si es así, la llamada suena directamente sin pasar por nuestro filtro.</li>
+                                            <li><em>Nivel 2 — Lista Blanca Local (<code>verdicts = 'whitelist'</code>):</em> Si marcaste previamente ese número como seguro (<code>[No Spam]</code>), la llamada se permite inmediatamente. La lista blanca siempre prevalece sobre cualquier reporte de spam propio o ajeno.</li>
+                                            <li><em>Nivel 3 — Reportes Propios (<code>spam_reports</code> firmados por tu clave local):</em> Si tú mismo marcaste el número como <code>[Spam]</code>, la llamada se rechaza silenciosamente (<code>setDisallowCall(true)</code>, <code>setRejectCall(true)</code>).</li>
+                                            <li><em>Nivel 4 — Probabilidad Global Comunitaria (<code>GlobalSpamProbability</code>):</em> Si el número no está clasificado por ti, se calcula su hash <code>HMAC-SHA256</code> y se cuenta cuántos dispositivos distintos de la red P2P cercana (<var>n</var> = <code>foreignReportCount</code>) han firmado un reporte válido para ese hash. La probabilidad de bloqueo sigue la función matemática:
+                                            <pre class="policy-section__code-block">P(bloqueo) = 1 - 2^(-n)
+• n = 0 reportes externos -> P = 0%     (La llamada se permite)
+• n = 1 reporte externo   -> P = 50.0%  (Probabilidad moderada ante un único reporte)
+• n = 2 reportes externos -> P = 75.0%
+• n = 3 reportes externos -> P = 87.5%
+• n = 4 reportes externos -> P = 93.75%
+• n >= 7 reportes         -> P >= 99.22%</pre>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Registro auditable o consulta al usuario:</strong> Si la llamada es bloqueada, se guarda un registro local en la tabla <code>blocked_calls</code> y se muestra una notificación local informándote del bloqueo. Si la llamada no estaba clasificada y se permitió, se añade como <code>pending</code> en la tabla local <code>verdicts</code> y se muestra una notificación interactiva (<code>¿Fue spam esta llamada? [Spam] / [No Spam]</code>) gestionada por <code>SpamVerdictService</code>.</li>
+                                </ol>
+                            </li>
+                            <li><strong>Por qué lo usa:</strong> Es estrictamente indispensable para cumplir la funcionalidad principal solicitada por el usuario: filtrar llamadas entrantes no deseadas antes de que suenen y garantizar el principio del producto <em>«Cada decisión es auditable y reversible por el usuario»</em>.</li>
+                        </ul>
+
+                        <h3>3.2. Código ISO de País / Región de la SIM o Red (<code>FrameworkRegionProvider</code>)</h3>
+                        <ul>
+                            <li><strong>Qué es:</strong> Un código <abbr title="International Organization for Standardization">ISO</abbr> 3166-1 alfa-2 de dos letras (ej. <code>ES</code>, <code>CO</code>, <code>MX</code>, <code>US</code>) obtenido consultando en memoria <code>TelephonyManager.getSimCountryIso()</code>, <code>TelephonyManager.getNetworkCountryIso()</code> o <code>Locale.getDefault().country</code> (con respaldo en <code>"US"</code>).</li>
+                            <li><strong>Cómo lo usa:</strong> Se consulta de forma efímera en memoria <abbr title="Random Access Memory">RAM</abbr> —sin requerir el permiso <code>READ_PHONE_STATE</code>— exclusivamente cuando una llamada entrante llega sin el signo internacional <code>+</code>, para traducir el código ISO al prefijo telefónico internacional correspondiente (<code>CountryCallingCodes</code>) durante la canonicalización.</li>
+                            <li><strong>Por qué lo usa:</strong> Garantiza que un número local marcado sin prefijo de país produzca exactamente el mismo número canónico (y por tanto el mismo hash <code>HMAC-SHA256</code>) que cuando llega con prefijo internacional. Nunca se almacena en base de datos ni se transmite por Bluetooth.</li>
+                        </ul>
+
+                        <h3>3.3. Resumen Criptográfico de Número Reportado como Spam (<code>SpamReportHasher</code>)</h3>
+                        <ul>
+                            <li><strong>Qué es:</strong> El resultado de aplicar la función criptográfica con clave <code>Base64URL(HMAC-SHA256(appSecret, canonicalNumber))</code>.</li>
+                            <li><strong>Cómo lo usa:</strong> Cuando calificas un número como <code>[Spam]</code>, la tabla <code>spam_reports</code> almacena únicamente este hash (<code>phone_hash</code>) junto con la fecha de creación en milisegundos UNIX (<code>created_at</code>), un número de secuencia monótono local (<code>seq_num</code>), tu clave pública <abbr title="Elliptic Curve Cryptography">ECC</abbr> en Base64URL (<code>created_by</code>) y la firma digital <abbr title="Elliptic Curve Digital Signature Algorithm">ECDSA</abbr> (<code>signature</code>). El número telefónico legible solo se guarda en tu tabla local privada <code>spam_report_aliases</code> para que tú puedas leer en tu pantalla qué números has bloqueado.</li>
+                            <li><strong>Por qué lo usa:</strong> Permite que otros dispositivos Mondafono cercanos verifiquen si una llamada que ellos están recibiendo en ese momento coincide con un hash reportado por la comunidad, sin que ningún dispositivo receptor pueda enumerar o leer en texto claro los números telefónicos reportados por otros usuarios.</li>
+                        </ul>
+
+                        <h3>3.4. Identidad Criptográfica del Dispositivo en Hardware (<code>KeystoreDeviceIdentity</code>)</h3>
+                        <ul>
+                            <li><strong>Qué es:</strong> Un par de claves asimétricas de Curva Elíptica (<abbr title="Elliptic Curve Cryptography">ECC</abbr>, curva estándar <code>secp256r1</code> / NIST P-256) generado una sola vez bajo el alias <code>mondafono_identity</code> dentro del proveedor seguro <code>AndroidKeyStore</code>.</li>
+                            <li><strong>Cómo lo usa:</strong>
+                                <ul>
+                                    <li>La <strong>clave privada</strong> nunca abandona el módulo seguro (<abbr title="Trusted Execution Environment">TEE</abbr> / StrongBox) del hardware de tu dispositivo y solo puede usarse internamente para firmar reportes de spam mediante el algoritmo <code>SHA256withECDSA</code> sobre la cadena canónica <code>"{phone_hash}|{created_at}|{seq_num}"</code> (<code>ReportSignature</code>).</li>
+                                    <li>La <strong>clave pública</strong> codificada en Base64URL actúa como identificador criptográfico del nodo emisor (<code>created_by</code> / <code>id_pubkey</code>), mientras que su huella SHA-256 (<code>PublicKeyFingerprint</code>) se usa únicamente como semilla interna para derivar el identificador rotatorio de Bluetooth.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Por qué lo usa:</strong> En una red P2P sin servidor central, es necesario impedir que un atacante falsifique miles de reportes cambiando de identidad o altere reportes de otros nodos. Gracias a ECDSA y al contador de secuencia monótono por clave pública (<code>peers_status</code>), cada dispositivo valida matemáticamente la autenticidad e integridad de cada reporte recibido sin vincularlo a tu identidad civil, cuenta de Google, <abbr title="International Mobile Equipment Identity">IMEI</abbr> ni número telefónico.</li>
+                        </ul>
+
+                        <h3>3.5. Identificador Rotatorio de Baliza Bluetooth (<code>RotatingBeaconId</code>)</h3>
+                        <ul>
+                            <li><strong>Qué es:</strong> Un identificador efímero de 7 bytes codificado en Base64URL (10 caracteres ASCII) que cambia automáticamente cada hora en punto:
+                                <pre class="policy-section__code-block">RotatingBeaconId = Base64URL( HMAC-SHA256(appSecret, publicKeyFingerprint || epochHour)[0..6] )</pre>
+                                donde <code>epochHour = floorDiv(System.currentTimeMillis(), 3_600_000)</code>.
+                            </li>
+                            <li><strong>Cómo lo usa:</strong> Durante la Fase 1 (Descubrimiento) de cada ventana de sincronización Bluetooth, el servicio <code>BleBeaconService</code> emite este ID de 10 caracteres dentro del campo Service Data con el <abbr title="Universally Unique Identifier">UUID</abbr> fijo de servicio <code>0000FD6F-0000-1000-8000-00805F9B34FB</code>. La huella real de tu clave pública (<code>publicKeyFingerprint</code>) <strong>jamás se transmite en claro por la radio</strong>.</li>
+                            <li><strong>Por qué lo usa:</strong> Evita el rastreo físico de ubicaciones o trayectos del usuario por parte de terceros que escaneen paquetes Bluetooth en lugares públicos. Como el identificador cambia cada hora, un observador externo no puede correlacionar las emisiones de radio de tu teléfono a lo largo de los días, mientras que dos dispositivos Mondafono legítimos pueden resolver determinísticamente quién actúa como Central (el ID rotatorio lexicográficamente mayor) y quién como Periférico (el ID menor) mediante <code>PeerRoleResolver</code>.</li>
+                        </ul>
+                    </div>
+
+                    <div lang="en">
+                        <p>
+                            Below is the code-accurate inventory of every data element processed by Mondafono, referencing the exact classes in the repository:
+                        </p>
+
+                        <h3>3.1. Incoming Caller Phone Number (<code>Call.Details.handle</code>)</h3>
+                        <ul>
+                            <li><strong>What it is:</strong> The caller phone number (<code>tel:</code> <abbr title="Uniform Resource Identifier">URI</abbr> scheme-specific part) delivered on demand by the Android OS to <code>TrustCallScreeningService</code> (extending <code>android.telecom.CallScreeningService</code>) at the exact moment an incoming call arrives from a number that is <em>not</em> stored in your system contacts. Outgoing calls are immediately ignored (<code>callDetails.callDirection != DIRECTION_INCOMING</code>).</li>
+                            <li><strong>How the app uses it:</strong>
+                                <ol>
+                                    <li><strong>In-memory canonicalization (<code>PhoneNumberNormalizer</code>):</strong> To ensure consistent matching whether the carrier delivers a number in international format (e.g., <code>+34...</code>, <code>+57...</code>, <code>+1...</code>) or national format, the number is normalized into a canonical digit string: <code>{country calling code zero-padded to 4 digits}{national number}</code> (e.g., country code <code>+57</code> becomes <code>0057</code> followed by the subscriber number).</li>
+                                    <li><strong>Synchronous 4-tier screening order:</strong>
+                                        <ul>
+                                            <li><em>Tier 1 — System Contacts (Native Android Telecom):</em> When <code>ROLE_CALL_SCREENING</code> is held, Android Telecom natively skips call screening for numbers present in your address book.</li>
+                                            <li><em>Tier 2 — Local Whitelist (<code>verdicts = 'whitelist'</code>):</em> If you previously marked the number as safe (<code>[No Spam]</code>), the call is immediately allowed. Your whitelist always overrides both own and community spam reports.</li>
+                                            <li><em>Tier 3 — Own Spam Reports (<code>spam_reports</code> signed by your device key):</em> If you personally reported the number as <code>[Spam]</code>, the call is silently rejected before ringing (<code>setDisallowCall(true)</code>, <code>setRejectCall(true)</code>).</li>
+                                            <li><em>Tier 4 — Community Global Spam Probability (<code>GlobalSpamProbability</code>):</em> If you have not classified the number, Mondafono computes its <code>HMAC-SHA256</code> hash and counts how many distinct peer public keys (<var>n</var> = <code>foreignReportCount</code>) have signed a valid spam report for that hash. The blocking probability follows the formula:
+                                            <pre class="policy-section__code-block">P(block) = 1 - 2^(-n)
+• n = 0 foreign reports -> P = 0%     (Call is allowed)
+• n = 1 foreign report  -> P = 50.0%  (Probabilistic protection against single-peer noise)
+• n = 2 foreign reports -> P = 75.0%
+• n = 3 foreign reports -> P = 87.5%
+• n = 4 foreign reports -> P = 93.75%
+• n >= 7 foreign reports -> P >= 99.22%</pre>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Reviewable audit log &amp; verdict prompt:</strong> Whenever a call is blocked, a local entry is recorded in the <code>blocked_calls</code> table and a local notification informs you. Whenever an unclassified call is allowed through, it is added as <code>pending</code> in the local <code>verdicts</code> table and an interactive notification (<code>Was this call spam? [Spam] / [No Spam]</code>) is displayed via <code>SpamVerdictService</code>.</li>
+                                </ol>
+                            </li>
+                            <li><strong>Why it is used:</strong> It is strictly necessary to perform on-device incoming call filtering before the phone rings and to uphold the core product principle: <em>"Every decision is reviewable and reversible by the user."</em></li>
+                        </ul>
+
+                        <h3>3.2. SIM / Network Country ISO Code (<code>FrameworkRegionProvider</code>)</h3>
+                        <ul>
+                            <li><strong>What it is:</strong> A 2-letter <abbr title="International Organization for Standardization">ISO</abbr> 3166-1 alpha-2 country code (e.g., <code>ES</code>, <code>CO</code>, <code>MX</code>, <code>US</code>) read in memory from <code>TelephonyManager.getSimCountryIso()</code>, <code>TelephonyManager.getNetworkCountryIso()</code>, or <code>Locale.getDefault().country</code> (falling back to <code>"US"</code>).</li>
+                            <li><strong>How it is used:</strong> Read ephemerally in <abbr title="Random Access Memory">RAM</abbr>—without requiring <code>READ_PHONE_STATE</code>—only when an incoming caller ID lacks a leading international <code>+</code> prefix, so that <code>CountryCallingCodes</code> can prepend the appropriate 4-digit country calling code during canonicalization.</li>
+                            <li><strong>Why it is used:</strong> Ensures that national-format caller IDs canonicalize to the exact same string (and therefore the exact same <code>HMAC-SHA256</code> digest) as international-format caller IDs. It is never stored in SQLite or transmitted over Bluetooth.</li>
+                        </ul>
+
+                        <h3>3.3. Cryptographic Spam Report Digest (<code>SpamReportHasher</code>)</h3>
+                        <ul>
+                            <li><strong>What it is:</strong> A keyed cryptographic digest computed as <code>Base64URL(HMAC-SHA256(appSecret, canonicalNumber))</code>.</li>
+                            <li><strong>How it is used:</strong> When you tap <code>[Spam]</code> on a pending number, the <code>spam_reports</code> table stores only this irreversible digest (<code>phone_hash</code>), alongside the UNIX creation timestamp in milliseconds (<code>created_at</code>), a strictly monotonic per-device sequence integer (<code>seq_num</code>), your Base64URL <abbr title="Elliptic Curve Cryptography">ECC</abbr> public key (<code>created_by</code>), and the <abbr title="Elliptic Curve Digital Signature Algorithm">ECDSA</abbr> signature (<code>signature</code>). The human-readable phone number is saved exclusively in your local-only <code>spam_report_aliases</code> table so you can view and manage your own blacklist in the UI.</li>
+                            <li><strong>Why it is used:</strong> Enables nearby Mondafono devices to verify whether an incoming call they receive matches a community-reported spam hash without ever transmitting or exposing raw phone numbers in plaintext to other devices.</li>
+                        </ul>
+
+                        <h3>3.4. Hardware-Backed Cryptographic Device Identity (<code>KeystoreDeviceIdentity</code>)</h3>
+                        <ul>
+                            <li><strong>What it is:</strong> An Elliptic Curve Cryptography (<abbr title="Elliptic Curve Cryptography">ECC</abbr>, <code>secp256r1</code> / NIST P-256) keypair generated once under the alias <code>mondafono_identity</code> inside Android's hardware-backed <code>AndroidKeyStore</code>.</li>
+                            <li><strong>How it is used:</strong>
+                                <ul>
+                                    <li>The <strong>private key</strong> never leaves the secure hardware keystore and is used solely to sign spam reports via <code>SHA256withECDSA</code> over the canonical payload <code>"{phone_hash}|{created_at}|{seq_num}"</code> (<code>ReportSignature</code>).</li>
+                                    <li>The Base64URL-encoded <strong>public key</strong> serves as a pseudonymous signer identifier (<code>created_by</code> / <code>id_pubkey</code>), while its SHA-256 digest (<code>PublicKeyFingerprint</code>) is used internally to derive rotating BLE beacon IDs.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Why it is used:</strong> In a serverless P2P network, cryptographic signatures prevent report spoofing, tampering, and replay attacks. Each device independently verifies the origin signature and monotonic sequence number (<code>peers_status</code>) of every received report without requiring user accounts, emails, phone numbers, <abbr title="International Mobile Equipment Identity">IMEI</abbr>, or Android Advertising IDs.</li>
+                        </ul>
+
+                        <h3>3.5. Hourly Rotating BLE Beacon Identifier (<code>RotatingBeaconId</code>)</h3>
+                        <ul>
+                            <li><strong>What it is:</strong> A 7-byte (10-character Base64URL) ephemeral identifier that rotates every hour on the hour:
+                                <pre class="policy-section__code-block">RotatingBeaconId = Base64URL( HMAC-SHA256(appSecret, publicKeyFingerprint || epochHour)[0..6] )</pre>
+                                where <code>epochHour = floorDiv(System.currentTimeMillis(), 3_600_000)</code>.
+                            </li>
+                            <li><strong>How it is used:</strong> During Phase 1 (Discovery) of each scheduled BLE window, <code>BleBeaconService</code> advertises this 10-character rotating ID inside the BLE Service Data payload under fixed service <abbr title="Universally Unique Identifier">UUID</abbr> <code>0000FD6F-0000-1000-8000-00805F9B34FB</code>. Your persistent public-key fingerprint is <strong>never broadcast in clear over the radio</strong>.</li>
+                            <li><strong>Why it is used:</strong> Protects users against physical movement tracking by third-party BLE sniffers. Because the broadcast identifier rotates every hour, external observers cannot correlate your radio advertisements across time, while two nearby Mondafono devices can still deterministically negotiate GATT Central (higher rotating ID) and Peripheral (lower rotating ID) roles via <code>PeerRoleResolver</code>.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-04" class="policy-section" aria-labelledby="h2-sec-04">
+                <div class="band band--ochre"></div>
+                <header class="policy-section__header">
+                    <h2 id="h2-sec-04" class="policy-section__title">
+                        <span lang="es">04. Arquitectura de Almacenamiento Local (SQLite: spam_verdicts.db)</span>
+                        <span lang="en">04. On-Device Storage Architecture (SQLite: spam_verdicts.db)</span>
+                    </h2>
+                    <span class="policy-section__code">[ SEC-04 // SQLITE-DB-V4 ]</span>
+                </header>
+                <div class="policy-section__body">
+                    <div lang="es">
+                        <p>
+                            Mondafono almacena todos sus datos operativos en una única base de datos SQLite nativa llamada <code>spam_verdicts.db</code> (Versión 4, definida en <code>VerdictContract.kt</code>), alojada dentro del directorio privado de la aplicación en la partición interna de Android (<code>/data/data/dev.polyrics.mondafono/databases/</code>). En el manifiesto se declara explícitamente <code>android:allowBackup="false"</code>, lo que impide que copias de seguridad automáticas en la nube o extracciones por <abbr title="Android Debug Bridge">ADB</abbr> sin root exporten tu base de datos fuera del dispositivo.
+                        </p>
+                        <div class="data-table">
+                            <table class="data-table__table">
+                                <caption class="data-table__caption">Esquema de las 6 tablas SQLite de spam_verdicts.db y su alcance de sincronización</caption>
+                                <thead>
+                                    <tr>
+                                        <th class="data-table__head-cell" scope="col">Tabla SQLite</th>
+                                        <th class="data-table__head-cell" scope="col">Columnas Exactas</th>
+                                        <th class="data-table__head-cell" scope="col">Propósito Técnico</th>
+                                        <th class="data-table__head-cell" scope="col">¿Se sincroniza por BLE?</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>verdicts</code></th>
+                                        <td class="data-table__cell"><code>number</code> (PK), <code>verdict</code> (<code>whitelist</code> | <code>pending</code>)</td>
+                                        <td class="data-table__cell">Guarda los números que has autorizado en tu Lista Blanca (<code>whitelist</code>) y las llamadas entrantes recientes pendientes de que decidas si fueron spam (<code>pending</code>).</td>
+                                        <td class="data-table__cell"><span class="stamp stamp--sage">NUNCA (100% LOCAL)</span></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>blocked_calls</code></th>
+                                        <td class="data-table__cell"><code>number</code>, <code>blocked_at</code></td>
+                                        <td class="data-table__cell">Registra cada llamada rechazada automáticamente junto con la marca de tiempo en milisegundos, alimentando el contador <code>BLOCKED CALLS</code> para tu revisión.</td>
+                                        <td class="data-table__cell"><span class="stamp stamp--sage">NUNCA (100% LOCAL)</span></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>spam_report_aliases</code></th>
+                                        <td class="data-table__cell"><code>phone_hash</code> (PK), <code>number</code></td>
+                                        <td class="data-table__cell">Asocia el hash <code>HMAC-SHA256</code> con el número legible <strong>únicamente para los reportes creados por ti mismo</strong>, para que puedas verlos y eliminarlos en la pestaña <em>Blacklist</em>.</td>
+                                        <td class="data-table__cell"><span class="stamp stamp--sage">NUNCA (100% LOCAL)</span></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>local_sync_state</code></th>
+                                        <td class="data-table__cell"><code>id</code> (=1), <code>next_seq_num</code></td>
+                                        <td class="data-table__cell">Contador monótono local que asigna un número de secuencia único y creciente a cada reporte de spam que firmas. Nunca se reutiliza aunque borres un reporte.</td>
+                                        <td class="data-table__cell"><span class="stamp stamp--sage">NUNCA (100% LOCAL)</span></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>peers_status</code></th>
+                                        <td class="data-table__cell"><code>id_pubkey</code> (PK), <code>max_seq_num</code>, <code>last_sync_at</code></td>
+                                        <td class="data-table__cell">Inventario del último número de secuencia conocido por cada clave pública ECC de la red P2P, usado para solicitar por BLE solo los reportes nuevos que aún no tengas (<code>SyncRequestPlanner</code>).</td>
+                                        <td class="data-table__cell"><span class="stamp stamp--ochre">INVENTARIO GATT P2P</span><br>Se ofrece como resumen <code>(id_pubkey, max_seq_num)</code> en tramas <code>OFFER_STATE</code> durante la sincronización BLE.</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>spam_reports</code></th>
+                                        <td class="data-table__cell"><code>phone_hash</code>, <code>created_by</code>, <code>seq_num</code>, <code>created_at</code>, <code>signature</code> (PK compuesta: <code>phone_hash, created_by</code>)</td>
+                                        <td class="data-table__cell">Almacena los reportes de spam firmados criptográficamente (tanto los propios como los recibidos de pares cercanos validados) sin ningún número telefónico en texto claro.</td>
+                                        <td class="data-table__cell"><span class="stamp stamp--ochre">SINCRONIZACIÓN GATT P2P</span><br>Se intercambia en tramas <code>REPORTS</code> con dispositivos Mondafono cercanos si el reporte tiene ≤ 20 días.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div lang="en">
+                        <p>
+                            Mondafono stores all operational state in a single native SQLite database named <code>spam_verdicts.db</code> (Version 4, defined in <code>VerdictContract.kt</code>) inside Android's private application sandbox (<code>/data/data/dev.polyrics.mondafono/databases/</code>). Furthermore, <code>AndroidManifest.xml</code> explicitly sets <code>android:allowBackup="false"</code>, preventing cloud auto-backups or unrooted <abbr title="Android Debug Bridge">ADB</abbr> backups from extracting your database off the device.
+                        </p>
+                        <div class="data-table">
+                            <table class="data-table__table">
+                                <caption class="data-table__caption">SQLite schema of spam_verdicts.db (6 tables) and their P2P sync scope</caption>
+                                <thead>
+                                    <tr>
+                                        <th class="data-table__head-cell" scope="col">SQLite Table</th>
+                                        <th class="data-table__head-cell" scope="col">Exact Columns</th>
+                                        <th class="data-table__head-cell" scope="col">Technical Purpose</th>
+                                        <th class="data-table__head-cell" scope="col">Synced Over BLE P2P?</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>verdicts</code></th>
+                                        <td class="data-table__cell"><code>number</code> (PK), <code>verdict</code> (<code>whitelist</code> | <code>pending</code>)</td>
+                                        <td class="data-table__cell">Stores numbers you explicitly trusted (<code>whitelist</code>) and incoming calls awaiting your classification (<code>pending</code>).</td>
+                                        <td class="data-table__cell"><span class="stamp stamp--sage">NEVER (100% LOCAL)</span></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>blocked_calls</code></th>
+                                        <td class="data-table__cell"><code>number</code>, <code>blocked_at</code></td>
+                                        <td class="data-table__cell">Records every rejected incoming call and its UNIX millisecond timestamp so you can audit blocked activity and view the <code>BLOCKED CALLS</code> counter.</td>
+                                        <td class="data-table__cell"><span class="stamp stamp--sage">NEVER (100% LOCAL)</span></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>spam_report_aliases</code></th>
+                                        <td class="data-table__cell"><code>phone_hash</code> (PK), <code>number</code></td>
+                                        <td class="data-table__cell">Maps a <code>phone_hash</code> back to a human-readable phone number <strong>exclusively for reports created on your own device</strong> so you can inspect and delete them in the <em>Blacklist</em> tab.</td>
+                                        <td class="data-table__cell"><span class="stamp stamp--sage">NEVER (100% LOCAL)</span></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>local_sync_state</code></th>
+                                        <td class="data-table__cell"><code>id</code> (=1), <code>next_seq_num</code></td>
+                                        <td class="data-table__cell">Strictly monotonic counter assigning a unique sequence number to each spam report you sign. Sequence numbers are never reused after deleting a report.</td>
+                                        <td class="data-table__cell"><span class="stamp stamp--sage">NEVER (100% LOCAL)</span></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>peers_status</code></th>
+                                        <td class="data-table__cell"><code>id_pubkey</code> (PK), <code>max_seq_num</code>, <code>last_sync_at</code></td>
+                                        <td class="data-table__cell">Tracks the highest verified sequence number per known peer public key so devices only request missing delta ranges (<code>SyncRequestPlanner</code>).</td>
+                                        <td class="data-table__cell"><span class="stamp stamp--ochre">P2P GATT INVENTORY</span><br>Shared as <code>(id_pubkey, max_seq_num)</code> pairs in <code>OFFER_STATE</code> frames during BLE sync.</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>spam_reports</code></th>
+                                        <td class="data-table__cell"><code>phone_hash</code>, <code>created_by</code>, <code>seq_num</code>, <code>created_at</code>, <code>signature</code> (Composite PK: <code>phone_hash, created_by</code>)</td>
+                                        <td class="data-table__cell">Stores cryptographically signed spam reports (both your own and validated reports from nearby peers) containing only the HMAC hash—never plaintext phone numbers.</td>
+                                        <td class="data-table__cell"><span class="stamp stamp--ochre">P2P GATT SYNC</span><br>Exchanged in <code>REPORTS</code> frames with nearby Mondafono peers for reports ≤ 20 days old.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-05" class="policy-section" aria-labelledby="h2-sec-05">
+                <div class="band band--ochre"></div>
+                <header class="policy-section__header">
+                    <h2 id="h2-sec-05" class="policy-section__title">
+                        <span lang="es">05. Funcionamiento del Protocolo P2P por Bluetooth (BLE) y Validación Criptográfica</span>
+                        <span lang="en">05. Bluetooth Low Energy (BLE) P2P Protocol &amp; Cryptographic Verification</span>
+                    </h2>
+                    <span class="policy-section__code">[ SEC-05 // BLE-GATT-SYNC ]</span>
+                </header>
+                <div class="policy-section__body">
+                    <div lang="es">
+                        <p>
+                            Para mantener actualizada la protección comunitaria sin servidores ni conexión a Internet, Mondafono programa ventanas breves de sincronización por proximidad mediante <code>BeaconAlarmScheduler</code> (por defecto cada 5 minutos entre las <time datetime="05:00">05:00</time> y las <time datetime="21:59">21:59</time>, respetando un <strong>silencio nocturno total entre las <time datetime="22:00">22:00</time> y las <time datetime="04:59">04:59</time></strong> en el que la radio Bluetooth no se activa).
+                        </p>
+                        <p>
+                            Mondafono <strong>nunca mantiene un servicio en segundo plano ejecutándose las 24 horas</strong>. En cada ventana programada, el servicio efímero <code>BleBeaconService</code> se inicia, ejecuta tres fases estrictamente acotadas en el tiempo (~17 segundos en total) y se destruye inmediatamente a sí mismo:
+                        </p>
+                        <ol>
+                            <li><strong>Fase 1 — Descubrimiento (~10 segundos, <code>BEACON_WINDOW_MS</code>):</strong> El dispositivo emite su identificador rotatorio horario (<code>RotatingBeaconId</code>) y escanea únicamente paquetes que coincidan por hardware con el UUID de servicio de Mondafono (<code>BeaconScanFilter</code>). No se escanea ningún otro dispositivo Bluetooth (auriculares, relojes, balizas comerciales) ni se abre ninguna conexión durante esta fase.</li>
+                            <li><strong>Fase 2 — Transmisión <abbr title="Generic Attribute Profile">GATT</abbr> Bidireccional (~7 segundos máx., <code>GATT_LIFETIME_MS</code>):</strong> Se detiene el escáner para liberar la radio. Por cada par Mondafono descubierto, <code>PeerRoleResolver</code> compara los IDs rotatorios: el ID mayor actúa como cliente GATT (<code>GattSyncClient</code>) y el menor como servidor GATT (<code>GattSyncServer</code>). Sobre una única característica bidireccional (<code>Handle_Data</code>) fragmentada a <code><abbr title="Maximum Transmission Unit">MTU</abbr> - 3</code> y coordinada por turnos (<code>SyncTurnCoordinator</code>), ambos dispositivos intercambian sus inventarios de secuencia (<code>OFFER_STATE</code>), solicitan solo los rangos de reportes que les faltan (<code>REQ</code>) y transfieren los paquetes de reportes firmados (<code>REPORTS</code>) en ambas direcciones sin renegociar roles.</li>
+                            <li><strong>Fase 3 — Cierre Inmediato:</strong> Al recibir la trama <code>END</code> (o tras 2 segundos de inactividad, <code>SYNC_IDLE_TIMEOUT_MS</code>), se cierran el anunciante, los clientes y el servidor GATT, y el servicio <code>BleBeaconService</code> finaliza por completo (<code>stopSelf()</code>).</li>
+                        </ol>
+
+                        <aside class="callout" aria-label="4 reglas de validación criptográfica de ReportValidator">
+                            <div class="band band--glint"></div>
+                            <div class="callout__body">
+                                <strong class="callout__title">[ 4 REGLAS DE VALIDACIÓN CRIPTOGRÁFICA ANTES DE ACEPTAR CUALQUIER REPORTE (ReportValidator.kt) ]</strong>
+                                <p>Ningún reporte recibido por Bluetooth se confía a ciegas. Antes de guardarse en <code>spam_reports</code>, <code>ReportValidator</code> exige que supere cuatro verificaciones matemáticas:</p>
+                                <ol>
+                                    <li><strong>Verificación de Firma Digital (<code>INVALID_SIGNATURE</code>):</strong> La firma ECDSA (<code>SHA256withECDSA</code>) debe ser matemáticamente válida para la clave pública <code>created_by</code> sobre <code>phone_hash|created_at|seq_num</code>.</li>
+                                    <li><strong>Secuencia Estrictamente Monótona (<code>SEQUENCE_ROLLBACK</code>):</strong> El número de secuencia <code>seq_num</code> debe ser estrictamente mayor que el último conocido para ese emisor (<code>seq_num &gt; lastKnownSeq</code>), bloqueando ataques de repetición (<em>replay attacks</em>).</li>
+                                    <li><strong>Protección contra Marcas de Tiempo Futuras (<code>FROM_FUTURE</code>):</strong> Se rechaza cualquier reporte cuya fecha de creación supere la hora actual más un margen máximo de desfase de reloj de <strong>5 minutos</strong> (<code>FUTURE_TOLERANCE_MILLIS = 300_000 ms</code>).</li>
+                                    <li><strong>Caducidad de 20 Días (<code>EXPIRED</code>):</strong> Se rechaza cualquier reporte cuya antigüedad supere los <strong>20 días</strong> (<code>REPORT_MAX_AGE_DAYS = 20</code>).</li>
+                                </ol>
+                            </div>
+                        </aside>
+                    </div>
+
+                    <div lang="en">
+                        <p>
+                            To keep community spam protection fresh without servers or Internet access, Mondafono schedules brief proximity sync windows via <code>BeaconAlarmScheduler</code> (by default every 5 minutes between <time datetime="05:00">05:00</time> and <time datetime="21:59">21:59</time> local time, enforcing <strong>night quiet hours from <time datetime="22:00">22:00</time> to <time datetime="04:59">04:59</time></strong> during which no BLE windows run).
+                        </p>
+                        <p>
+                            Mondafono <strong>never runs a 24/7 background service</strong>. At each scheduled alarm, the ephemeral foreground service <code>BleBeaconService</code> wakes up, executes three bounded phases (~17 seconds total), and immediately terminates itself:
+                        </p>
+                        <ol>
+                            <li><strong>Phase 1 — Discovery (~10 seconds, <code>BEACON_WINDOW_MS</code>):</strong> The device advertises its 10-character hourly rotating ID (<code>RotatingBeaconId</code>) and scans using a strict hardware <code>ScanFilter</code> locked to Mondafono's fixed Service Data UUID (<code>BeaconScanFilter</code>). Unrelated Bluetooth devices (headphones, watches, retail beacons) are ignored by the Bluetooth controller hardware.</li>
+                            <li><strong>Phase 2 — Bidirectional <abbr title="Generic Attribute Profile">GATT</abbr> Sync (~7 seconds max, <code>GATT_LIFETIME_MS</code>):</strong> The scanner stops to free radio capacity. For each discovered Mondafono peer, <code>PeerRoleResolver</code> compares rotating IDs: the peer with the higher ID acts as GATT Central (<code>GattSyncClient</code>) and the lower ID acts as GATT Peripheral (<code>GattSyncServer</code>). Over a single characteristic (<code>Handle_Data</code>) chunked to <code><abbr title="Maximum Transmission Unit">MTU</abbr> - 3</code> and serialized by <code>SyncTurnCoordinator</code>, both peers exchange sequence inventories (<code>OFFER_STATE</code>), request missing sequence ranges (<code>REQ</code>), and transfer signed report packets (<code>REPORTS</code>) in both directions over a single connection.</li>
+                            <li><strong>Phase 3 — Immediate Teardown:</strong> Upon receiving the final <code>END</code> frame (or after a 2-second idle timeout, <code>SYNC_IDLE_TIMEOUT_MS</code>), the advertiser, GATT clients, and GATT server close and <code>BleBeaconService</code> calls <code>stopSelf()</code>.</li>
+                        </ol>
+
+                        <aside class="callout" aria-label="4 cryptographic validation gates in ReportValidator">
+                            <div class="band band--glint"></div>
+                            <div class="callout__body">
+                                <strong class="callout__title">[ 4 CRYPTOGRAPHIC VALIDATION GATES BEFORE PERSISTING ANY REMOTE REPORT (ReportValidator.kt) ]</strong>
+                                <p>No report received over Bluetooth is ever trusted blindly. Before persisting to <code>spam_reports</code>, <code>ReportValidator</code> enforces four mandatory checks:</p>
+                                <ol>
+                                    <li><strong>ECDSA Signature Verification (<code>INVALID_SIGNATURE</code>):</strong> The <code>SHA256withECDSA</code> signature must cryptographically verify against the origin public key <code>created_by</code> over <code>phone_hash|created_at|seq_num</code>.</li>
+                                    <li><strong>Strict Monotonic Sequence (<code>SEQUENCE_ROLLBACK</code>):</strong> The report's <code>seq_num</code> must be strictly greater than the highest sequence number previously recorded for that peer (<code>seq_num &gt; lastKnownSeq</code>), preventing replay or rollback attacks.</li>
+                                    <li><strong>Clock-Skew Future Guard (<code>FROM_FUTURE</code>):</strong> Any report with a <code>created_at</code> timestamp more than <strong>5 minutes</strong> ahead of current device time (<code>FUTURE_TOLERANCE_MILLIS = 300_000 ms</code>) is rejected.</li>
+                                    <li><strong>20-Day Freshness Expiration (<code>EXPIRED</code>):</strong> Any report older than <strong>20 days</strong> (<code>REPORT_MAX_AGE_DAYS = 20</code>) is rejected.</li>
+                                </ol>
+                            </div>
+                        </aside>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-06" class="policy-section" aria-labelledby="h2-sec-06">
+                <div class="band band--brick"></div>
+                <header class="policy-section__header">
+                    <h2 id="h2-sec-06" class="policy-section__title">
+                        <span lang="es">06. Auditoría de Permisos de Android y Garantía de Cero Acceso</span>
+                        <span lang="en">06. Android Permissions Audit &amp; Zero-Access Guarantee</span>
+                    </h2>
+                    <span class="policy-section__code">[ SEC-06 // PERMISSIONS ]</span>
+                </header>
+                <div class="policy-section__body">
+                    <div lang="es">
+                        <p>
+                            A continuación se detallan todos los permisos y roles declarados en <code>AndroidManifest.xml</code>, así como los permisos sensibles que Mondafono <strong>se niega por diseño a solicitar</strong>:
+                        </p>
+
+                        <h3>6.1. Permisos y Roles Solicitados por Mondafono</h3>
+                        <div class="data-table">
+                            <table class="data-table__table">
+                                <caption class="data-table__caption">Permisos y roles del sistema Android declarados en AndroidManifest.xml</caption>
+                                <thead>
+                                    <tr>
+                                        <th class="data-table__head-cell" scope="col">Permiso / Rol del Sistema</th>
+                                        <th class="data-table__head-cell" scope="col">Etapa en la App</th>
+                                        <th class="data-table__head-cell" scope="col">Por qué es necesario y qué alcance exacto tiene</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>android.app.role.ROLE_CALL_SCREENING</code><br>(<code>BIND_SCREENING_SERVICE</code>)</th>
+                                        <td class="data-table__cell"><code>FILTER</code></td>
+                                        <td class="data-table__cell">Otorgado mediante <code>RoleManager</code>. Permite que Android Telecom consulte a <code>TrustCallScreeningService</code> cuando entra una llamada de un número que no está en tus contactos para permitirla o rechazarla antes de que suene.</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>POST_NOTIFICATIONS</code></th>
+                                        <td class="data-table__cell"><code>ALERTS</code></td>
+                                        <td class="data-table__cell">Permite mostrarte notificaciones locales cuando se bloquea una llamada spam, preguntarte mediante botones interactivos (<code>[Spam]</code> / <code>[No Spam]</code>) tras una llamada desconocida y mostrar el aviso obligatorio del servicio efímero durante los ~17 segundos de sincronización Bluetooth.</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>BLUETOOTH_ADVERTISE</code><br><code>BLUETOOTH_SCAN</code> (con <code>neverForLocation</code>)<br><code>BLUETOOTH_CONNECT</code></th>
+                                        <td class="data-table__cell"><code>BLE NET</code></td>
+                                        <td class="data-table__cell">Usados exclusivamente durante las ventanas breves de <code>BleBeaconService</code> para anunciar el ID rotatorio horario, detectar otros dispositivos Mondafono cercanos mediante filtro de hardware y sincronizar hashes de spam por GATT. El flag <code>neverForLocation</code> garantiza por sistema operativo que el escaneo Bluetooth jamás pueda usarse para deducir tu ubicación física.</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>SCHEDULE_EXACT_ALARM</code><br><code>USE_EXACT_ALARM</code><br><code>REQUEST_IGNORE_BATTERY_OPTIMIZATIONS</code><br><code>RECEIVE_BOOT_COMPLETED</code></th>
+                                        <td class="data-table__cell"><code>POWER</code></td>
+                                        <td class="data-table__cell">Permiten programar con precisión las ventanas efímeras de descubrimiento P2P (<code>BeaconAlarmScheduler</code> mediante <code>setAlarmClock</code> / <code>setAndAllowWhileIdle</code>) y rearmar la programación tras reiniciar el teléfono (<code>BootReceiver</code>), evitando así tener un servicio consumiendo batería las 24 horas.</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>FOREGROUND_SERVICE</code><br><code>FOREGROUND_SERVICE_CONNECTED_DEVICE</code></th>
+                                        <td class="data-table__cell">Ejecución efímera</td>
+                                        <td class="data-table__cell">Requerido por Android 12+ para que <code>BleBeaconService</code> pueda usar la radio Bluetooth durante los ~17 segundos que dura cada ventana de sincronización cuando la pantalla está apagada.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h3>6.2. Permisos Sensibles que Mondafono JAMÁS Solicita (Garantía por Manifiesto)</h3>
+                        <ul>
+                            <li><code>android.permission.INTERNET</code> — <strong>No solicitado.</strong> Imposibilita cualquier conexión a servidores externos.</li>
+                            <li><code>android.permission.READ_CONTACTS</code> / <code>WRITE_CONTACTS</code> — <strong>No solicitado.</strong> Mondafono jamás lee tu agenda de contactos.</li>
+                            <li><code>android.permission.READ_CALL_LOG</code> / <code>WRITE_CALL_LOG</code> — <strong>No solicitado.</strong> Mondafono no puede leer tu historial de llamadas pasadas del sistema.</li>
+                            <li><code>android.permission.READ_PHONE_STATE</code> / <code>READ_PHONE_NUMBERS</code> — <strong>No solicitado.</strong> Mondafono no puede leer tu propio número de teléfono, ni tu IMEI, ni el número de serie de tu tarjeta SIM.</li>
+                            <li><code>android.permission.ACCESS_FINE_LOCATION</code> / <code>ACCESS_COARSE_LOCATION</code> — <strong>No solicitado.</strong> Mondafono no accede nunca a coordenadas GPS, torres celulares ni redes Wi-Fi para geolocalización.</li>
+                        </ul>
+                    </div>
+
+                    <div lang="en">
+                        <p>
+                            Below is every permission and system role declared in <code>AndroidManifest.xml</code>, followed by the sensitive permissions Mondafono <strong>deliberately refuses to request by design</strong>:
+                        </p>
+
+                        <h3>6.1. Permissions &amp; Roles Requested by Mondafono</h3>
+                        <div class="data-table">
+                            <table class="data-table__table">
+                                <caption class="data-table__caption">Android permissions and roles declared in AndroidManifest.xml</caption>
+                                <thead>
+                                    <tr>
+                                        <th class="data-table__head-cell" scope="col">Android Permission / Role</th>
+                                        <th class="data-table__head-cell" scope="col">Readiness Stage</th>
+                                        <th class="data-table__head-cell" scope="col">Exact Technical Purpose &amp; Scope</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>android.app.role.ROLE_CALL_SCREENING</code><br>(<code>BIND_SCREENING_SERVICE</code>)</th>
+                                        <td class="data-table__cell"><code>FILTER</code></td>
+                                        <td class="data-table__cell">Requested via Android's official <code>RoleManager</code> API. Allows Android Telecom to invoke <code>TrustCallScreeningService</code> when an incoming call arrives from a number not in your contacts so it can be allowed or rejected before ringing.</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>POST_NOTIFICATIONS</code></th>
+                                        <td class="data-table__cell"><code>ALERTS</code></td>
+                                        <td class="data-table__cell">Displays local notifications when a spam call is blocked, prompts you with interactive verdict buttons (<code>[Spam]</code> / <code>[No Spam]</code>) after an unknown call, and displays the system-mandated foreground notification during the ~17-second BLE sync window.</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>BLUETOOTH_ADVERTISE</code><br><code>BLUETOOTH_SCAN</code> (with <code>neverForLocation</code>)<br><code>BLUETOOTH_CONNECT</code></th>
+                                        <td class="data-table__cell"><code>BLE NET</code></td>
+                                        <td class="data-table__cell">Used strictly during ephemeral <code>BleBeaconService</code> windows to broadcast the hourly rotating beacon ID, discover nearby Mondafono peers using a hardware <code>ScanFilter</code>, and exchange signed spam-report hashes over GATT. The <code>neverForLocation</code> flag guarantees at the OS level that BLE scans can never derive physical location.</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>SCHEDULE_EXACT_ALARM</code><br><code>USE_EXACT_ALARM</code><br><code>REQUEST_IGNORE_BATTERY_OPTIMIZATIONS</code><br><code>RECEIVE_BOOT_COMPLETED</code></th>
+                                        <td class="data-table__cell"><code>POWER</code></td>
+                                        <td class="data-table__cell">Allows <code>BeaconAlarmScheduler</code> to wake the ephemeral BLE sync window on schedule and re-arm alarms after device reboot (<code>BootReceiver</code>), avoiding the battery drain of a 24/7 background service.</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="data-table__row-header" scope="row"><code>FOREGROUND_SERVICE</code><br><code>FOREGROUND_SERVICE_CONNECTED_DEVICE</code></th>
+                                        <td class="data-table__cell">Ephemeral Sync</td>
+                                        <td class="data-table__cell">Required by Android 12+ so <code>BleBeaconService</code> can access the Bluetooth radio during its ~17-second sync window while the screen is off.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h3>6.2. Sensitive Permissions Mondafono NEVER Requests (Manifest Guarantee)</h3>
+                        <ul>
+                            <li><code>android.permission.INTERNET</code> — <strong>Never requested.</strong> Makes remote server connections impossible.</li>
+                            <li><code>android.permission.READ_CONTACTS</code> / <code>WRITE_CONTACTS</code> — <strong>Never requested.</strong> Mondafono cannot read your address book.</li>
+                            <li><code>android.permission.READ_CALL_LOG</code> / <code>WRITE_CALL_LOG</code> — <strong>Never requested.</strong> Mondafono cannot read your system call history.</li>
+                            <li><code>android.permission.READ_PHONE_STATE</code> / <code>READ_PHONE_NUMBERS</code> — <strong>Never requested.</strong> Mondafono cannot read your own phone number, IMEI, or SIM serial number.</li>
+                            <li><code>android.permission.ACCESS_FINE_LOCATION</code> / <code>ACCESS_COARSE_LOCATION</code> — <strong>Never requested.</strong> Mondafono never accesses GPS, cell-tower, or Wi-Fi location data.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-07" class="policy-section" aria-labelledby="h2-sec-07">
+                <div class="band band--brick"></div>
+                <header class="policy-section__header">
+                    <h2 id="h2-sec-07" class="policy-section__title">
+                        <span lang="es">07. Medidas de Seguridad, Plazos de Retención (20 Días) y Eliminación de Datos</span>
+                        <span lang="en">07. Security Measures, Retention Policy (20 Days) &amp; Data Deletion Controls</span>
+                    </h2>
+                    <span class="policy-section__code">[ SEC-07 // RETENTION-DELETION ]</span>
+                </header>
+                <div class="policy-section__body">
+                    <div lang="es">
+                        <h3>7.1. Medidas Técnicas de Seguridad</h3>
+                        <ul>
+                            <li><strong>Aislamiento en Sandbox del Sistema Operativo:</strong> La base de datos <code>spam_verdicts.db</code> reside en el almacenamiento interno privado protegido por los permisos de usuario de Linux/SELinux de Android y cifrado en reposo mediante el cifrado basado en archivos (<abbr title="File-Based Encryption">FBE</abbr>) de Android 12+.</li>
+                            <li><strong>Bloqueo de extracción de copias de seguridad (<code>android:allowBackup="false"</code>):</strong> Impide que los datos locales salgan del dispositivo a través de copias de seguridad no cifradas.</li>
+                            <li><strong>Custodia de claves en Hardware (Android Keystore):</strong> La clave privada ECDSA (<code>secp256r1</code>) se genera dentro del módulo criptográfico del sistema y no puede ser extraída ni siquiera por la propia aplicación en forma de bytes en memoria.</li>
+                            <li><strong>Seudonimización mediante HMAC-SHA256 y rotación horaria:</strong> Ningún reporte sincronizado por BLE contiene números de teléfono en texto plano, y ningún anuncio BLE contiene la huella estática de la clave pública del dispositivo.</li>
+                        </ul>
+
+                        <h3>7.2. Política de Retención y Ventana de Vigencia de 20 Días</h3>
+                        <ul>
+                            <li><strong>Reportes de Spam Comunitarios (Ventana de 20 días — <code>REPORT_MAX_AGE_DAYS = 20</code>):</strong> Los números utilizados por campañas de spam telefónico suelen rotar o reasignarse con el tiempo. Por ello, Mondafono aplica una ventana de vigencia estricta de <strong>20 días</strong>: las métricas activas de la red y el validador de sincronización P2P (<code>ReportValidator</code>) descartan cualquier reporte cuya marca de tiempo <code>created_at</code> tenga más de 20 días de antigüedad.</li>
+                            <li><strong>Lista Blanca, Pendientes y Reportes Propios:</strong> Permanecen almacenados localmente en tu teléfono mientras tú los mantengas para seguir protegiendo tus llamadas entrantes.</li>
+                        </ul>
+
+                        <h3>7.3. Cómo Eliminar tus Datos en Cualquier Momento (Control Total del Usuario)</h3>
+                        <p>
+                            Dado que no existen cuentas en servidores externos, tú tienes el poder técnico directo e inmediato para borrar parcial o totalmente cualquier dato desde tu propio teléfono sin necesidad de solicitar autorización a nadie:
+                        </p>
+                        <ol>
+                            <li><strong>Eliminación individual dentro de la aplicación:</strong>
+                                <ul>
+                                    <li>En la pestaña <strong>Whitelist</strong> (Lista Blanca): pulsa el botón rojo <code>[x]</code> junto a cualquier número para eliminarlo inmediatamente de la tabla <code>verdicts</code>.</li>
+                                    <li>En la pestaña <strong>Blacklist</strong> (Lista Negra / Reportes propios): pulsa el botón rojo <code>[x]</code> junto a cualquier número reportado por ti para ejecutar <code>removeOwnReport(phoneHash)</code>, lo que borra de inmediato tanto el reporte de la tabla <code>spam_reports</code> como su número legible de la tabla <code>spam_report_aliases</code> (por lo que dejará de ofrecerse en futuras sincronizaciones BLE).</li>
+                                </ul>
+                            </li>
+                            <li><strong>Eliminación total e instantánea (Destrucción de Base de Datos e Identidad Criptográfica):</strong>
+                                <ul>
+                                    <li>Ve a <strong>Ajustes de Android → Aplicaciones → Mondafono → Almacenamiento y caché → Borrar almacenamiento (Borrar datos)</strong>, o simplemente <strong>desinstala la aplicación</strong>.</li>
+                                    <li>Esta acción destruye de forma inmediata e irreversible la base de datos SQLite completa (<code>spam_verdicts.db</code>) y elimina el par de claves criptográficas <code>mondafono_identity</code> alojado en el Android Keystore.</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+
+                    <div lang="en">
+                        <h3>7.1. Technical Security Safeguards</h3>
+                        <ul>
+                            <li><strong>OS Sandbox &amp; File-Based Encryption:</strong> The <code>spam_verdicts.db</code> SQLite database resides in Android's internal app-private storage, protected by Linux UID/SELinux isolation and Android 12+ File-Based Encryption (<abbr title="File-Based Encryption">FBE</abbr>) at rest.</li>
+                            <li><strong>Backup Extraction Disabled (<code>android:allowBackup="false"</code>):</strong> Prevents local database extraction via cloud backups or unencrypted device transfers.</li>
+                            <li><strong>Hardware-Backed Key Custody (Android Keystore):</strong> The <code>secp256r1</code> private signing key is generated inside Android Keystore hardware and can never be exported as raw key material.</li>
+                            <li><strong>HMAC-SHA256 Pseudonymization &amp; Hourly ID Rotation:</strong> No BLE-synced spam report ever contains a plaintext phone number, and no BLE advertisement ever broadcasts a static device fingerprint.</li>
+                        </ul>
+
+                        <h3>7.2. Data Retention Policy &amp; 20-Day Freshness Window</h3>
+                        <ul>
+                            <li><strong>Community Spam Reports (20-Day Freshness Window — <code>REPORT_MAX_AGE_DAYS = 20</code>):</strong> Because spam campaigns rotate caller IDs frequently, Mondafono enforces a strict <strong>20-day validity window</strong>: active network statistics and the P2P ingestion validator (<code>ReportValidator</code>) reject any spam report whose <code>created_at</code> timestamp is older than 20 days.</li>
+                            <li><strong>Local Whitelist, Pending Verdicts &amp; Own Reports:</strong> Remain stored locally on your device for as long as you keep them to filter incoming calls.</li>
+                        </ul>
+
+                        <h3>7.3. How to Delete Your Data at Any Time (Direct User Control)</h3>
+                        <p>
+                            Because Mondafono operates no remote servers or user accounts, you hold direct, immediate technical control to erase individual entries or all application data directly on your device:
+                        </p>
+                        <ol>
+                            <li><strong>Granular In-App Deletion:</strong>
+                                <ul>
+                                    <li>In the <strong>Whitelist</strong> tab: tap the red <code>[x]</code> button next to any number to immediately delete it from the <code>verdicts</code> table.</li>
+                                    <li>In the <strong>Blacklist</strong> tab: tap the red <code>[x]</code> button next to any spam report you created to invoke <code>removeOwnReport(phoneHash)</code>, which permanently deletes both the signed report from <code>spam_reports</code> and the human-readable number from <code>spam_report_aliases</code> (so it is never advertised in future BLE sync windows).</li>
+                                </ul>
+                            </li>
+                            <li><strong>Complete &amp; Instantaneous Erasure (Database &amp; Cryptographic Identity Destruction):</strong>
+                                <ul>
+                                    <li>Open <strong>Android Settings → Apps → Mondafono → Storage &amp; cache → Clear storage (Clear data)</strong>, or simply <strong>uninstall Mondafono</strong>.</li>
+                                    <li>This immediately and irreversibly destroys the entire <code>spam_verdicts.db</code> SQLite database and purges the <code>mondafono_identity</code> ECC keypair from Android Keystore.</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-08" class="policy-section" aria-labelledby="h2-sec-08">
+                <div class="band band--glint"></div>
+                <header class="policy-section__header">
+                    <h2 id="h2-sec-08" class="policy-section__title">
+                        <span lang="es">08. Marco Normativo Europeo: RGPD (UE 2016/679), LOPDGDD y Directiva ePrivacy</span>
+                        <span lang="en">08. European Legal Framework: GDPR (EU 2016/679) &amp; ePrivacy Directive</span>
+                    </h2>
+                    <span class="policy-section__code">[ SEC-08 // EU-GDPR ]</span>
+                </header>
+                <div class="policy-section__body">
+                    <div lang="es">
+                        <p>
+                            Para los usuarios ubicados en el Espacio Económico Europeo (<abbr title="Espacio Económico Europeo">EEE</abbr>), el Reino Unido (UK GDPR) y Suiza, exponemos el encaje jurídico-técnico de Mondafono bajo el <strong>Reglamento General de Protección de Datos — <abbr title="Reglamento General de Protección de Datos">RGPD</abbr> (Reglamento (UE) 2016/679)</strong> y el artículo 5.3 de la <strong>Directiva 2002/58/CE (ePrivacy)</strong>:
+                        </p>
+
+                        <h3>8.1. Naturaleza del Tratamiento, Datos Seudonimizados y Rol del Desarrollador</h3>
+                        <ul>
+                            <li><strong>Calificación del hash como dato personal seudonimizado (Art. 4.5 y Considerando 26 del RGPD):</strong> El resumen criptográfico <code>HMAC-SHA256</code> de un número telefónico reportado como spam (<code>phone_hash</code>), la clave pública ECC (<code>created_by</code>) y el identificador rotatorio horario (<code>RotatingBeaconId</code>) constituyen <strong>datos personales sujetos a seudonimización</strong> (y por tanto siguen siendo considerados datos del usuario bajo el RGPD), dado que permiten a otros dispositivos con la misma aplicación evaluar si un número entrante coincide con dicho hash.</li>
+                            <li><strong>Ausencia de fichero centralizado del desarrollador:</strong> El desarrollador de Mondafono no recibe, no almacena ni accede a estos datos en servidores propios o de encargados del tratamiento (Art. 4.7 y 4.8 RGPD). El tratamiento y el intercambio P2P por Bluetooth ocurren de manera descentralizada entre los terminales de los usuarios.</li>
+                            <li><strong>Cumplimiento del Art. 5.3 de la Directiva ePrivacy:</strong> Todo acceso o almacenamiento en la memoria local del terminal (base de datos SQLite <code>spam_verdicts.db</code>) tiene como única finalidad estrictamente necesaria prestar el servicio de filtrado de llamadas spam expresamente instalado y activado por el usuario, sin cookies, sin identificadores publicitarios y sin seguimiento.</li>
+                        </ul>
+
+                        <h3>8.2. Bases Jurídicas (Artículo 6.1 del RGPD)</h3>
+                        <ul>
+                            <li><strong>Consentimiento explícito y ejecución de la funcionalidad solicitada por el usuario (Art. 6.1.a y 6.1.b RGPD):</strong> El usuario activa libremente el rol de filtrado (<code>ROLE_CALL_SCREENING</code>) y los permisos de Bluetooth durante el proceso de incorporación (<em>onboarding</em>) y decide voluntariamente qué llamadas desconocidas marca como <code>[Spam]</code> o <code>[No Spam]</code>. Puede retirar cualquier permiso o eliminar cualquier reporte en todo momento con un solo toque.</li>
+                            <li><strong>Interés legítimo en la seguridad de las comunicaciones y prevención del fraude telefónico (Art. 6.1.f RGPD y Considerando 47):</strong> El intercambio P2P de resúmenes criptográficos irreversibles (<code>HMAC-SHA256</code>) de números utilizados para llamadas no solicitadas o fraudulentas responde al interés legítimo de proteger a los ciudadanos frente a estafas telefónicas (<em>vishing</em>) y acoso comercial, aplicando salvaguardias técnicas de seudonimización, firma digital y caducidad automática a los 20 días que garantizan que no prevalezcan riesgos sobre los derechos fundamentales.</li>
+                        </ul>
+
+                        <h3>8.3. Ausencia de Transferencias Internacionales de Datos (Capítulo V del RGPD)</h3>
+                        <p>
+                            Al carecer del permiso <code>INTERNET</code> y de servidores en la nube, Mondafono <strong>no realiza transferencias internacionales de datos personales a terceros países</strong>. La sincronización BLE ocurre exclusivamente por ondas de radio de corto alcance (típicamente menos de 10–30 metros) entre dispositivos físicamente próximos en el mismo entorno donde se encuentra el usuario.
+                        </p>
+
+                        <h3>8.4. Ejercicio de Derechos del Interesado (Artículos 12 a 22 del RGPD)</h3>
+                        <ul>
+                            <li><strong>Derecho de Acceso (Art. 15) y Portabilidad (Art. 20):</strong> Puedes consultar en todo momento en la pantalla principal de la aplicación todos tus números pendientes (<em>Pending</em>), tu lista blanca (<em>Whitelist</em>), tus reportes de spam (<em>Blacklist</em>) y el contador de llamadas bloqueadas.</li>
+                            <li><strong>Derecho de Rectificación (Art. 16) y Supresión / Derecho al Olvido (Art. 17):</strong> Puedes reclasificar o borrar cualquier número de tu Lista Blanca o Lista Negra pulsando el botón <code>[x]</code> en la interfaz de la app, o borrar toda la base de datos e identidad criptográfica desde los ajustes de Android.</li>
+                            <li><strong>Derecho de Limitación (Art. 18) y Oposición / Retirada del Consentimiento (Art. 21 y Art. 7.3):</strong> Puedes revocar el permiso de Bluetooth para detener la sincronización P2P manteniendo el bloqueo local, o revocar el rol de filtrado de llamadas en los ajustes de Android en cualquier instante.</li>
+                            <li><strong>Decisiones Individuales Automatizadas (Art. 22):</strong> El filtrado probabilístico de llamadas spam se ejecuta localmente en tu teléfono para protegerte de llamadas molestas y nunca produce efectos jurídicos adversos sobre ti; además, cada bloqueo queda registrado y puedes añadir cualquier número a tu Lista Blanca (que siempre tiene prioridad absoluta).</li>
+                            <li><strong>Derecho a Reclamar ante una Autoridad de Control (Art. 77):</strong> Si tienes cualquier duda o consulta sobre privacidad, puedes escribirnos a la dirección indicada en la Sección 10. Asimismo, tienes derecho a presentar una reclamación ante la autoridad de protección de datos de tu país de residencia (por ejemplo, la <strong>Agencia Española de Protección de Datos — <abbr title="Agencia Española de Protección de Datos">AEPD</abbr></strong> en <a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer">www.aepd.es</a>, o cualquier autoridad miembro del Comité Europeo de Protección de Datos — <abbr title="Comité Europeo de Protección de Datos / European Data Protection Board">CEPD/EDPB</abbr>).</li>
+                        </ul>
+                    </div>
+
+                    <div lang="en">
+                        <p>
+                            For users located in the European Economic Area (<abbr title="European Economic Area">EEA</abbr>), the United Kingdom (UK GDPR), and Switzerland, this section details how Mondafono complies with the <strong>General Data Protection Regulation — <abbr title="General Data Protection Regulation">GDPR</abbr> (Regulation (EU) 2016/679)</strong> and Article 5(3) of the <strong>ePrivacy Directive (2002/58/EC)</strong>:
+                        </p>
+
+                        <h3>8.1. Nature of Processing, Pseudonymized User Data &amp; Role of the Developer</h3>
+                        <ul>
+                            <li><strong>Legal classification of hashes as pseudonymized personal data (GDPR Art. 4(5) &amp; Recital 26):</strong> The <code>HMAC-SHA256</code> digest of a reported phone number (<code>phone_hash</code>), the ECC public key (<code>created_by</code>), and the hourly rotating beacon ID (<code>RotatingBeaconId</code>) are classified as <strong>pseudonymized personal data (user data)</strong> under the GDPR, because other devices running the application can evaluate incoming numbers against the hash.</li>
+                            <li><strong>No Centralized Data Controller Server:</strong> The developer of Mondafono never receives, stores, or accesses this data on developer-operated or processor-operated servers (GDPR Art. 4(7) &amp; 4(8)). All storage, call screening, and BLE P2P synchronization take place directly between user handsets.</li>
+                            <li><strong>ePrivacy Directive Art. 5(3) Compliance:</strong> Local storage access on your terminal equipment (<code>spam_verdicts.db</code>) is strictly necessary to deliver the anti-spam call-screening service explicitly installed and enabled by you, with zero tracking cookies, zero advertising identifiers, and zero behavioral profiling.</li>
+                        </ul>
+
+                        <h3>8.2. Lawful Bases for Processing (GDPR Article 6(1))</h3>
+                        <ul>
+                            <li><strong>User Consent &amp; Performance of User-Requested Functionality (Art. 6(1)(a) &amp; 6(1)(b) GDPR):</strong> You freely grant the system call-screening role (<code>ROLE_CALL_SCREENING</code>) and Bluetooth permissions during onboarding, and you explicitly decide whether to classify an unknown caller as <code>[Spam]</code> or <code>[No Spam]</code>. You can revoke any permission or delete any verdict at any time with a single tap.</li>
+                            <li><strong>Legitimate Interest in Telecommunications Security &amp; Fraud Prevention (Art. 6(1)(f) GDPR &amp; Recital 47):</strong> The peer-to-peer exchange of irreversible cryptographic digests (<code>HMAC-SHA256</code>) of numbers engaged in unsolicited or fraudulent calling serves the legitimate interest of protecting individuals against phone scams (<em>vishing</em>) and harassment, paired with strict cryptographic pseudonymization, ECDSA signatures, and automatic 20-day expiration.</li>
+                        </ul>
+
+                        <h3>8.3. No International Transfers to Third-Country Servers (GDPR Chapter V)</h3>
+                        <p>
+                            Because Mondafono lacks the <code>INTERNET</code> permission and uses no cloud servers, <strong>no personal data is ever transferred to remote servers in third countries</strong>. BLE synchronization occurs exclusively over short-range radio waves (typically under 10–30 meters) between physically nearby devices in your immediate vicinity.
+                        </p>
+
+                        <h3>8.4. Exercising Your GDPR Data Subject Rights (Articles 12–22 GDPR)</h3>
+                        <ul>
+                            <li><strong>Right of Access (Art. 15) &amp; Portability (Art. 20):</strong> You can inspect all pending numbers (<em>Pending</em>), trusted numbers (<em>Whitelist</em>), your own reported spam numbers (<em>Blacklist</em>), and blocked call counts directly in the main screen of the app at any time.</li>
+                            <li><strong>Right to Rectification (Art. 16) &amp; Erasure / "Right to Be Forgotten" (Art. 17):</strong> You can reclassify or delete any number in your Whitelist or Blacklist by tapping the <code>[x]</code> button in the app UI, or wipe the entire database and Keystore identity via Android system settings.</li>
+                            <li><strong>Right to Restriction (Art. 18) &amp; Right to Object / Withdraw Consent (Art. 21 &amp; Art. 7(3)):</strong> You can revoke Bluetooth permissions in Android Settings at any time to disable P2P sync while keeping local call screening active, or revoke the Call Screening role altogether.</li>
+                            <li><strong>Automated Individual Decision-Making (Art. 22):</strong> Probabilistic spam filtering runs locally on your handset to protect you from nuisance calls; every block is logged and can be overridden immediately by adding any number to your local Whitelist (which always takes highest priority).</li>
+                            <li><strong>Right to Lodge a Complaint with a Supervisory Authority (Art. 77):</strong> You may contact us at the email address in Section 10 with any privacy inquiry, and you also have the right to lodge a complaint with your national Data Protection Authority (such as the Spanish <strong><abbr title="Agencia Española de Protección de Datos">AEPD</abbr></strong> at <a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer">www.aepd.es</a> or any EU/EEA supervisory authority listed by the European Data Protection Board — <abbr title="European Data Protection Board">EDPB</abbr>).</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-09" class="policy-section" aria-labelledby="h2-sec-09">
+                <div class="band band--glint"></div>
+                <header class="policy-section__header">
+                    <h2 id="h2-sec-09" class="policy-section__title">
+                        <span lang="es">09. Marco Normativo de EE. UU.: CCPA / CPRA (California), Leyes Estatales y COPPA</span>
+                        <span lang="en">09. United States Legal Framework: CCPA / CPRA (California), State Laws &amp; COPPA</span>
+                    </h2>
+                    <span class="policy-section__code">[ SEC-09 // US-CCPA-CPRA ]</span>
+                </header>
+                <div class="policy-section__body">
+                    <div lang="es">
+                        <p>
+                            Esta sección proporciona las declaraciones legales exigidas por la <strong>Ley de Privacidad del Consumidor de California (<abbr title="California Consumer Privacy Act">CCPA</abbr>)</strong>, modificada por la <strong>Ley de Derechos de Privacidad de California (<abbr title="California Privacy Rights Act">CPRA</abbr>, Cal. Civ. Code § 1798.100 y siguientes)</strong>, así como por las leyes estatales de privacidad de Virginia (<strong><abbr title="Virginia Consumer Data Protection Act">VCDPA</abbr></strong>), Colorado (<strong><abbr title="Colorado Privacy Act">CPA</abbr></strong>), Connecticut (<strong><abbr title="Connecticut Data Privacy Act">CTDPA</abbr></strong>), Utah (<strong><abbr title="Utah Consumer Privacy Act">UCPA</abbr></strong>), Texas (<strong><abbr title="Texas Data Privacy and Security Act">TDPSA</abbr></strong>) y normativas equivalentes de los Estados Unidos:
+                        </p>
+
+                        <aside class="callout" aria-label="Declaración de No Venta ni Compartición bajo CCPA y CPRA">
+                            <div class="band band--sage"></div>
+                            <div class="callout__body">
+                                <strong class="callout__title">[ DECLARACIÓN EXPRESA: NO VENDEMOS NI COMPARTIMOS INFORMACIÓN PERSONAL ]</strong>
+                                <p>
+                                    <strong>Mondafono NO vende («Sell») ni comparte («Share» para publicidad conductual de contexto cruzado) tu información personal con terceros, corredores de datos (<em>Data Brokers</em>) ni redes publicitarias</strong>, ni lo ha hecho en los últimos 12 meses. Asimismo, Mondafono no recopila ni utiliza Información Personal Sensible (<em>Sensitive Personal Information</em>) para inferir características sobre los consumidores.
+                                </p>
+                            </div>
+                        </aside>
+
+                        <h3>9.1. Desglose de Categorías de la CCPA (Últimos 12 Meses)</h3>
+                        <ul>
+                            <li><strong>Identificadores y Datos Seudonimizados (Categoría A del § 1798.140(v)(1) y § 1798.140(aa)):</strong> Los números de llamadas entrantes se procesan localmente en tu teléfono, y cuando marcas un número como spam, su hash criptográfico <code>HMAC-SHA256</code> junto con la clave pública ECC de tu dispositivo y el identificador rotatorio de baliza —los cuales <strong>sí son considerados datos del usuario (información personal seudonimizada)</strong>— se recopilan y transmiten por Bluetooth P2P a otros dispositivos Mondafono cercanos con fines exclusivos de seguridad y prevención de fraude telefónico (Cal. Civ. Code § 1798.140(e)(2) — <em>Helping to ensure security and integrity</em>), sin enviarse jamás a servidores del desarrollador ni venderse a terceros.</li>
+                            <li><strong>Información comercial, biométrica, geolocalización, historial de navegación en Internet, audio/voz (el audio de tus llamadas jamás se escucha ni se graba), datos laborales o inferencias de perfilado (Categorías B a K):</strong> <strong>No recopilados ni accedidos en ningún caso.</strong></li>
+                        </ul>
+
+                        <h3>9.2. Derechos de los Residentes de California y Otros Estados de EE. UU.</h3>
+                        <ul>
+                            <li><strong>Derecho a Saber y Acceder (Right to Know &amp; Access):</strong> Esta política y el código fuente abierto describen el 100% de las operaciones de datos, y la pantalla principal de la app muestra todos los registros locales de tu dispositivo.</li>
+                            <li><strong>Derecho de Eliminación (Right to Delete):</strong> Puedes eliminar cualquier registro individual o borrar toda la base de datos local desde tu propio dispositivo en cualquier momento (ver Sección 7.3).</li>
+                            <li><strong>Derecho de Exclusión de Venta o Compartición (Right to Opt-Out of Sale/Sharing):</strong> Como no vendemos ni compartimos datos personales con fines publicitarios, estás excluido por defecto. Puedes desactivar en cualquier momento el intercambio P2P por Bluetooth revocando el permiso de dispositivos cercanos en Android.</li>
+                            <li><strong>Derecho a la No Discriminación (Right to Non-Discrimination):</strong> Mondafono es gratuito, no tiene niveles de pago ni discrimina a ningún usuario por ejercer sus derechos de privacidad.</li>
+                        </ul>
+
+                        <h3>9.3. Privacidad de los Menores (COPPA y Artículo 8 del RGPD)</h3>
+                        <p>
+                            Mondafono es una utilidad técnica de filtrado de llamadas telefónicas y no está dirigida a menores de 13 años (bajo la ley federal estadounidense <strong><abbr title="Children's Online Privacy Protection Act">COPPA</abbr> — Children's Online Privacy Protection Act</strong>) ni a menores de 16 años (bajo el Art. 8 del RGPD). La aplicación no solicita ni recopila datos personales de menores ni de adultos hacia ningún servidor.
+                        </p>
+                    </div>
+
+                    <div lang="en">
+                        <p>
+                            This section provides the statutory disclosures required under the <strong>California Consumer Privacy Act (<abbr title="California Consumer Privacy Act">CCPA</abbr>)</strong> as amended by the <strong>California Privacy Rights Act (<abbr title="California Privacy Rights Act">CPRA</abbr>, Cal. Civ. Code § 1798.100 et seq.)</strong>, as well as the Virginia Consumer Data Protection Act (<strong><abbr title="Virginia Consumer Data Protection Act">VCDPA</abbr></strong>), Colorado Privacy Act (<strong><abbr title="Colorado Privacy Act">CPA</abbr></strong>), Connecticut Data Privacy Act (<strong><abbr title="Connecticut Data Privacy Act">CTDPA</abbr></strong>), Utah Consumer Privacy Act (<strong><abbr title="Utah Consumer Privacy Act">UCPA</abbr></strong>), Texas Data Privacy and Security Act (<strong><abbr title="Texas Data Privacy and Security Act">TDPSA</abbr></strong>), and equivalent US state privacy statutes:
+                        </p>
+
+                        <aside class="callout" aria-label="CCPA and CPRA statutory notice of non-sale of personal information">
+                            <div class="band band--sage"></div>
+                            <div class="callout__body">
+                                <strong class="callout__title">[ STATUTORY NOTICE: WE DO NOT SELL OR SHARE PERSONAL INFORMATION ]</strong>
+                                <p>
+                                    <strong>Mondafono does NOT "sell" or "share" (for cross-context behavioral advertising) any personal information with third parties, data brokers, or ad networks</strong>, and has not done so in the preceding 12 months. Furthermore, Mondafono does not collect or process Sensitive Personal Information to infer characteristics about any consumer.
+                                </p>
+                            </div>
+                        </aside>
+
+                        <h3>9.1. CCPA Statutory Categories Disclosure (Preceding 12 Months)</h3>
+                        <ul>
+                            <li><strong>Identifiers &amp; Pseudonymized User Data (Cal. Civ. Code § 1798.140(v)(1)(A) &amp; § 1798.140(aa)):</strong> Incoming caller phone numbers are screened locally on your device, and when you explicitly report a number as spam, its <code>HMAC-SHA256</code> digest together with your device's ECC public key and hourly rotating beacon ID—which <strong>are classified as user data (pseudonymized personal information)</strong>—are collected and transmitted over short-range BLE P2P to nearby Mondafono peers strictly for telecommunications security and fraud prevention purposes (Cal. Civ. Code § 1798.140(e)(2) — <em>Helping to ensure security and integrity</em>), never sent to developer servers or sold to third parties.</li>
+                            <li><strong>Commercial Information, Biometric Data, Geolocation Data, Internet/Network Activity, Audio/Voice Content (Mondafono never listens to or records call audio), Professional Data, or Profiling Inferences (Categories B through K):</strong> <strong>Never accessed, collected, or processed under any circumstances.</strong></li>
+                        </ul>
+
+                        <h3>9.2. Rights of California &amp; US State Residents</h3>
+                        <ul>
+                            <li><strong>Right to Know &amp; Access:</strong> This Privacy Policy and the open-source codebase disclose 100% of data operations, and the app UI displays all local records stored on your handset.</li>
+                            <li><strong>Right to Delete:</strong> You can delete individual entries or wipe the entire local SQLite database and Keystore identity directly on your device at any time (see Section 7.3).</li>
+                            <li><strong>Right to Opt-Out of Sale / Sharing / Targeted Advertising:</strong> Because Mondafono never sells personal information or engages in targeted advertising, you are protected by default. You may also disable P2P BLE synchronization at any time by revoking Nearby Devices permission in Android Settings.</li>
+                            <li><strong>Right to Non-Discrimination:</strong> Mondafono is free, contains no paywalls or accounts, and never discriminates against users for exercising privacy rights.</li>
+                        </ul>
+
+                        <h3>9.3. Children's Privacy (US COPPA &amp; GDPR Article 8)</h3>
+                        <p>
+                            Mondafono is a general-utility call-screening tool not directed at children under the age of 13 (under the US <strong>Children's Online Privacy Protection Act — <abbr title="Children's Online Privacy Protection Act">COPPA</abbr></strong>) or under the age of 16 (under GDPR Article 8). Because Mondafono collects zero personal information onto any server, it never knowingly collects personal information from children or adults.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-10" class="policy-section" aria-labelledby="h2-sec-10">
+                <div class="band band--glint"></div>
+                <header class="policy-section__header">
+                    <h2 id="h2-sec-10" class="policy-section__title">
+                        <span lang="es">10. Contacto del Responsable, Verificación en Código Abierto y Actualizaciones</span>
+                        <span lang="en">10. Developer Contact Point, Open-Source Auditability &amp; Policy Updates</span>
+                    </h2>
+                    <span class="policy-section__code">[ SEC-10 // CONTACT-FOSS ]</span>
+                </header>
+                <div class="policy-section__body">
+                    <div lang="es">
+                        <h3>10.1. Identificación del Desarrollador y Punto de Contacto para Privacidad</h3>
+                        <p>
+                            Cualquier usuario o autoridad reguladora puede dirigir sus consultas, solicitudes o comentarios relativos a esta Política de Privacidad a través de los siguientes canales oficiales:
+                        </p>
+                        <address class="policy-section__contact">
+                            <ul>
+                                <li><strong>Desarrollador / Proyecto Responsable:</strong> Kevocde — Proyecto Mondafono (<code>dev.polyrics.mondafono</code>)</li>
+                                <li><strong>Correo electrónico de contacto para privacidad:</strong> <a href="mailto:kevind.guzmand@gmail.com"><code>kevind.guzmand@gmail.com</code></a></li>
+                            </ul>
+                        </address>
+
+                        <h3>10.2. Verificación Pública Mediante Código Abierto (<abbr title="Free and Open-Source Software">FOSS</abbr>)</h3>
+                        <p>
+                            Mondafono se distribuye como software libre y de código abierto (FOSS). Cualquier ingeniero de seguridad, auditor o usuario puede inspeccionar el código fuente completo de la aplicación, verificar el archivo <code>AndroidManifest.xml</code> (comprobando la ausencia de <code>android.permission.INTERNET</code>, <code>READ_CONTACTS</code>, <code>READ_CALL_LOG</code> y el uso de <code>neverForLocation</code>), auditar las pruebas unitarias de criptografía (<code>SpamReportHasher</code>, <code>ReportSignature</code>, <code>RotatingBeaconId</code>, <code>ReportValidator</code>) y compilar el APK de forma reproducible desde el repositorio oficial del proyecto.
+                        </p>
+
+                        <h3>10.3. Actualizaciones de esta Política de Privacidad</h3>
+                        <p>
+                            Si en futuras versiones de Mondafono se modifica cualquier aspecto del tratamiento local de datos o del protocolo criptográfico P2P, actualizaremos esta página indicando la nueva fecha de entrada en vigor y el número de versión correspondiente en la cabecera del boletín.
+                        </p>
+                    </div>
+
+                    <div lang="en">
+                        <h3>10.1. Developer Identification &amp; Privacy Point of Contact</h3>
+                        <p>
+                            Any user or regulatory authority may direct questions, requests, or inquiries regarding this Privacy Policy to the developer through the following official contact details:
+                        </p>
+                        <address class="policy-section__contact">
+                            <ul>
+                                <li><strong>Developer / Project Entity:</strong> Kevocde — Mondafono Project (<code>dev.polyrics.mondafono</code>)</li>
+                                <li><strong>Privacy Contact Email:</strong> <a href="mailto:kevind.guzmand@gmail.com"><code>kevind.guzmand@gmail.com</code></a></li>
+                            </ul>
+                        </address>
+
+                        <h3>10.2. Public Auditability via Open Source (<abbr title="Free and Open-Source Software">FOSS</abbr>)</h3>
+                        <p>
+                            Mondafono is released as Free and Open-Source Software (FOSS). Any security researcher, privacy auditor, or user can inspect the complete Kotlin source code, verify <code>AndroidManifest.xml</code> (confirming the absence of <code>android.permission.INTERNET</code>, <code>READ_CONTACTS</code>, <code>READ_CALL_LOG</code>, and the presence of <code>neverForLocation</code>), audit the unit test suite covering <code>SpamReportHasher</code>, <code>ReportSignature</code>, <code>RotatingBeaconId</code>, and <code>ReportValidator</code>, and build the APK directly from source.
+                        </p>
+
+                        <h3>10.3. Changes to This Privacy Policy</h3>
+                        <p>
+                            If a future release of Mondafono modifies any aspect of its on-device storage or P2P cryptographic protocol, we will update this page and revise the Effective Date and version stamp in the header strip at the top of this bulletin.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+        </article>
+    </main>
+
+    <footer class="footer">
+        <small class="footer__info">
+            <strong>MONDAFONO</strong> // <code>dev.polyrics.mondafono</code>
+            <span lang="es">— Boletín Oficial de Privacidad y Protección de Datos (<time datetime="2026">2026</time>)</span>
+            <span lang="en">— Official Privacy &amp; Data Protection Dispatch (<time datetime="2026">2026</time>)</span>
+        </small>
+        <small class="footer__badge">
+            [ ZERO SERVERS // NO INTERNET PERMISSION // P2P BLE GUARD ]
+        </small>
+    </footer>
+
+</div>
+
+<script>
+    var SEO_META = {
+        es: {
+            title: "Mondafono — Política de Privacidad y Protección de Datos Personales",
+            description: "Política de Privacidad técnica, criptográfica y legal de Mondafono (dev.polyrics.mondafono). Filtro de llamadas anti-spam en Android con red P2P Bluetooth Low Energy sin servidores, sin permiso de Internet y protección de datos desde el diseño (RGPD / GDPR, CCPA / CPRA)."
+        },
+        en: {
+            title: "Mondafono — Privacy Policy & Personal Data Protection Notice",
+            description: "Technical, cryptographic, and legal Privacy Policy for Mondafono (dev.polyrics.mondafono). Serverless Android anti-spam call screening with BLE P2P sync, no INTERNET permission, and privacy by design under GDPR and CCPA/CPRA."
+        }
+    };
+
+    function setLanguage(lang) {
+        var normalized = (lang === 'en') ? 'en' : 'es';
+        document.documentElement.setAttribute('lang', normalized);
+        document.documentElement.setAttribute('data-lang', normalized);
+
+        if (SEO_META[normalized]) {
+            document.title = SEO_META[normalized].title;
+            var metaDesc = document.querySelector('meta[name="description"]');
+            if (metaDesc) {
+                metaDesc.setAttribute('content', SEO_META[normalized].description);
+            }
+        }
+
+        var btnEs = document.getElementById('btn-es');
+        var btnEn = document.getElementById('btn-en');
+        if (btnEs && btnEn) {
+            if (normalized === 'es') {
+                btnEs.classList.add('retro-btn--active');
+                btnEs.setAttribute('aria-pressed', 'true');
+                btnEn.classList.remove('retro-btn--active');
+                btnEn.setAttribute('aria-pressed', 'false');
+            } else {
+                btnEn.classList.add('retro-btn--active');
+                btnEn.setAttribute('aria-pressed', 'true');
+                btnEs.classList.remove('retro-btn--active');
+                btnEs.setAttribute('aria-pressed', 'false');
+            }
+        }
+    }
+
+    (function initLanguage() {
+        try {
+            var params = new URLSearchParams(window.location.search);
+            var queryLang = params.get('lang');
+            if (queryLang === 'en' || queryLang === 'es') {
+                setLanguage(queryLang);
+                return;
+            }
+            var navLang = (navigator.language || navigator.userLanguage || 'es').toLowerCase();
+            if (navLang.indexOf('en') === 0) {
+                setLanguage('en');
+            } else {
+                setLanguage('es');
+            }
+        } catch (e) {
+            setLanguage('es');
+        }
+    })();
+</script>
+
+</body>
+</html>
